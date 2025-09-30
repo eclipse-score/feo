@@ -63,7 +63,7 @@ tokio-util = { version = "0.7.16", features = ["codec", "net"] }
 tracing = { version = "0.1.41", features = [
     "attributes",
 ], default-features = false }
-tracing-subscriber = { version = "0.3.19", default-features = false }
+tracing-subscriber = { version = "0.3.20", default-features = false }
 
 [profile.profiling]
 inherits = "release"
