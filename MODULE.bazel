@@ -51,13 +51,6 @@ RUST_VERSION = "1.83.0"
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
     edition = RUST_EDITION,
-    sha256s = {
-        "rustc-1.83.0-x86_64-unknown-linux-gnu.tar.xz": "6ec40e0405c8cbed3b786a97d374c144b012fc831b7c22b535f8ecb524f495ad",
-        "clippy-1.83.0-x86_64-unknown-linux-gnu.tar.xz": "ef6c05abcfd861ff0bca41d408e126dda195dc966ee35abee57645a12d418f5b",
-        "cargo-1.83.0-x86_64-unknown-linux-gnu.tar.xz": "de834a4062d9cd200f8e0cdca894c0b98afe26f1396d80765df828880a39b98c",
-        "llvm-tools-1.83.0-x86_64-unknown-linux-gnu.tar.xz": "b931673b309c229e234f03271aaa777ea149c3c41f0fb43f3ef13a272540299a",
-        "rust-std-1.83.0-x86_64-unknown-linux-gnu.tar.xz": "c88fe6cb22f9d2721f26430b6bdd291e562da759e8629e2b4c7eb2c7cad705f2",
-    },
     versions = [RUST_VERSION],
 )
 use_repo(rust, "rust_toolchains")
@@ -84,7 +77,3 @@ crate.from_cargo(
     ],
 )
 use_repo(crate, "cargo")
-
-# To update, run `bazel run @rules_rust//tools/rust_analyzer:gen_rust_project`.
-rust_analyzer = use_extension("@rules_rust//tools/rust_analyzer:deps.bzl", "rust")
-rust_analyzer.rust_analyzer_dependencies()
