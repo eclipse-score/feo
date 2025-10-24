@@ -10,9 +10,24 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+
 load("@rules_rust//rust:defs.bzl", "rust_test")
 
 rust_test(
-    name = "rust_hello_test",
-    srcs = ["test_main.rs"],
+    name = "feo_tests",
+    size = "small",
+    srcs = [
+        "src/lib.rs",
+        "src/monitor.rs",
+    ],
+    data = ["//tests/rust/feo_tests/test_agent"],
+    edition = "2021",
+    deps = [
+        "@score_crates//:clap",
+        "@score_crates//:env_logger",
+        "@score_crates//:ipc_channel",
+        "@score_crates//:log",
+        "@score_crates//:nix",
+        "@score_crates//:serde",
+    ],
 )

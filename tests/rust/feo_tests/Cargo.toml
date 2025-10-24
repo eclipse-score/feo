@@ -1,0 +1,12 @@
+[package]
+name = "integration_test"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { workspace = true }
+ipc-channel = { workspace = true }
+serde = { workspace = true }
+nix = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }

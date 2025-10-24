@@ -11,7 +11,18 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-#[test]
-fn test_hello() {
-    assert_eq!(2 + 2, 4);
+//! TODO: should be merged with test_agent/src/monitor.rs
+
+use serde::{Deserialize, Serialize};
+
+/// Notification type for Monitor activity to test runner
+#[derive(Serialize, Deserialize, Debug)]
+pub enum MonitorNotification {
+    Startup,
+    Step,
+    Shutdown,
 }
+
+/// Request type for test runner to Monitor activity
+#[derive(Serialize, Deserialize, Debug)]
+pub enum MonitorRequest {}
