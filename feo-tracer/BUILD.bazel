@@ -47,7 +47,7 @@ rust_library(
     deps = [
         "//feo-log:libfeo_log_rust",
         "//feo-tracing:libfeo_tracing_rust",
-        "//perfetto-model:libperfetto_model_rust",
+        "//perfetto-model",
         "@score_crates//:anyhow",
         "@score_crates//:human_bytes",
         "@score_crates//:indicatif",

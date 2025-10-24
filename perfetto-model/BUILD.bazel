@@ -10,28 +10,27 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust_prost//:defs.bzl", "rust_prost_library")
 
-load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
-
-rust_library(
-    name = "libperfetto_model_rust",
-    srcs = [
-        "src/lib.rs",
-    ],
-    crate_name = "perfetto_model",
+proto_library(
+    name = "perfetto_proto",
+    srcs = glob(["protos/**/*.proto"]),
     visibility = ["//visibility:public"],
-    deps = [
-        ":build_script",
-        "@score_crates//:prost",
-    ],
 )
 
-cargo_build_script(
-    name = "build_script",
-    srcs = ["build.rs"],
-    data = glob(["protos/**"]),
+rust_prost_library(
+    name = "perfetto_proto_rust",
+    proto = ":perfetto_proto",
+)
+
+rust_library(
+    name = "perfetto-model",
+    srcs = ["src/lib.rs"],
+    visibility = ["//visibility:public"],
     deps = [
-        "@score_crates//:prost_build",
+        ":perfetto_proto_rust",
+        "@score_crates//:prost",
     ],
 )
