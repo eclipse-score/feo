@@ -11,7 +11,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@cargo//:defs.bzl", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
 
 rust_library(
@@ -23,6 +22,11 @@ rust_library(
         "src/lib.rs",
     ],
     crate_name = "cycle_benchmark",
+    rustc_flags = [
+        "-Clink-arg=-lstdc++",
+        "-Clink-arg=-lm",
+        "-Clink-arg=-lc",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         "//feo:libfeo_recording_rust",
@@ -31,10 +35,11 @@ rust_library(
         "//feo-logger:libfeo_logger_rust",
         "//feo-time:libfeo_time_rust",
         "//feo-tracing:libfeo_tracing_rust",
-        "@cargo//:postcard",
-        "@cargo//:serde",
-        "@cargo//:serde_json",
-        "@cargo//:tracing",
+        "@score-baselibs//score/language/futurecpp",
+        "@score_crates//:postcard",
+        "@score_crates//:serde",
+        "@score_crates//:serde_json",
+        "@score_crates//:tracing",
     ],
 )
 
@@ -42,6 +47,11 @@ rust_binary(
     name = "cycle_bench",
     srcs = [
         "src/bin/cycle_bench.rs",
+    ],
+    rustc_flags = [
+        "-Clink-arg=-lstdc++",
+        "-Clink-arg=-lm",
+        "-Clink-arg=-lc",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -51,5 +61,6 @@ rust_binary(
         "//feo-logger:libfeo_logger_rust",
         "//feo-time:libfeo_time_rust",
         "//feo-tracing:libfeo_tracing_rust",
+        "@score-baselibs//score/language/futurecpp",
     ],
 )

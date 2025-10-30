@@ -26,10 +26,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install protobuf-compiler
+        run: sudo apt-get install protobuf-compiler
 
       - uses: bazelbuild/setup-bazelisk@v3
 

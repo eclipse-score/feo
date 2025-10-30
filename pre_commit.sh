@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # *******************************************************************************
 # Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
@@ -11,27 +13,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
-load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
+set -e
 
-rust_library(
-    name = "libperfetto_model_rust",
-    srcs = [
-        "src/lib.rs",
-    ],
-    crate_name = "perfetto_model",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":build_script",
-        "@score_crates//:prost",
-    ],
-)
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-cargo_build_script(
-    name = "build_script",
-    srcs = ["build.rs"],
-    data = glob(["protos/**"]),
-    deps = [
-        "@score_crates//:prost_build",
-    ],
-)
+buildifier -r $SCRIPT_DIR
+bazelisk clean --expunge
+bazelisk mod tidy
+bazelisk build //:format.check
+bazelisk build //:format.fix
+cargo fmt --all
+bazelisk build //...
