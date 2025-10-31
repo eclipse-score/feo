@@ -76,7 +76,7 @@ git_override(
 bazel_dep(name = "score_crates", version = "1.0.0")
 git_override(
     module_name = "score_crates",
-    commit = "6031e8c018da76b108f0f9c3772b0c535125ac28",
+    commit = "2f0616c5af797f05788e4e5cad16f37699ea7a17",
     remote = "https://github.com/eclipse-score/score-crates.git",
 )
 

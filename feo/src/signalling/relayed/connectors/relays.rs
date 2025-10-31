@@ -85,7 +85,7 @@ impl<Inter: IsChannel, Intra: IsChannel> PrimaryReceiveRelay<Inter, Intra> {
                 }
                 Err(_) => {
                     error!("Failed to receive");
-                    continue;
+                    break;
                 }
             };
 
@@ -336,7 +336,7 @@ impl<Inter: IsChannel, Intra: IsChannel> SecondarySendRelay<Inter, Intra> {
                 }
                 Err(_) => {
                     error!("Failed to receive");
-                    continue;
+                    break;
                 }
             };
 

@@ -22,6 +22,7 @@ use mio::{event, Events, Interest, Poll, Token};
 use std::collections::HashMap;
 use std::fs;
 use std::io;
+use std::io::ErrorKind;
 use std::path::Path;
 
 /// Token of the listener
@@ -67,7 +68,12 @@ where
         }
 
         // There was no readable connection -> poll
-        self.poll.poll(events, Some(timeout)).unwrap();
+        while let Err(e) = self.poll.poll(events, Some(timeout)) {
+            if e.kind() == ErrorKind::Interrupted {
+                continue;
+            }
+            panic!("{e}");
+        }
         for event in events.iter() {
             match event.token() {
                 LISTENER_TOKEN => self.accept_connections(),

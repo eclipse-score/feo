@@ -46,6 +46,7 @@ pub mod agent;
 pub mod cpp;
 pub mod error;
 pub mod ids;
+pub mod os_signals;
 #[cfg(feature = "recording")]
 pub mod recording;
 pub mod scheduler;
