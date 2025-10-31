@@ -11,14 +11,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@cargo//:defs.bzl", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 rust_library(
     name = "libfeo_com_rust",
     srcs = [
         "src/interface.rs",
-        "src/iox2/mod.rs",
+        # Disabled due to compilation error of iceoryx2
+        # "src/iox2/mod.rs",
         "src/lib.rs",
         "src/linux_shm/mod.rs",
         "src/linux_shm/shared_memory.rs",
@@ -26,19 +26,19 @@ rust_library(
     crate_features = [
         # bazel has a different concept (select) for optional dependencies than cargo,
         # so we activate all features until we refactor to select
-        "ipc_iceoryx2",
+        # Disabled due to compilation error of iceoryx2
+        # "ipc_iceoryx2",
         "ipc_linux_shm",
     ],
     crate_name = "feo_com",
     visibility = ["//visibility:public"],
-    deps = all_crate_deps(
-        normal = True,
-    ) + [
+    deps = [
         "//feo-log:libfeo_log_rust",
         # all_crate_deps only contains optional dependencies which are default-activated,
         # so we add all optional dependencies here to be independent of cargo default features
-        "@cargo//:iceoryx2",
-        "@cargo//:nix",
-        "@cargo//:rand",
+        # Disabled due to compilation error of iceoryx2
+        # "@score_crates//:iceoryx2",
+        "@score_crates//:nix",
+        "@score_crates//:rand",
     ],
 )
