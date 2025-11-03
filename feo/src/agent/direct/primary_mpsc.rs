@@ -39,6 +39,8 @@ pub struct PrimaryConfig {
     pub worker_assignments: Vec<(WorkerId, Vec<ActivityIdAndBuilder>)>,
     /// Receive timeout of the scheduler's connector
     pub timeout: Duration,
+    /// Timeout for waiting on initial connections from workers/recorders.
+    pub connection_timeout: Duration,
 }
 
 /// Primary agent
@@ -51,13 +53,14 @@ pub struct Primary {
 
 impl Primary {
     /// Create a new instance
-    pub fn new(config: PrimaryConfig) -> Self {
+    pub fn new(config: PrimaryConfig) -> Result<Self, Error>{
         let PrimaryConfig {
             cycle_time,
             activity_dependencies,
             recorder_ids,
             worker_assignments,
             timeout,
+            connection_timeout,
         } = config;
 
         let activity_worker_map: HashMap<ActivityId, WorkerId> = worker_assignments
@@ -89,7 +92,7 @@ impl Primary {
             })
             .collect();
 
-        connector.connect_remotes().expect("failed to connect");
+        connector.connect_remotes()?;
 
         let scheduler = Scheduler::new(
             cycle_time,
@@ -99,10 +102,10 @@ impl Primary {
             recorder_ids,
         );
 
-        Self {
+        Ok(Self {
             scheduler,
             _worker_threads,
-        }
+        })
     }
 
     /// Run the agent

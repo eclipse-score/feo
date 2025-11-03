@@ -42,11 +42,21 @@ fn main() {
         MAX_ADDITIONAL_SUBSCRIBERS,
     );
 
-    // Setup primary
-    let mut primary = cfg::Primary::new(config);
-
-    // Run primary
-    primary.run().unwrap()
+    // Setup and run primary
+    #[cfg(any(
+        feature = "signalling_direct_mpsc",
+        feature = "signalling_direct_tcp",
+        feature = "signalling_direct_unix"
+    ))]
+    cfg::Primary::new(config)
+        .unwrap_or_else(|err| {
+            feo_log::error!("Failed to initialize primary agent: {err:?}");
+            std::process::exit(1);
+        })
+        .run()
+        .unwrap();
+    #[cfg(any(feature = "signalling_relayed_tcp", feature = "signalling_relayed_unix"))]
+    cfg::Primary::new(config).run().unwrap();
 }
 
 /// Parameters of the primary
@@ -102,6 +112,7 @@ mod cfg {
             recorder_ids: vec![],
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
+            connection_timeout: Duration::from_secs(10),
         }
     }
 }
@@ -126,6 +137,7 @@ mod cfg {
             recorder_ids: params.recorder_ids,
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
+            connection_timeout: Duration::from_secs(10),
             endpoint: NodeAddress::Tcp(BIND_ADDR),
         }
     }
@@ -151,6 +163,7 @@ mod cfg {
             recorder_ids: params.recorder_ids,
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
+            connection_timeout: Duration::from_secs(10),
             endpoint: NodeAddress::UnixSocket(socket_paths().0),
         }
     }
