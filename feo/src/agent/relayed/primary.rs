@@ -19,7 +19,10 @@ use crate::error::Error;
 use crate::ids::{ActivityId, AgentId, WorkerId};
 use crate::scheduler::Scheduler;
 use crate::signalling::common::interface::{ConnectScheduler, ConnectWorker};
-use crate::signalling::relayed::sockets_mpsc::{SchedulerConnectorTcp, SchedulerConnectorUnix};
+use crate::signalling::relayed::interface::IsChannel;
+use crate::signalling::relayed::sockets_mpsc::{
+    InterChannelTcp, InterChannelUnix, IntraChannel, SchedulerConnectorTcp, SchedulerConnectorUnix,
+};
 use crate::timestamp;
 use crate::worker::Worker;
 use alloc::boxed::Box;
@@ -42,6 +45,8 @@ pub struct PrimaryConfig {
     pub worker_assignments: Vec<(WorkerId, Vec<ActivityIdAndBuilder>)>,
     /// Receive timeout of the scheduler's connector
     pub timeout: Duration,
+    /// Timeout for waiting on initial connections from workers/recorders.
+    pub connection_timeout: Duration,
     /// The socket address to which secondary agents' senders shall connect
     pub bind_address_senders: NodeAddress,
     /// The socket address to which secondary agents' receivers shall connect
@@ -62,7 +67,12 @@ pub struct Primary {
 
 impl Primary {
     /// Create a new instance
-    pub fn new(config: PrimaryConfig) -> Self {
+    pub fn new(config: PrimaryConfig) -> Result<Self, Error>
+    where
+        <InterChannelTcp as IsChannel>::MultiReceiver: Send,
+        <InterChannelUnix as IsChannel>::MultiReceiver: Send,
+        <IntraChannel as IsChannel>::Sender: Send,
+    {
         let PrimaryConfig {
             id,
             cycle_time,
@@ -72,6 +82,7 @@ impl Primary {
             bind_address_receivers,
             worker_assignments,
             timeout,
+            connection_timeout,
             worker_agent_map,
             activity_worker_map,
         } = config;
@@ -84,7 +95,7 @@ impl Primary {
                     id,
                     bind_senders,
                     bind_receivers,
-                    timeout,
+                    connection_timeout,
                     worker_agent_map,
                     activity_worker_map,
                     recorder_ids.clone(),
@@ -97,7 +108,7 @@ impl Primary {
                     id,
                     bind_senders,
                     bind_receivers,
-                    timeout,
+                    connection_timeout,
                     worker_agent_map,
                     activity_worker_map,
                     recorder_ids.clone(),
@@ -126,7 +137,7 @@ impl Primary {
             })
             .collect();
 
-        connector.connect_remotes().expect("failed to connect");
+        connector.connect_remotes()?;
 
         let scheduler = Scheduler::new(
             cycle_time,
@@ -136,10 +147,10 @@ impl Primary {
             recorder_ids,
         );
 
-        Self {
+        Ok(Self {
             scheduler,
             _worker_threads,
-        }
+        })
     }
 
     /// Run the agent

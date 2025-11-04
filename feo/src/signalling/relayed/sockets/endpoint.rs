@@ -23,7 +23,7 @@ pub(crate) use crate::signalling::common::socket::ProtocolSignal;
 use crate::signalling::relayed;
 use core::net::SocketAddr;
 use core::time::Duration;
-use feo_log::{debug, trace};
+use feo_log::{debug, trace, warn};
 use feo_time::Instant;
 use mio::{Events, Token};
 use std::collections::{HashMap, HashSet};
@@ -160,19 +160,27 @@ impl<S: IsServer> ProtocolMultiEndpoint<S> {
         let server = self.server.as_mut().unwrap();
 
         // TODO: timeout handling
+        let deadline = Instant::now() + timeout;
         let mut missing_peers: HashSet<ChannelId> = self.channel_ids.clone();
         while !missing_peers.is_empty() {
             trace!("Connecting missing channels {:?}", missing_peers);
+            let time_left = deadline.saturating_duration_since(Instant::now());
+            if time_left.is_zero() {
+                return Err(Error::Io((
+                    std::io::ErrorKind::TimedOut.into(),
+                    "CONNECTION_TIMEOUT",
+                )));
+            }
             // TODO: server to reject connections from unexpected peers
-            if let Some((token, signal)) = server.receive(&mut self.events, timeout) {
+            if let Some((token, signal)) = server.receive(&mut self.events, time_left) {
                 match signal {
                     ProtocolSignal::ChannelHello(channel_id) => {
                         self.channel_token_map.insert(channel_id, token);
                         missing_peers.remove(&channel_id);
                         debug!("Channel connected {channel_id:?}");
                     }
-                    _ => {
-                        return Err(Error::UnexpectedProtocolSignal);
+                    other => {
+                        warn!("Received unexpected signal {:?} from unknown token {:?} during connect", other, token);
                     }
                 }
             }
@@ -215,6 +223,47 @@ impl<S: IsServer> HasAddress for ProtocolMultiEndpoint<S> {
     type Address = S::Address;
 }
 
+impl<S: IsServer> relayed::interface::ProtocolMultiRecv for ProtocolMultiReceiver<S> {
+    type ProtocolSignal = ProtocolSignal;
+
+    fn receive(&mut self, timeout: Duration) -> Result<Option<Self::ProtocolSignal>, Error> {
+        self.receive(timeout)
+    }
+
+    fn connect_senders(&mut self, timeout: Duration) -> Result<(), Error> {
+        self.connect(timeout)
+    }
+}
+
+impl<S: IsServer> relayed::interface::ProtocolMultiSend for ProtocolMultiSender<S> {
+    type ProtocolSignal = ProtocolSignal;
+
+    fn send(&mut self, channel_id: ChannelId, signal: Self::ProtocolSignal) -> Result<(), Error> {
+        self.send(channel_id, signal)
+    }
+
+    fn connect_receivers(&mut self, timeout: Duration) -> Result<(), Error> {
+        self.connect(timeout)
+    }
+}
+
+impl TryFrom<ProtocolSignal> for Signal {
+    type Error = Error;
+
+    fn try_from(protocol_signal: ProtocolSignal) -> Result<Self, Self::Error> {
+        match protocol_signal {
+            ProtocolSignal::Core(s) => Ok(s),
+            _ => Err(Error::UnexpectedProtocolSignal),
+        }
+    }
+}
+
+impl From<Signal> for ProtocolSignal {
+    fn from(signal: Signal) -> Self {
+        ProtocolSignal::Core(signal)
+    }
+}
+
 impl HasAddress for TcpServer {
     type Address = SocketAddr;
 }
@@ -249,59 +298,6 @@ impl<C: IsClient> relayed::interface::ProtocolSend for ProtocolSender<C> {
     }
 }
 
-impl<C: IsClient> relayed::interface::ProtocolRecv for ProtocolReceiver<C> {
-    type ProtocolSignal = ProtocolSignal;
-
-    fn receive(&mut self, timeout: Duration) -> Result<Option<Self::ProtocolSignal>, Error> {
-        self.receive(timeout)
-    }
-
-    fn connect_sender(&mut self, timeout: Duration) -> Result<(), Error> {
-        self.connect(timeout)
-    }
-}
-
-impl<S: IsServer> relayed::interface::ProtocolMultiSend for ProtocolMultiSender<S> {
-    type ProtocolSignal = ProtocolSignal;
-
-    fn send(&mut self, channel_id: ChannelId, signal: Self::ProtocolSignal) -> Result<(), Error> {
-        self.send(channel_id, signal)
-    }
-
-    fn connect_receivers(&mut self, timeout: Duration) -> Result<(), Error> {
-        self.connect(timeout)
-    }
-}
-
-impl<S: IsServer> relayed::interface::ProtocolMultiRecv for ProtocolMultiReceiver<S> {
-    type ProtocolSignal = ProtocolSignal;
-
-    fn receive(&mut self, timeout: Duration) -> Result<Option<Self::ProtocolSignal>, Error> {
-        self.receive(timeout)
-    }
-
-    fn connect_senders(&mut self, timeout: Duration) -> Result<(), Error> {
-        self.connect(timeout)
-    }
-}
-
-impl TryFrom<ProtocolSignal> for Signal {
-    type Error = Error;
-
-    fn try_from(protocol_signal: ProtocolSignal) -> Result<Self, Self::Error> {
-        match protocol_signal {
-            ProtocolSignal::Core(s) => Ok(s),
-            _ => Err(Error::UnexpectedProtocolSignal),
-        }
-    }
-}
-
-impl From<Signal> for ProtocolSignal {
-    fn from(signal: Signal) -> Self {
-        ProtocolSignal::Core(signal)
-    }
-}
-
 impl HasAddress for UnixServer {
     type Address = PathBuf;
 }
@@ -321,6 +317,18 @@ impl IsServer for UnixServer {
         timeout: Duration,
     ) -> Option<(Token, ProtocolSignal)> {
         self.receive(events, timeout)
+    }
+}
+
+impl<C: IsClient> relayed::interface::ProtocolRecv for ProtocolReceiver<C> {
+    type ProtocolSignal = ProtocolSignal;
+
+    fn receive(&mut self, timeout: Duration) -> Result<Option<Self::ProtocolSignal>, Error> {
+        self.receive(timeout)
+    }
+
+    fn connect_sender(&mut self, timeout: Duration) -> Result<(), Error> {
+        self.connect(timeout)
     }
 }
 

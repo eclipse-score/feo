@@ -43,11 +43,6 @@ fn main() {
     );
 
     // Setup and run primary
-    #[cfg(any(
-        feature = "signalling_direct_mpsc",
-        feature = "signalling_direct_tcp",
-        feature = "signalling_direct_unix"
-    ))]
     cfg::Primary::new(config)
         .unwrap_or_else(|err| {
             feo_log::error!("Failed to initialize primary agent: {err:?}");
@@ -55,8 +50,6 @@ fn main() {
         })
         .run()
         .unwrap();
-    #[cfg(any(feature = "signalling_relayed_tcp", feature = "signalling_relayed_unix"))]
-    cfg::Primary::new(config).run().unwrap();
 }
 
 /// Parameters of the primary
@@ -199,6 +192,7 @@ mod cfg {
             recorder_ids: params.recorder_ids,
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
+            connection_timeout: Duration::from_secs(10),
             bind_address_senders: NodeAddress::Tcp(BIND_ADDR),
             bind_address_receivers: NodeAddress::Tcp(BIND_ADDR2),
             id: AGENT_ID,
@@ -238,6 +232,7 @@ mod cfg {
             recorder_ids: params.recorder_ids,
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
+            connection_timeout: Duration::from_secs(10),
             bind_address_senders: NodeAddress::UnixSocket(socket_paths().0),
             bind_address_receivers: NodeAddress::UnixSocket(socket_paths().1),
             id: AGENT_ID,

@@ -48,31 +48,31 @@ impl<Inter: IsChannel, Intra: IsChannel> PrimaryReceiveRelay<Inter, Intra> {
         }
     }
 
-    pub fn run_and_connect(&mut self) {
+    pub fn connect_and_run(&mut self) -> Result<(), Error>
+    where
+        Inter::MultiReceiver: Send,
+        Intra::Sender: Send,
+    {
         let inter_receiver_builder = self.inter_receiver_builder.take().unwrap();
         let intra_sender_builder = self.intra_sender_builder.take().unwrap();
         let timeout = self.timeout;
+
+        let (inter_receiver, intra_sender) =
+            Self::connect(inter_receiver_builder, intra_sender_builder, timeout)?;
+
         let thread = thread::spawn(move || {
-            Self::thread_main(inter_receiver_builder, intra_sender_builder, timeout)
+            Self::thread_main(inter_receiver, intra_sender, timeout)
         });
         self._thread = Some(thread);
+        Ok(())
     }
 
     fn thread_main(
-        inter_receiver_builder: Builder<Inter::MultiReceiver>,
-        intra_sender_builder: Builder<Intra::Sender>,
+        mut inter_receiver: Inter::MultiReceiver,
+        mut intra_sender: Intra::Sender,
         timeout: Duration,
     ) {
         trace!("PrimaryReceiveRelay thread started");
-        let mut inter_receiver = inter_receiver_builder();
-        let mut intra_sender = intra_sender_builder();
-        inter_receiver
-            .connect_senders(timeout)
-            .expect("failed to connect inter-process receiver");
-        intra_sender
-            .connect_receiver(timeout)
-            .expect("failed to connect intra-process sender");
-        trace!("PrimaryReceiveRelay connected");
         loop {
             // Receive from remote workers on inter-process receiver
             let signal = inter_receiver.receive(timeout);
@@ -105,55 +105,19 @@ impl<Inter: IsChannel, Intra: IsChannel> PrimaryReceiveRelay<Inter, Intra> {
             }
         }
     }
-}
 
-/// Relay for the primary agent to send signals to secondary agents and recorders
-pub struct PrimarySendRelay<Inter: IsChannel> {
-    /// Set of all remote agents (secondaries and recorders)
-    remote_agents: HashSet<AgentId>,
-    /// Inter-process sender
-    inter_sender: Inter::MultiSender,
-    /// Connecting timeout
-    timeout: Duration,
-}
-
-impl<Inter: IsChannel> PrimarySendRelay<Inter> {
-    pub fn new(
-        remote_agents: HashSet<AgentId>,
-        inter_sender: Inter::MultiSender,
+    fn connect(
+        inter_receiver_builder: Builder<Inter::MultiReceiver>,
+        intra_sender_builder: Builder<Intra::Sender>,
         timeout: Duration,
-    ) -> Self {
-        Self {
-            remote_agents,
-            inter_sender,
-            timeout,
-        }
-    }
-
-    pub fn connect(&mut self) -> Result<(), Error> {
-        self.inter_sender.connect_receivers(self.timeout)?;
-        trace!("PrimarySendRelay connected");
-        Ok(())
-    }
-
-    pub fn send_to_agent(
-        &mut self,
-        agent_id: AgentId,
-        signal: Inter::ProtocolSignal,
-    ) -> Result<(), Error> {
-        let channel_id = ChannelId::Agent(agent_id);
-        self.inter_sender.send(channel_id, signal)
-    }
-
-    pub fn sync_time(&mut self) -> Result<(), Error> {
-        let signal = Signal::StartupSync(sync_info());
-
-        // Send sync info to all remote agents
-        for id in self.remote_agents.iter() {
-            let channel_id = ChannelId::Agent(*id);
-            self.inter_sender.send(channel_id, signal.into())?;
-        }
-        Ok(())
+    ) -> Result<(Inter::MultiReceiver, Intra::Sender), Error> {
+        trace!("PrimaryReceiveRelay connecting...");
+        let mut inter_receiver = inter_receiver_builder();
+        let mut intra_sender = intra_sender_builder();
+        inter_receiver.connect_senders(timeout)?;
+        intra_sender.connect_receiver(timeout)?;
+        trace!("PrimaryReceiveRelay connected");
+        Ok((inter_receiver, intra_sender))
     }
 }
 
@@ -293,6 +257,56 @@ impl<Inter: IsChannel, Intra: IsChannel> SecondaryReceiveRelay<Inter, Intra> {
                 error!("Failed to send signal {protocol_signal:?}");
             }
         }
+    }
+}
+
+/// Relay for the primary agent to send signals to secondary agents and recorders
+pub struct PrimarySendRelay<Inter: IsChannel> {
+    /// Set of all remote agents (secondaries and recorders)
+    remote_agents: HashSet<AgentId>,
+    /// Inter-process sender
+    inter_sender: Inter::MultiSender,
+    /// Connecting timeout
+    timeout: Duration,
+}
+
+impl<Inter: IsChannel> PrimarySendRelay<Inter> {
+    pub fn new(
+        remote_agents: HashSet<AgentId>,
+        inter_sender: Inter::MultiSender,
+        timeout: Duration,
+    ) -> Self {
+        Self {
+            remote_agents,
+            inter_sender,
+            timeout,
+        }
+    }
+
+    pub fn connect(&mut self) -> Result<(), Error> {
+        self.inter_sender.connect_receivers(self.timeout)?;
+        trace!("PrimarySendRelay connected");
+        Ok(())
+    }
+
+    pub fn send_to_agent(
+        &mut self,
+        agent_id: AgentId,
+        signal: Inter::ProtocolSignal,
+    ) -> Result<(), Error> {
+        let channel_id = ChannelId::Agent(agent_id);
+        self.inter_sender.send(channel_id, signal)
+    }
+
+    pub fn sync_time(&mut self) -> Result<(), Error> {
+        let signal = Signal::StartupSync(sync_info());
+
+        // Send sync info to all remote agents
+        for id in self.remote_agents.iter() {
+            let channel_id = ChannelId::Agent(*id);
+            self.inter_sender.send(channel_id, signal.into())?;
+        }
+        Ok(())
     }
 }
 

@@ -23,7 +23,7 @@
 //! through intra-process channels.
 
 mod connectors;
-mod interface;
+pub(crate) mod interface;
 mod mpsc;
 mod sockets;
 pub(crate) mod sockets_mpsc;

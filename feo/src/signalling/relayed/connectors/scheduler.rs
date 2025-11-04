@@ -97,9 +97,13 @@ impl<Inter: IsChannel, Intra: IsChannel> SchedulerConnector<Inter, Intra> {
         }
     }
 
-    pub fn run_and_connect(&mut self) -> Result<(), Error> {
+    pub fn run_and_connect(&mut self) -> Result<(), Error>
+    where
+        Inter::MultiReceiver: Send,
+        Intra::Sender: Send,
+    {
         debug!("Starting MixedSchedulerConnector");
-        self.ipc_receive_relay.run_and_connect();
+        self.ipc_receive_relay.connect_and_run()?;
         self.ipc_send_relay.connect()?;
         self.intra_receiver.connect_senders(self.timeout)?;
         self.worker_sender.connect_receivers(self.timeout)
@@ -114,7 +118,11 @@ impl<Inter: IsChannel, Intra: IsChannel> SchedulerConnector<Inter, Intra> {
     }
 }
 
-impl<Inter: IsChannel, Intra: IsChannel> ConnectScheduler for SchedulerConnector<Inter, Intra> {
+impl<Inter: IsChannel, Intra: IsChannel> ConnectScheduler for SchedulerConnector<Inter, Intra>
+where
+    Inter::MultiReceiver: Send,
+    Intra::Sender: Send,
+{
     fn connect_remotes(&mut self) -> Result<(), Error> {
         self.run_and_connect()
     }
