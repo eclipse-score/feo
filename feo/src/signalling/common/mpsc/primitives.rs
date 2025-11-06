@@ -42,7 +42,7 @@ impl<T: fmt::Debug + 'static> Receiver<T> {
             Ok(v) => Ok(Some(v)),
             Err(err) => match err {
                 RecvTimeoutError::Timeout => Ok(None),
-                _ => Err(Error::Channel("channel closed")),
+                _ => Err(Error::ChannelClosed),
             },
         }
     }
@@ -61,7 +61,7 @@ impl<T: fmt::Debug + 'static> Sender<T> {
     pub fn send(&mut self, t: T) -> Result<(), Error> {
         self.sender
             .send(t)
-            .map_err(|_| Error::Channel("channel closed"))?;
+            .map_err(|_| Error::ChannelClosed)?;
         Ok(())
     }
 }

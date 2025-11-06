@@ -11,7 +11,12 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
+<<<<<<< HEAD
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+=======
+load("@cargo//:defs.bzl", "aliases", "all_crate_deps")
+
+>>>>>>> 9f85924 ( handling shutdown and termination signallingin all signalling modes)
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_static_library")
 
 rust_library(

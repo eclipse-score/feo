@@ -24,8 +24,13 @@ rust_library(
         "src/lib.rs",
     ],
     crate_features = [
+<<<<<<< HEAD
         "com_linux_shm",
         "signalling_relayed_tcp",
+=======
+        "com_iox2",
+        "signalling_direct_tcp",
+>>>>>>> 9f85924 ( handling shutdown and termination signallingin all signalling modes)
     ],
     crate_name = "mini_adas",
     proc_macro_deps = [
@@ -58,7 +63,7 @@ rust_library(
     crate_features = [
         "com_linux_shm",
         "recording",
-        "signalling_relayed_tcp",
+        "signalling_direct_tcp",
     ],
     crate_name = "mini_adas",
     proc_macro_deps = [
@@ -85,12 +90,16 @@ rust_binary(
     srcs = [
         "src/bin/adas_primary.rs",
     ],
+<<<<<<< HEAD
     crate_features = ["signalling_relayed_tcp"],
     rustc_flags = [
         "-Clink-arg=-lstdc++",
         "-Clink-arg=-lm",
         "-Clink-arg=-lc",
     ],
+=======
+    crate_features = ["signalling_direct_tcp"],
+>>>>>>> 9f85924 ( handling shutdown and termination signallingin all signalling modes)
     visibility = ["//visibility:public"],
     deps = [
         ":libmini_adas_rust",
@@ -107,12 +116,16 @@ rust_binary(
     srcs = [
         "src/bin/adas_secondary.rs",
     ],
+<<<<<<< HEAD
     crate_features = ["signalling_relayed_tcp"],
     rustc_flags = [
         "-Clink-arg=-lstdc++",
         "-Clink-arg=-lm",
         "-Clink-arg=-lc",
     ],
+=======
+    crate_features = ["signalling_direct_tcp"],
+>>>>>>> 9f85924 ( handling shutdown and termination signallingin all signalling modes)
     visibility = ["//visibility:public"],
     deps = [
         ":libmini_adas_rust",
@@ -131,7 +144,7 @@ rust_binary(
     ],
     crate_features = [
         "recording",
-        "signalling_relayed_tcp",
+        "signalling_direct_tcp",
     ],
     visibility = ["//visibility:public"],
     deps = [

@@ -25,8 +25,10 @@ use crate::worker::Worker;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::time::Duration;
+use feo_log::{debug, info};
 use std::collections::HashMap;
 use std::thread::{self, JoinHandle};
+use std::sync::{atomic::AtomicBool, Arc};
 
 /// Configuration of the primary agent
 pub struct PrimaryConfig {
@@ -57,7 +59,9 @@ pub struct Primary {
     /// Scheduler
     scheduler: Scheduler,
     /// Handles to the worker threads
-    _worker_threads: Vec<JoinHandle<()>>,
+    worker_threads: Vec<JoinHandle<()>>,
+    /// Handles to the relay threads
+    relay_threads: Vec<JoinHandle<()>>,
 }
 
 impl Primary {
@@ -111,7 +115,7 @@ impl Primary {
         };
 
         // Create worker threads first so that the connector of the scheduler can connect
-        let _worker_threads = worker_assignments
+        let worker_threads = worker_assignments
             .into_iter()
             .map(|(id, activities)| {
                 let connector_builder = builders.remove(&id).expect("missing connector builder");
@@ -120,7 +124,7 @@ impl Primary {
                     connector.connect_remote().expect("failed to connect");
 
                     let activity_builders = activities;
-                    let worker = Worker::new(id, activity_builders, connector, timeout);
+                    let worker = Worker::new(id, config.id, activity_builders, connector, timeout);
                     worker.run().expect("failed to run worker");
                 })
             })
@@ -128,17 +132,32 @@ impl Primary {
 
         connector.connect_remotes().expect("failed to connect");
 
+        // Take ownership of the relay threads from the connector.
+        let relay_threads = connector.take_relay_threads();
+
+        // Create a shared flag to signal shutdown from an OS signal (e.g., Ctrl-C).
+        let shutdown_requested = Arc::new(AtomicBool::new(false));
+        let shutdown_clone = shutdown_requested.clone();
+        ctrlc::set_handler(move || {
+            info!("Ctrl-C detected. Requesting graceful shutdown...");
+            shutdown_clone.store(true, std::sync::atomic::Ordering::Relaxed);
+        })
+        .expect("Error setting Ctrl-C handler");
+
         let scheduler = Scheduler::new(
+            id,
             cycle_time,
             timeout,
             activity_dependencies,
             connector,
             recorder_ids,
+            shutdown_requested,
         );
 
         Self {
             scheduler,
-            _worker_threads,
+            worker_threads,
+            relay_threads,
         }
     }
 
@@ -152,6 +171,19 @@ impl Primary {
 
         // TODO: Bubble up errors
         self.scheduler.run();
+
+        debug!("Primary agent waiting for background threads to join...");
+
+        // Wait for all local worker threads to complete their shutdown.
+        // They will exit after receiving the `Terminate` signal from the scheduler's broadcast.
+        for th in self.worker_threads.drain(..) {
+            th.join().unwrap();
+        }
+        // Wait for the communication relay threads to complete their shutdown.
+        for th in self.relay_threads.drain(..) {
+            th.join().unwrap();
+        }
+        debug!("Primary finished!!");
 
         Ok(())
     }

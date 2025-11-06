@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 feo-com = { workspace = true }
+ctrlc = { version = "3.4", features = ["termination"] }
 feo-log = { workspace = true }
 feo-time = { workspace = true }
 feo-tracing = { workspace = true }

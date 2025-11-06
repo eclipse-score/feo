@@ -20,9 +20,8 @@ use crate::signalling::common::socket::ProtocolSignal;
 use alloc::vec::Vec;
 use core::net::SocketAddr;
 use core::time::Duration;
-use feo_log::warn;
 use mio::net::{TcpStream, UnixStream};
-use mio::Events;
+use mio::{Events};
 use std::io;
 use std::path::PathBuf;
 
@@ -56,15 +55,12 @@ where
             .client
             .as_mut()
             .expect("socket client not connected")
-            .receive(&mut self.events, timeout)
-        {
-            Some(ProtocolSignal::Core(signal)) => Ok(Some(signal)),
-            Some(signal) => {
-                warn!("Received unexpected signal {signal:?}");
-                Ok(None)
+            .receive(&mut self.events, timeout) {
+                Ok(Some(ProtocolSignal::Core(signal))) => Ok(Some(signal)),
+                Ok(Some(_signal)) => Err(Error::UnexpectedProtocolSignal),
+                Ok(None) => Ok(None),
+                Err(e) => Err(e),
             }
-            None => Ok(None),
-        }
     }
 
     fn send_to_scheduler(&mut self, signal: &Signal) -> Result<(), Error> {

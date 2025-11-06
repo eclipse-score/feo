@@ -43,6 +43,7 @@ where
 
     activity_id_token_map: HashMap<ActivityId, Token>,
     recorder_id_token_map: HashMap<AgentId, Token>,
+    activity_agent_map: HashMap<ActivityId, AgentId>,
 
     all_activities: Vec<ActivityId>,
     all_recorders: Vec<AgentId>,
@@ -57,20 +58,22 @@ where
         server: SocketServer<L>,
         activity_ids: impl IntoIterator<Item = ActivityId>,
         recorder_ids: impl IntoIterator<Item = AgentId>,
+        activity_agent_map: HashMap<ActivityId, AgentId>,
     ) -> Self {
         let events = Events::with_capacity(32);
 
         let activity_id_token_map = HashMap::new();
         let recorder_id_token_map = HashMap::new();
 
-        let all_activities = activity_ids.into_iter().collect();
-        let all_recorders = recorder_ids.into_iter().collect();
+        let all_activities = activity_ids.into_iter().collect::<Vec<_>>();
+        let all_recorders = recorder_ids.into_iter().collect::<Vec<_>>();
 
         Self {
             events,
             server,
             activity_id_token_map,
             recorder_id_token_map,
+            activity_agent_map,
             all_activities,
             all_recorders,
         }
@@ -83,9 +86,10 @@ impl TcpSchedulerConnector {
         bind_address: SocketAddr,
         activity_ids: impl IntoIterator<Item = ActivityId>,
         recorder_ids: impl IntoIterator<Item = AgentId>,
+        activity_agent_map: HashMap<ActivityId, AgentId>,
     ) -> Self {
         let tcp_server = TcpServer::new(bind_address);
-        Self::new_with_server(tcp_server, activity_ids, recorder_ids)
+        Self::new_with_server(tcp_server, activity_ids, recorder_ids, activity_agent_map)
     }
 }
 
@@ -95,9 +99,10 @@ impl UnixSchedulerConnector {
         path: &Path,
         activity_ids: impl IntoIterator<Item = ActivityId>,
         recorder_ids: impl IntoIterator<Item = AgentId>,
+        activity_agent_map: HashMap<ActivityId, AgentId>,
     ) -> Self {
         let unix_server = UnixServer::new(path);
-        Self::new_with_server(unix_server, activity_ids, recorder_ids)
+        Self::new_with_server(unix_server, activity_ids, recorder_ids, activity_agent_map)
     }
 }
 
@@ -111,9 +116,8 @@ where
         let mut missing_recorders: HashSet<AgentId> = self.all_recorders.iter().cloned().collect();
 
         while !missing_activities.is_empty() || !missing_recorders.is_empty() {
-            if let Some((token, signal)) = self
-                .server
-                .receive(&mut self.events, Duration::from_secs(1))
+            if let Ok(Some((token, signal))) =
+                self.server.receive(&mut self.events, Duration::from_secs(1))
             {
                 match signal {
                     ProtocolSignal::ActivityHello(activity_id) => {
@@ -151,15 +155,26 @@ where
         Ok(())
     }
 
-    fn receive(&mut self, timeout: Duration) -> Result<Option<Signal>, Error> {
-        if let Some((_, signal)) = self.server.receive(&mut self.events, timeout) {
-            match signal {
-                ProtocolSignal::Core(signal) => return Ok(Some(signal)),
-                other => panic!("received unexpected signal {other:?}"),
+    fn get_connected_agent_ids(&self) -> Vec<AgentId> {
+        let mut agent_ids: HashSet<AgentId> = self.recorder_id_token_map.keys().copied().collect();
+        for activity_id in self.activity_id_token_map.keys() {
+            if let Some(agent_id) = self.activity_agent_map.get(activity_id) {
+                agent_ids.insert(*agent_id);
             }
         }
+        agent_ids.into_iter().collect()
+    }
 
-        Ok(None)
+    fn receive(&mut self, timeout: Duration) -> Result<Option<Signal>, Error> {
+        match self.server.receive(&mut self.events, timeout) {
+            Ok(Some((_, ProtocolSignal::Core(signal)))) => Ok(Some(signal)),
+            Ok(Some((_, other))) => {
+                warn!("received unexpected protocol signal {:?}", other);
+                Ok(None)
+            }
+            Ok(None) => Ok(None),
+            Err(e) => Err(e),
+        }
     }
 
     fn send_to_activity(&mut self, activity_id: ActivityId, signal: &Signal) -> Result<(), Error> {
@@ -180,5 +195,20 @@ where
         self.server
             .send(token, &ProtocolSignal::Core(*signal))
             .map_err(|e| Error::Io((e, "failed to send")))
+    }
+     fn broadcast_terminate(&mut self, signal: &Signal) -> Result<(), Error> {
+        let protocol_signal = ProtocolSignal::Core(*signal);
+
+        // Collect unique tokens to avoid sending the same message multiple times to the same worker.
+        let unique_tokens: HashSet<_> = self
+            .activity_id_token_map
+            .values()
+            .chain(self.recorder_id_token_map.values())
+            .collect();
+
+        for token in unique_tokens {
+            self.server.send(token, &protocol_signal)?;
+        }
+        Ok(())
     }
 }

@@ -15,7 +15,7 @@
 
 use crate::activity::{Activity, ActivityBuilder};
 use crate::error::Error;
-use crate::ids::{ActivityId, WorkerId};
+use crate::ids::{ActivityId, AgentId, WorkerId};
 use crate::signalling::common::interface::ConnectWorker;
 use crate::signalling::common::signals::Signal;
 use crate::timestamp;
@@ -23,6 +23,7 @@ use alloc::boxed::Box;
 use core::time::Duration;
 use feo_log::debug;
 use feo_time::Instant;
+use std::thread;
 use std::collections::HashMap;
 
 /// Worker
@@ -33,6 +34,8 @@ use std::collections::HashMap;
 pub(crate) struct Worker<T: ConnectWorker> {
     /// ID of this worker
     id: WorkerId,
+    /// ID of the agent this worker belongs to
+    agent_id: AgentId,
     /// Map from [ActivityId] to the activity
     activities: HashMap<ActivityId, Box<dyn Activity>>,
     /// Connector to the scheduler
@@ -45,6 +48,7 @@ impl<T: ConnectWorker> Worker<T> {
     /// Create a new instance
     pub(crate) fn new(
         id: WorkerId,
+        agent_id: AgentId,
         activity_builders: impl IntoIterator<Item = (ActivityId, Box<dyn ActivityBuilder>)>,
         connector: T,
         timeout: Duration,
@@ -57,6 +61,7 @@ impl<T: ConnectWorker> Worker<T> {
 
         Self {
             id,
+            agent_id,
             activities,
             connector,
             timeout,
@@ -68,10 +73,17 @@ impl<T: ConnectWorker> Worker<T> {
         debug!("Running worker {}", self.id);
 
         loop {
-            // Receive from connector
-            let Some(signal) = self.connector.receive(self.timeout)? else {
-                // TODO: Manage timeout
-                continue;
+            let signal = match self.connector.receive(self.timeout) {
+                Ok(Some(s)) => s,
+                Ok(None) => {
+                    // TODO: Manage timeout
+                    continue;
+                }
+                Err(Error::ChannelClosed) => {
+                    debug!("Worker {} detected closed channel from scheduler/relay. Exiting.", self.id);
+                    return Ok(()); // Graceful exit
+                }
+                Err(e) => return Err(e), // Propagate other errors
             };
 
             match signal {
@@ -80,6 +92,18 @@ impl<T: ConnectWorker> Worker<T> {
                 }
                 Signal::StartupSync(sync_info) => {
                     timestamp::initialize_from(sync_info);
+                }
+                Signal::Terminate(_) => {
+                    debug!("Worker {} received Terminate signal. Acknowledging and exiting.", self.id);
+                    //connection reset may happen if primary terminated and closed its sockets
+                    if let Err(e) = self.connector.send_to_scheduler(&Signal::TerminateAck(self.agent_id)) {
+                        debug!("Worker {} failed to send TerminateAck (this is often expected during shutdown): {:?}", self.id, e);
+                    }
+                    debug!("Worker {} sent termination ack. Exiting.", self.id);
+                    // Linger for a moment to ensure  TerminateAck has time to be sent
+                    // over the network before the thread exits and closes the socket.
+                    thread::sleep(Duration::from_millis(100));
+                    return Ok(()); // Graceful exit
                 }
                 other => return Err(Error::UnexpectedSignal(other)),
             }
@@ -109,7 +133,7 @@ impl<T: ConnectWorker> Worker<T> {
                     .send_to_scheduler(&Signal::Ready((*activity_id, timestamp::timestamp())))
             }
             Signal::Shutdown((activity_id, _)) => {
-                activity.startup();
+                activity.shutdown();
                 let elapsed = start.elapsed();
                 debug!("Ran shutdown of activity {id:?} in {elapsed:?}");
                 self.connector

@@ -15,6 +15,8 @@ use crate::error::Error;
 use crate::ids::{ActivityId, AgentId};
 use crate::signalling::common::signals::Signal;
 use core::time::Duration;
+use std::thread::JoinHandle;
+use alloc::vec::Vec;
 
 /// Trait for the connector of a scheduler
 ///
@@ -26,6 +28,9 @@ pub(crate) trait ConnectScheduler {
     /// Synchronize the time on all remotes
     fn sync_time(&mut self) -> Result<(), Error>;
 
+    /// Get the IDs of all connected agents (workers and recorders).
+    fn get_connected_agent_ids(&self) -> Vec<AgentId>;
+
     /// Try to receive a signal, returning latest after `timeout`
     fn receive(&mut self, timeout: Duration) -> Result<Option<Signal>, Error>;
 
@@ -34,6 +39,15 @@ pub(crate) trait ConnectScheduler {
 
     /// Send `signal` to the recorder with `recorder_id`
     fn send_to_recorder(&mut self, recorder_id: AgentId, signal: &Signal) -> Result<(), Error>;
+
+     /// Broadcast termination `signal` to all connected agents
+    fn broadcast_terminate(&mut self, signal: &Signal) -> Result<(), Error>;
+
+    /// Take ownership of any background relay threads.
+    /// The default implementation returns an empty Vec for connectors that don't have relays.
+    fn take_relay_threads(&mut self) -> Vec<JoinHandle<()>> {
+        Vec::new()
+    }
 }
 
 /// Trait for the connector of a worker

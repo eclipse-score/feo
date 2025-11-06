@@ -23,7 +23,7 @@ pub(crate) use crate::signalling::common::socket::ProtocolSignal;
 use crate::signalling::relayed;
 use core::net::SocketAddr;
 use core::time::Duration;
-use feo_log::{debug, trace};
+use feo_log::{debug, error, trace};
 use feo_time::Instant;
 use mio::{Events, Token};
 use std::collections::{HashMap, HashSet};
@@ -53,14 +53,14 @@ pub trait IsServer: HasAddress {
         &mut self,
         events: &mut Events,
         timeout: Duration,
-    ) -> Option<(Token, ProtocolSignal)>;
+    ) -> Result<Option<(Token, ProtocolSignal)>, Error>;
 }
 
 /// Required shared socket client functionality
 pub trait IsClient: HasAddress {
     fn send(&mut self, msg: &ProtocolSignal) -> Result<(), Error>;
 
-    fn receive(&mut self, events: &mut Events, timeout: Duration) -> Option<ProtocolSignal>;
+    fn receive(&mut self, events: &mut Events, timeout: Duration) -> Result<Option<ProtocolSignal>, Error>;
 
     fn connect(address: &Self::Address, channel_id: ChannelId) -> Self;
 }
@@ -106,8 +106,10 @@ impl<C: IsClient> ProtocolEndpoint<C> {
         let mut elapsed = Duration::ZERO;
         while elapsed <= timeout {
             let remaining = timeout.saturating_sub(elapsed);
-            if let Some(signal) = client.receive(&mut self.events, remaining) {
-                return Ok(Some(signal));
+            match client.receive(&mut self.events, remaining) {
+                Ok(Some(signal)) => return Ok(Some(signal)),
+                Ok(None) => {} // Continue loop on timeout
+                Err(e) => return Err(e),
             }
             elapsed = start.elapsed();
         }
@@ -163,8 +165,7 @@ impl<S: IsServer> ProtocolMultiEndpoint<S> {
         let mut missing_peers: HashSet<ChannelId> = self.channel_ids.clone();
         while !missing_peers.is_empty() {
             trace!("Connecting missing channels {:?}", missing_peers);
-            // TODO: server to reject connections from unexpected peers
-            if let Some((token, signal)) = server.receive(&mut self.events, timeout) {
+            if let Ok(Some((token, signal))) = server.receive(&mut self.events, timeout) {
                 match signal {
                     ProtocolSignal::ChannelHello(channel_id) => {
                         self.channel_token_map.insert(channel_id, token);
@@ -191,8 +192,10 @@ impl<S: IsServer> ProtocolMultiEndpoint<S> {
         let mut elapsed = Duration::ZERO;
         while elapsed <= timeout {
             let remaining = timeout.saturating_sub(elapsed);
-            if let Some(signal) = server.receive(&mut self.events, remaining).map(|(_, s)| s) {
-                return Ok(Some(signal));
+            match server.receive(&mut self.events, remaining) {
+                Ok(Some((_, signal))) => return Ok(Some(signal)),
+                Ok(None) => {} // Continue loop on timeout
+                Err(e) => return Err(e),
             }
             elapsed = start.elapsed();
         }
@@ -208,6 +211,17 @@ impl<S: IsServer> ProtocolMultiEndpoint<S> {
             .as_mut()
             .expect("not connected")
             .send(token, &signal)
+    }
+
+    pub fn broadcast(&mut self, signal: ProtocolSignal) -> Result<(), Error> {
+        let server = self.server.as_mut().expect("not connected");
+        // Iterate over all known connection tokens and send the signal.
+        for token in self.channel_token_map.values() {
+            if let Err(e) = server.send(token, &signal) {
+                error!("Failed to broadcast to token {:?}: {:?}", token, e);
+            }
+        }
+        Ok(())
     }
 }
 
@@ -232,7 +246,7 @@ impl IsServer for TcpServer {
         &mut self,
         events: &mut Events,
         timeout: Duration,
-    ) -> Option<(Token, ProtocolSignal)> {
+    ) -> Result<Option<(Token, ProtocolSignal)>, Error> {
         self.receive(events, timeout)
     }
 }
@@ -266,6 +280,10 @@ impl<S: IsServer> relayed::interface::ProtocolMultiSend for ProtocolMultiSender<
 
     fn send(&mut self, channel_id: ChannelId, signal: Self::ProtocolSignal) -> Result<(), Error> {
         self.send(channel_id, signal)
+    }
+
+    fn broadcast(&mut self, signal: Self::ProtocolSignal) -> Result<(), Error> {
+        self.broadcast(signal)
     }
 
     fn connect_receivers(&mut self, timeout: Duration) -> Result<(), Error> {
@@ -319,7 +337,7 @@ impl IsServer for UnixServer {
         &mut self,
         events: &mut Events,
         timeout: Duration,
-    ) -> Option<(Token, ProtocolSignal)> {
+    ) -> Result<Option<(Token, ProtocolSignal)>, Error> {
         self.receive(events, timeout)
     }
 }
@@ -333,7 +351,7 @@ impl IsClient for TcpClient {
         self.send(msg)
     }
 
-    fn receive(&mut self, events: &mut Events, timeout: Duration) -> Option<ProtocolSignal> {
+    fn receive(&mut self, events: &mut Events, timeout: Duration) -> Result<Option<ProtocolSignal>, Error> {
         self.receive(events, timeout)
     }
 
@@ -351,7 +369,7 @@ impl IsClient for UnixClient {
         self.send(msg)
     }
 
-    fn receive(&mut self, events: &mut Events, timeout: Duration) -> Option<ProtocolSignal> {
+    fn receive(&mut self, events: &mut Events, timeout: Duration) -> Result<Option<ProtocolSignal>, Error> {
         self.receive(events, timeout)
     }
 

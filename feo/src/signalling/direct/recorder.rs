@@ -57,12 +57,13 @@ where
             .expect("socket client not connected")
             .receive(&mut self.events, timeout)
         {
-            Some(ProtocolSignal::Core(signal)) => Ok(Some(signal)),
-            Some(signal) => {
+            Ok(Some(ProtocolSignal::Core(signal))) => Ok(Some(signal)),
+            Ok(Some(signal)) => {
                 warn!("Received unexpected signal {signal:?}");
                 Ok(None)
             }
-            None => Ok(None),
+            Ok(None) => Ok(None),
+            Err(e) => Err(e),
         }
     }
 
