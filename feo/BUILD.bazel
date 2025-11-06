@@ -32,7 +32,6 @@ rust_library(
         "src/error.rs",
         "src/ids.rs",
         "src/lib.rs",
-        "src/os_signals.rs",
         "src/recording/mod.rs",
         "src/recording/recorder.rs",
         "src/recording/registry.rs",
@@ -81,7 +80,6 @@ rust_library(
         "//feo-tracing:libfeo_tracing_rust",
         "@score_crates//:libc",
         "@score_crates//:mio",
-        "@score_crates//:signal_hook",
     ],
 )
 
@@ -104,7 +102,6 @@ rust_library(
         "src/error.rs",
         "src/ids.rs",
         "src/lib.rs",
-        "src/os_signals.rs",
         "src/recording/mod.rs",
         "src/recording/recorder.rs",
         "src/recording/registry.rs",
@@ -156,6 +153,5 @@ rust_library(
         "@score_crates//:mio",
         "@score_crates//:postcard",
         "@score_crates//:serde",
-        "@score_crates//:signal_hook",
     ],
 )

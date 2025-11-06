@@ -15,7 +15,6 @@
 
 use crate::error::Error;
 use crate::ids::{ActivityId, AgentId};
-use crate::os_signals::SignalTriggeredFlagRef;
 use crate::signalling::common::interface::ConnectScheduler;
 use crate::signalling::common::signals::Signal;
 use crate::timestamp::timestamp;
@@ -47,8 +46,6 @@ pub(crate) struct Scheduler {
     recorder_ids: Vec<AgentId>,
     /// Map from recorder agent ID to ready state
     recorders_ready: HashMap<AgentId, bool>,
-    /// Flag of SIGTERM signal triggered
-    term_flag_ref: SignalTriggeredFlagRef,
 }
 
 impl Scheduler {
@@ -68,14 +65,11 @@ impl Scheduler {
                     ActivityState {
                         triggered: false,
                         ready: false,
-                        started: false,
                     },
                 )
             })
             .collect();
         let recorders_ready = recorder_ids.iter().map(|id| (*id, false)).collect();
-
-        let term_flag_ref = SignalTriggeredFlagRef::sigterm();
 
         Self {
             cycle_time: feo_cycle_time,
@@ -85,7 +79,6 @@ impl Scheduler {
             activity_states,
             recorder_ids,
             recorders_ready,
-            term_flag_ref,
         }
     }
 
@@ -97,21 +90,22 @@ impl Scheduler {
     }
 
     /// Run the task lifecycle, i.e. startup, stepping, shutdown
+    ///
+    /// Shutdown is not implemented, as it is not yet defined in the architecture
     pub(crate) fn run(&mut self) {
         #[cfg(feature = "loop_duration_meter")]
         let mut meter = loop_duration_meter::LoopDurationMeter::<1000>::default();
 
         // Sort activity ids
-        let mut activity_ids: Vec<_> = self.activity_states.keys().copied().collect();
+        let mut activity_ids: Vec<_> = self.activity_states.keys().collect();
         activity_ids.sort();
 
         // Call startup on all activities sorted according to their ids
         // Note: Actual startup may occur in different order, depending on the assignment
         // of activities to worker threads. (A worker with greater id value may start up in
         // one thread before an activity with smaller id value in another thread.)
-        for activity_id in &activity_ids {
+        for activity_id in activity_ids {
             Self::startup_activity(activity_id, &self.recorder_ids, &mut self.connector).unwrap();
-            self.activity_states.get_mut(activity_id).unwrap().started = true;
         }
 
         // Wait until all activities have returned their ready signal
@@ -122,11 +116,6 @@ impl Scheduler {
 
         // Loop the FEO task chain
         loop {
-            if self.term_flag_ref.is_triggered() {
-                debug!("SIGTERM, finishing up");
-                break;
-            }
-
             let task_chain_start = Instant::now();
 
             // Record start of task chain on registered recorders
@@ -175,8 +164,6 @@ impl Scheduler {
                 thread::sleep(time_left);
             }
         }
-
-        self.shutdown_started_activities();
     }
 
     /// Step all activities whose dependencies have signalled ready
@@ -200,20 +187,6 @@ impl Scheduler {
                     .expect("failed to step activity");
                 self.activity_states.get_mut(act_id).unwrap().triggered = true;
             }
-        }
-    }
-
-    fn shutdown_started_activities(&mut self) {
-        debug!("Shutting down started activities");
-        for (act_id, _) in self.activity_depends.iter() {
-            // skip activity if not started yet
-            if !self.activity_states[act_id].started {
-                continue;
-            }
-
-            Self::shutdown_activity(act_id, &self.recorder_ids, &mut self.connector)
-                .expect("failed to shutdown activity");
-            self.activity_states.get_mut(act_id).unwrap().started = false;
         }
     }
 
@@ -352,9 +325,6 @@ struct ActivityState {
 
     /// Whether the activity has finished its previously triggered operation
     ready: bool,
-
-    /// Whether the activity has started
-    started: bool,
 }
 
 #[cfg(feature = "loop_duration_meter")]

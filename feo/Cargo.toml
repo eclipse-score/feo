@@ -14,7 +14,6 @@ postcard = { workspace = true, features = [
     "experimental-derive",
 ], optional = true }
 serde = { workspace = true, optional = true }
-signal-hook = { workspace = true }
 
 [dev-dependencies]
 feo-logger = { workspace = true }
