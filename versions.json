@@ -4,31 +4,19 @@
     "url": "https://eclipse-score.github.io/feo/main/"
   },
   {
-    "version": "pr-3",
-    "url": "https://eclipse-score.github.io/feo/pr-3/"
-  },
-  {
-    "version": "pr-9",
-    "url": "https://eclipse-score.github.io/feo/pr-9/"
-  },
-  {
-    "version": "pr-10",
-    "url": "https://eclipse-score.github.io/feo/pr-10/"
-  },
-  {
     "version": "pr-11",
     "url": "https://eclipse-score.github.io/feo/pr-11/"
-  },
-  {
-    "version": "pr-12",
-    "url": "https://eclipse-score.github.io/feo/pr-12/"
   },
   {
     "version": "pr-13",
     "url": "https://eclipse-score.github.io/feo/pr-13/"
   },
   {
-    "version": "pr-14",
-    "url": "https://eclipse-score.github.io/feo/pr-14/"
+    "version": "pr-3",
+    "url": "https://eclipse-score.github.io/feo/pr-3/"
+  },
+  {
+    "version": "pr-9",
+    "url": "https://eclipse-score.github.io/feo/pr-9/"
   }
 ]
