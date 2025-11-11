@@ -23,6 +23,7 @@ use crate::timestamp;
 use crate::timestamp::sync_info;
 use core::time::Duration;
 use feo_log::{debug, error, trace};
+use feo_time::Instant;
 use std::collections::{HashMap, HashSet};
 use std::thread;
 
@@ -49,30 +50,26 @@ impl<Inter: IsChannel, Intra: IsChannel> PrimaryReceiveRelay<Inter, Intra> {
     }
 
     pub fn connect_and_run(&mut self) -> Result<(), Error>
-    where
-        Inter::MultiReceiver: Send,
-        Intra::Sender: Send,
     {
         let inter_receiver_builder = self.inter_receiver_builder.take().unwrap();
         let intra_sender_builder = self.intra_sender_builder.take().unwrap();
         let timeout = self.timeout;
 
-        let (inter_receiver, intra_sender) =
-            Self::connect(inter_receiver_builder, intra_sender_builder, timeout)?;
-
         let thread = thread::spawn(move || {
-            Self::thread_main(inter_receiver, intra_sender, timeout)
+            Self::thread_main(inter_receiver_builder, intra_sender_builder, timeout)
         });
         self._thread = Some(thread);
         Ok(())
     }
 
     fn thread_main(
-        mut inter_receiver: Inter::MultiReceiver,
-        mut intra_sender: Intra::Sender,
+        inter_receiver_builder: Builder<Inter::MultiReceiver>,
+        intra_sender_builder: Builder<Intra::Sender>,
         timeout: Duration,
     ) {
         trace!("PrimaryReceiveRelay thread started");
+        let (mut inter_receiver, mut intra_sender) =
+            Self::connect(inter_receiver_builder, intra_sender_builder, timeout).expect("PrimaryReceiveRelay not connected");
         loop {
             // Receive from remote workers on inter-process receiver
             let signal = inter_receiver.receive(timeout);
@@ -112,10 +109,14 @@ impl<Inter: IsChannel, Intra: IsChannel> PrimaryReceiveRelay<Inter, Intra> {
         timeout: Duration,
     ) -> Result<(Inter::MultiReceiver, Intra::Sender), Error> {
         trace!("PrimaryReceiveRelay connecting...");
+        let start_time = Instant::now();
         let mut inter_receiver = inter_receiver_builder();
         let mut intra_sender = intra_sender_builder();
         inter_receiver.connect_senders(timeout)?;
-        intra_sender.connect_receiver(timeout)?;
+
+        let elapsed = start_time.elapsed();
+        let remaining_timeout = timeout.saturating_sub(elapsed);
+        intra_sender.connect_receiver(remaining_timeout)?;
         trace!("PrimaryReceiveRelay connected");
         Ok((inter_receiver, intra_sender))
     }

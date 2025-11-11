@@ -19,10 +19,7 @@ use crate::error::Error;
 use crate::ids::{ActivityId, AgentId, WorkerId};
 use crate::scheduler::Scheduler;
 use crate::signalling::common::interface::{ConnectScheduler, ConnectWorker};
-use crate::signalling::relayed::interface::IsChannel;
-use crate::signalling::relayed::sockets_mpsc::{
-    InterChannelTcp, InterChannelUnix, IntraChannel, SchedulerConnectorTcp, SchedulerConnectorUnix,
-};
+use crate::signalling::relayed::sockets_mpsc::{SchedulerConnectorTcp, SchedulerConnectorUnix};
 use crate::timestamp;
 use crate::worker::Worker;
 use alloc::boxed::Box;
@@ -68,10 +65,6 @@ pub struct Primary {
 impl Primary {
     /// Create a new instance
     pub fn new(config: PrimaryConfig) -> Result<Self, Error>
-    where
-        <InterChannelTcp as IsChannel>::MultiReceiver: Send,
-        <InterChannelUnix as IsChannel>::MultiReceiver: Send,
-        <IntraChannel as IsChannel>::Sender: Send,
     {
         let PrimaryConfig {
             id,
