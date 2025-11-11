@@ -53,8 +53,12 @@ impl<Inter: IsChannel, Intra: IsChannel> PrimaryReceiveRelay<Inter, Intra> {
         let inter_receiver_builder = self.inter_receiver_builder.take().unwrap();
         let intra_sender_builder = self.intra_sender_builder.take().unwrap();
         let timeout = self.timeout;
+<<<<<<< HEAD
 
         thread::spawn(move || {
+=======
+        let thread = thread::spawn(move || {
+>>>>>>> 999c8dd (ctrlc is not built after rebasing)
             if let Err(e) = Self::thread_main(inter_receiver_builder, intra_sender_builder, timeout)
             {
                 // This error is expected during shutdown when the scheduler drops its receiver.
@@ -136,6 +140,48 @@ impl<Inter: IsChannel, Intra: IsChannel> PrimaryReceiveRelay<Inter, Intra> {
         trace!("PrimaryReceiveRelay connected");
         Ok((inter_receiver, intra_sender))
     }
+<<<<<<< HEAD
+=======
+
+    pub fn connect(&mut self) -> Result<(), Error> {
+        self.inter_sender.connect_receivers(self.timeout)?;
+        trace!("PrimarySendRelay connected");
+        Ok(())
+    }
+
+    pub fn get_remote_agents(&self) -> impl Iterator<Item = AgentId> + '_ {
+        self.remote_agents.iter().copied()
+    }
+
+    pub fn send_to_agent(
+        &mut self,
+        agent_id: AgentId,
+        signal: Inter::ProtocolSignal,
+    ) -> Result<(), Error> {
+        let channel_id = ChannelId::Agent(agent_id);
+        self.inter_sender.send(channel_id, signal)
+    }
+
+    pub fn sync_time(&mut self) -> Result<(), Error> {
+        let signal = Signal::StartupSync(sync_info());
+
+        // Send sync info to all remote agents
+        for id in self.remote_agents.iter() {
+            let channel_id = ChannelId::Agent(*id);
+            self.inter_sender.send(channel_id, signal.into())?;
+        }
+        Ok(())
+    }
+
+    pub fn broadcast(&mut self, signal: Inter::ProtocolSignal) -> Result<(), Error> {
+        // Send signal to all remote agents
+        for id in self.remote_agents.iter() {
+            let channel_id = ChannelId::Agent(*id);
+            self.inter_sender.send(channel_id, signal)?;
+        }
+        Ok(())
+    }
+>>>>>>> 999c8dd (ctrlc is not built after rebasing)
 }
 
 /// Relay for a secondary to receive signals from the primary agent

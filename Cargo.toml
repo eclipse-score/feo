@@ -65,6 +65,7 @@ tracing = { version = "0.1.41", features = [
     "attributes",
 ], default-features = false }
 tracing-subscriber = { version = "0.3.19", default-features = false }
+ctrlc = { version = "3.4", features = ["termination"] }
 
 [profile.profiling]
 inherits = "release"

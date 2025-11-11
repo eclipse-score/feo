@@ -135,6 +135,7 @@ where
         let start_time = Instant::now();
 
         while !missing_activities.is_empty() || !missing_recorders.is_empty() {
+<<<<<<< HEAD
             let elapsed = start_time.elapsed();
             if elapsed >= self.connection_timeout {
                 return Err(Error::Io((
@@ -146,6 +147,11 @@ where
             // Wait for a new connection, but no longer than the remaining overall timeout.
             if let Ok(Some((token, signal))) =
                 self.server.receive(&mut self.events, remaining_timeout)
+=======
+            if let Ok(Some((token, signal))) = self
+                .server
+                .receive(&mut self.events, Duration::from_secs(1))
+>>>>>>> 999c8dd (ctrlc is not built after rebasing)
             {
                 match signal {
                     ProtocolSignal::ActivityHello(activity_id) => {
