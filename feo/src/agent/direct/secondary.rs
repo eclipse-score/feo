@@ -21,7 +21,7 @@ use crate::signalling::direct::worker::{TcpWorkerConnector, UnixWorkerConnector}
 use crate::worker::Worker;
 use alloc::vec::Vec;
 use core::time::Duration;
-use feo_log::debug;
+use feo_log::{debug, error};
 use std::thread::{self, JoinHandle};
 
 /// Configuration of a secondary agent
@@ -48,7 +48,7 @@ impl Secondary {
     /// Create a new instance
     pub fn new(config: SecondaryConfig) -> Self {
         let SecondaryConfig {
-            id,
+            id: _,
             worker_assignments,
             timeout,
             endpoint,
@@ -58,28 +58,40 @@ impl Secondary {
             .into_iter()
             .map(|(id, activities)| {
                 let endpoint = endpoint.clone();
+                let agent_id = config.id; // Use the correct AgentId from the config.
                 thread::spawn(move || match endpoint {
                     NodeAddress::Tcp(addr) => {
                         let mut connector =
                             TcpWorkerConnector::new(addr, activities.iter().map(|(id, _)| *id));
-                        connector.connect_remote().expect("failed to connect");
-                        let worker = Worker::new(id, activities, connector, timeout);
-
-                        worker.run().expect("failed to run worker");
+                        if let Err(e) = connector.connect_remote() {
+                            error!("Worker {} failed to connect to primary: {:?}", id, e);
+                            return;
+                        }
+                        let worker = Worker::new(id, agent_id, activities, connector, timeout);
+                        if let Err(e) = worker.run() {
+                            error!("Worker {} failed with error: {:?}", id, e);
+                        }
                     }
                     NodeAddress::UnixSocket(path) => {
                         let mut connector =
                             UnixWorkerConnector::new(path, activities.iter().map(|(id, _)| *id));
-                        connector.connect_remote().expect("failed to connect");
-                        let worker = Worker::new(id, activities, connector, timeout);
-
-                        worker.run().expect("failed to run worker");
+                        if let Err(e) = connector.connect_remote() {
+                            error!("Worker {} failed to connect to primary: {:?}", id, e);
+                            return;
+                        }
+                        let worker = Worker::new(id, agent_id, activities, connector, timeout);
+                        if let Err(e) = worker.run() {
+                            error!("Worker {} failed with error: {:?}", id, e);
+                        }
                     }
                 })
             })
             .collect();
 
-        Self { id, worker_threads }
+        Self {
+            id: config.id,
+            worker_threads,
+        }
     }
 
     /// Run the agent
@@ -87,7 +99,11 @@ impl Secondary {
         debug!("Running secondary with ID {:?}", self.id);
 
         for th in self.worker_threads {
-            th.join().unwrap();
+            if let Err(e) = th.join() {
+                error!("Worker thread for agent {:?} panicked: {:?}", self.id, e);
+            }
         }
+
+        debug!("Secondary with ID {:?} finished", self.id);
     }
 }

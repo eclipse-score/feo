@@ -58,7 +58,7 @@ rust_library(
     crate_features = [
         "com_linux_shm",
         "recording",
-        "signalling_relayed_tcp",
+        "signalling_direct_tcp",
     ],
     crate_name = "mini_adas",
     proc_macro_deps = [
@@ -131,7 +131,7 @@ rust_binary(
     ],
     crate_features = [
         "recording",
-        "signalling_relayed_tcp",
+        "signalling_direct_tcp",
     ],
     visibility = ["//visibility:public"],
     deps = [

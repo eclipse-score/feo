@@ -37,7 +37,9 @@ impl<Inter: IsChannel, Intra: IsChannel> SecondaryConnector<Inter, Intra> {
         self.local_to_ipc_relay
             .connect()
             .expect("failed to connect relay");
-        self.local_to_ipc_relay.run();
+        if let Err(e) = self.local_to_ipc_relay.run() {
+            debug!("[SecondaryConnector] Send relay exited with: {:?}", e);
+        }
     }
 }
 
