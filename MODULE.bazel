@@ -24,7 +24,6 @@ python.toolchain(
     is_default = True,
     python_version = PYTHON_VERSION,
 )
-use_repo(python)
 
 # Add GoogleTest dependency
 bazel_dep(name = "googletest", version = "1.17.0")

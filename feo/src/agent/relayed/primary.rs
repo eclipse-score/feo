@@ -64,8 +64,7 @@ pub struct Primary {
 
 impl Primary {
     /// Create a new instance
-    pub fn new(config: PrimaryConfig) -> Result<Self, Error>
-    {
+    pub fn new(config: PrimaryConfig) -> Result<Self, Error> {
         let PrimaryConfig {
             id,
             cycle_time,

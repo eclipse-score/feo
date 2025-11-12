@@ -49,8 +49,7 @@ impl<Inter: IsChannel, Intra: IsChannel> PrimaryReceiveRelay<Inter, Intra> {
         }
     }
 
-    pub fn connect_and_run(&mut self) -> Result<(), Error>
-    {
+    pub fn connect_and_run(&mut self) -> Result<(), Error> {
         let inter_receiver_builder = self.inter_receiver_builder.take().unwrap();
         let intra_sender_builder = self.intra_sender_builder.take().unwrap();
         let timeout = self.timeout;
@@ -69,7 +68,8 @@ impl<Inter: IsChannel, Intra: IsChannel> PrimaryReceiveRelay<Inter, Intra> {
     ) {
         trace!("PrimaryReceiveRelay thread started");
         let (mut inter_receiver, mut intra_sender) =
-            Self::connect(inter_receiver_builder, intra_sender_builder, timeout).expect("PrimaryReceiveRelay not connected");
+            Self::connect(inter_receiver_builder, intra_sender_builder, timeout)
+                .expect("PrimaryReceiveRelay not connected");
         loop {
             // Receive from remote workers on inter-process receiver
             let signal = inter_receiver.receive(timeout);

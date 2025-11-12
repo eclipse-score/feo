@@ -194,7 +194,6 @@ mod direct_mpsc {
             recorder_ids: vec![],
             worker_assignments: app_config.worker_assignments().remove(&agent_id).unwrap(),
             timeout: Duration::from_secs(10),
-            connection_timeout: Duration::from_secs(10),
         }
     }
 

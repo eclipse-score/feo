@@ -22,6 +22,7 @@ use alloc::vec::Vec;
 use core::net::SocketAddr;
 use core::time::Duration;
 use feo_log::warn;
+use feo_time::Instant;
 use mio::net::{TcpListener, UnixListener};
 use mio::{Events, Token};
 use std::collections::{HashMap, HashSet};
@@ -114,18 +115,19 @@ where
         let mut missing_activities: HashSet<ActivityId> =
             self.all_activities.iter().cloned().collect();
         let mut missing_recorders: HashSet<AgentId> = self.all_recorders.iter().cloned().collect();
-        let start_time = std::time::Instant::now();
+        let start_time = Instant::now();
 
         while !missing_activities.is_empty() || !missing_recorders.is_empty() {
             let elapsed = start_time.elapsed();
             if elapsed >= self.connection_timeout {
-                return Err(Error::Io((std::io::ErrorKind::TimedOut.into(), "CONNECTION_TIMEOUT")));
+                return Err(Error::Io((
+                    std::io::ErrorKind::TimedOut.into(),
+                    "CONNECTION_TIMEOUT",
+                )));
             }
             let remaining_timeout = self.connection_timeout.saturating_sub(elapsed);
             // Wait for a new connection, but no longer than the remaining overall timeout.
-            if let Some((token, signal)) = self
-                .server
-                .receive(&mut self.events, remaining_timeout)
+            if let Some((token, signal)) = self.server.receive(&mut self.events, remaining_timeout)
             {
                 match signal {
                     ProtocolSignal::ActivityHello(activity_id) => {
