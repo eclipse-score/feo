@@ -11,7 +11,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@cargo//:defs.bzl", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library")
 
 rust_library(
@@ -25,7 +24,7 @@ rust_library(
         "src/lib.rs",
     ],
     crate_features = [
-        "com_iox2",
+        "com_linux_shm",
         "signalling_relayed_tcp",
     ],
     crate_name = "mini_adas",
@@ -42,7 +41,7 @@ rust_library(
         "//feo-logger:libfeo_logger_rust",
         "//feo-time:libfeo_time_rust",
         "//feo-tracing:libfeo_tracing_rust",
-        "@cargo//:tracing",
+        "@score_crates//:tracing",
     ],
 )
 
@@ -57,7 +56,7 @@ rust_library(
         "src/lib.rs",
     ],
     crate_features = [
-        "com_iox2",
+        "com_linux_shm",
         "recording",
         "signalling_relayed_tcp",
     ],
@@ -66,9 +65,7 @@ rust_library(
         "//feo-cpp-macros:feo_cpp_macros_rust",
     ],
     visibility = ["//visibility:public"],
-    deps = all_crate_deps(
-        normal = True,
-    ) + [
+    deps = [
         ":cpp_activities",
         "//feo:libfeo_recording_rust",
         "//feo-com:libfeo_com_rust",
@@ -77,8 +74,9 @@ rust_library(
         "//feo-logger:libfeo_logger_rust",
         "//feo-time:libfeo_time_rust",
         "//feo-tracing:libfeo_tracing_rust",
-        "@cargo//:postcard",
-        "@cargo//:serde",
+        "@score_crates//:postcard",
+        "@score_crates//:serde",
+        "@score_crates//:tracing",
     ],
 )
 
@@ -88,6 +86,11 @@ rust_binary(
         "src/bin/adas_primary.rs",
     ],
     crate_features = ["signalling_relayed_tcp"],
+    rustc_flags = [
+        "-Clink-arg=-lstdc++",
+        "-Clink-arg=-lm",
+        "-Clink-arg=-lc",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         ":libmini_adas_rust",
@@ -105,6 +108,11 @@ rust_binary(
         "src/bin/adas_secondary.rs",
     ],
     crate_features = ["signalling_relayed_tcp"],
+    rustc_flags = [
+        "-Clink-arg=-lstdc++",
+        "-Clink-arg=-lm",
+        "-Clink-arg=-lc",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         ":libmini_adas_rust",
@@ -149,8 +157,8 @@ rust_binary(
         "//feo-log:libfeo_log_rust",
         "//feo-logger:libfeo_logger_rust",
         "//feo-tracing:libfeo_tracing_rust",
-        "@cargo//:postcard",
-        "@cargo//:serde",
+        "@score_crates//:postcard",
+        "@score_crates//:serde",
     ],
 )
 

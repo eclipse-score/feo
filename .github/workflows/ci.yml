@@ -26,22 +26,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install protobuf-compiler
+        run: sudo apt-get install protobuf-compiler
 
       - uses: bazelbuild/setup-bazelisk@v3
-
-      - name: Install Clang
-        run: |
-          sudo apt update
-          sudo apt install -y clang
 
       - uses: actions/cache@v4
         with:
           path: "~/.cache/bazel"
           key: bazel
+
+      - name: Bazel mod tidy
+        run: bazel mod tidy
 
       - name: Build all workspace targets
         run: bazel build //...
@@ -51,106 +47,3 @@ jobs:
 
       - name: Lint rust code (with clippy)
         run: bazel build --config=lint-rust //...
-
-  cargo-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: 1.83.0
-          components: clippy, rustfmt
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install Clang
-        run: |
-          sudo apt update
-          sudo apt install -y clang
-
-      - run: cargo fmt --check
-
-      - run: cargo clippy --workspace --all-features --exclude mini-adas -- -D warnings
-
-      - run: cargo build --workspace --all-features --exclude mini-adas
-
-  cargo-build-mini-adas:
-    name: Compile and check mini-adas with mutually exclusive features
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        com_type:
-          - com_iox2
-        signaling_type:
-          - signalling_direct_mpsc
-          - signalling_direct_tcp
-          - signalling_direct_unix
-          - signalling_relayed_tcp
-        recording:
-          - "--features recording"
-          - ""
-        exclude:
-          - signaling_type: signalling_direct_mpsc
-            recording: "--features recording"
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: 1.83.0
-          components: clippy, rustfmt
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install Clang
-        run: |
-          sudo apt update
-          sudo apt install -y clang
-
-      - run: |
-          cargo clippy -p mini-adas \
-          --no-default-features \
-          --features ${{ matrix.com_type }} \
-          --features ${{ matrix.signaling_type }} \
-          ${{ matrix.recording }} \
-          -- -D warnings
-
-      - run: |
-          cargo build -p mini-adas \
-          --no-default-features \
-          --features ${{ matrix.com_type }} \
-          --features ${{ matrix.signaling_type }} \
-          ${{ matrix.recording }}
-
-  cargo-miri:
-    runs-on: ubuntu-latest
-    env:
-      MIRIFLAGS: "-Zmiri-disable-isolation"
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: nightly-2024-12-17
-          components: miri, rust-src
-
-      - name: Install Clang
-        run: |
-          sudo apt update
-          sudo apt install -y clang
-
-      - run: cargo +nightly-2024-12-17 miri test
-

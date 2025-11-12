@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # *******************************************************************************
 # Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
@@ -11,25 +13,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//rust:defs.bzl", "rust_library")
+set -e
 
-cc_library(
-    name = "libfeo_cpp_build_cc",
-    hdrs = ["src/include/feo_cpp/feo_macros.h"],
-    includes = ["src/include"],
-    visibility = ["//visibility:public"],
-)
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-rust_library(
-    name = "libfeo_cpp_build_rust",
-    srcs = [
-        "src/lib.rs",
-    ],
-    crate_features = [],
-    crate_name = "feo_cpp_build",
-    proc_macro_deps = [],
-    visibility = ["//visibility:public"],
-    deps = [
-        "@score_crates//:cc",
-    ],
-)
+buildifier -r $SCRIPT_DIR
+bazelisk clean --expunge
+bazelisk mod tidy
+bazelisk build //:format.check
+bazelisk build //:format.fix
+cargo fmt --all
+bazelisk build //...

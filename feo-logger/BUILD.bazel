@@ -11,7 +11,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@cargo//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_static_library", "rust_test")
 
 rust_library(
@@ -26,11 +25,12 @@ rust_library(
     ],
     crate_name = "feo_logger",
     visibility = ["//visibility:public"],
-    deps = all_crate_deps(
-        normal = True,
-    ) + [
+    deps = [
         "//feo-log:libfeo_log_rust",
         "//feo-time:libfeo_time_rust",
+        "@score_crates//:console",
+        "@score_crates//:libc",
+        "@score_crates//:time",
     ],
 )
 
