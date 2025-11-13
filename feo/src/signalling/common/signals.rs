@@ -48,6 +48,12 @@ pub enum Signal {
 
     // Signal sent to indicate that a recorder operation has finished
     RecorderReady((AgentId, Timestamp)),
+
+    // Signal sent by the scheduler to all workers to terminate the agent process
+    Terminate(Timestamp),
+
+    // Signal sent by a worker to acknowledge termination
+    TerminateAck(AgentId),
 }
 
 impl Display for Signal {
@@ -61,6 +67,8 @@ impl Display for Signal {
             Signal::TaskChainStart(t) => write!(f, "TaskChainStart({t:?})"),
             Signal::TaskChainEnd(t) => write!(f, "TaskChainEnd({t:?})"),
             Signal::RecorderReady((id, t)) => write!(f, "RecorderReady({id}, {t:?})"),
+            Signal::Terminate(t) => write!(f, "Terminate({t:?})"),
+            Signal::TerminateAck(id) => write!(f, "TerminateAck({id})"),
         }
     }
 }

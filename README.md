@@ -89,7 +89,7 @@ Install *bytehound* with the following commands:
 
 ```sh
 wget https://github.com/koute/bytehound/releases/download/0.11.0/bytehound-x86_64-unknown-linux-gnu.tgz
-tar xzf bytehound-x86_64-unknown-linux-gnu.tgz bytehound libbytehound.so 
+tar xzf bytehound-x86_64-unknown-linux-gnu.tgz bytehound libbytehound.so
 mv bytehound libbytehound.so $HOME/.cargo/bin
 ```
 
@@ -113,5 +113,3 @@ bytehound server memory-profiling_*.dat
 
 Click on the [link](http://127.0.0.1:8080) in the output to open the browser and
 see the results. Setup ssh port forwarding if needed when working remote (`ssh -L 8080:localhost:8080 host`).
-
-

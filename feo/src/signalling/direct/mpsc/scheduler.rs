@@ -157,6 +157,11 @@ impl ConnectScheduler for SchedulerConnector {
         Ok(())
     }
 
+    fn get_connected_agent_ids(&self) -> alloc::vec::Vec<AgentId> {
+        // In direct MPSC mode, there are no remote agents.
+        alloc::vec![]
+    }
+
     fn receive(&mut self, timeout: Duration) -> Result<Option<Signal>, Error> {
         self.receive(timeout)
     }
@@ -169,5 +174,12 @@ impl ConnectScheduler for SchedulerConnector {
     /// Send `signal` to the recorder with `recorder_id`
     fn send_to_recorder(&mut self, _recorder_id: AgentId, _signal: &Signal) -> Result<(), Error> {
         unimplemented!("Recording not supported with mpsc channels");
+    }
+
+    fn broadcast_terminate(&mut self, _signal: &Signal) -> Result<(), Error> {
+        // In direct MPSC mode, all workers are local threads. Broadcast to them.
+        let protocol_signal =
+            ProtocolSignal::Core(Signal::Terminate(crate::timestamp::timestamp()));
+        self.sender.broadcast(protocol_signal)
     }
 }

@@ -30,6 +30,7 @@ use postcard::experimental::max_size::MaxSize;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::BufWriter;
+use std::thread;
 use std::{fs, io};
 
 /// Maximum allowed length of topics and type names in the recording
@@ -139,6 +140,24 @@ impl<'s> FileRecorder<'s> {
                     self.record_signal(signal);
                     self.flush();
                     self.send_recorder_ready();
+                }
+                Signal::Terminate(_) => {
+                    debug!(
+                        "Recorder {} received Terminate signal. Acknowledging and exiting.",
+                        self.id
+                    );
+                    // Send TerminateAck to the primary.
+                    if let Err(e) = self
+                        .connector
+                        .send_to_scheduler(&Signal::TerminateAck(self.id))
+                    {
+                        error!("Recorder {} failed to send TerminateAck: {:?}", self.id, e);
+                    }
+                    debug!("Recorder {} sent termination ack. Exiting.", self.id);
+                    // Linger for a moment to ensure TerminateAck has time to be sent
+                    // over the network before the thread exits and closes the socket.
+                    thread::sleep(Duration::from_millis(100));
+                    return; // Graceful exit from the run loop
                 }
 
                 // Otherwise, only record the signal

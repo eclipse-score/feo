@@ -93,5 +93,19 @@ cargo run --no-default-features --features signalling_direct_tcp --bin adas_seco
 cargo run --no-default-features --features signalling_direct_tcp --bin adas_secondary 2
 ```
 
+### Direct Mode with a Recorder
+
+To run with a recorder in direct mode.
+
+```sh
+# Use 400ms cycle time and wait for recorder 900
+cargo run --no-default-features --features "signalling_direct_tcp,com_iox2" --bin adas_primary -- 400 900
+```
+
+```sh
+# Start recorder with ID 900 in direct mode
+cargo run --no-default-features --features "signalling_direct_tcp,recording,com_iox2" --bin adas_recorder -- 900
+```
+
 Note that for mpsc-only signalling, there can be only a primary process without
 any secondaries or recorders, because mpsc does not support inter-process signalling.

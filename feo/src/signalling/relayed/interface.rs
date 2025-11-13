@@ -57,6 +57,8 @@ pub(crate) trait ProtocolMultiSend {
     type ProtocolSignal: From<Signal> + TryInto<Signal> + Copy + Debug;
 
     fn send(&mut self, channel_id: ChannelId, signal: Self::ProtocolSignal) -> Result<(), Error>;
+    /// Broadcast a signal to all channels
+    fn broadcast(&mut self, signal: Self::ProtocolSignal) -> Result<(), Error>;
 
     fn connect_receivers(&mut self, _timeout: Duration) -> Result<(), Error>;
 }

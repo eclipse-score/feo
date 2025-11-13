@@ -98,7 +98,9 @@ impl Activity for Camera {
     }
 
     #[instrument(name = "Camera shutdown")]
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) {
+        debug!("Shutting down Camera activity {}", self.activity_id);
+    }
 }
 
 /// Radar activity
@@ -161,7 +163,9 @@ impl Activity for Radar {
     }
 
     #[instrument(name = "Radar shutdown")]
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) {
+        debug!("Shutting down Radar activity {}", self.activity_id);
+    }
 }
 
 /// Neural network activity
@@ -251,7 +255,9 @@ impl Activity for NeuralNet {
     }
 
     #[instrument(name = "NeuralNet shutdown")]
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) {
+        debug!("Shutting down NeuralNet activity {}", self.activity_id);
+    }
 }
 
 /// Emergency braking activity
@@ -328,7 +334,12 @@ impl Activity for EmergencyBraking {
     }
 
     #[instrument(name = "EmergencyBraking shutdown")]
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) {
+        debug!(
+            "Shutting down EmergencyBraking activity {}",
+            self.activity_id
+        );
+    }
 }
 
 /// Brake controller activity
@@ -378,7 +389,12 @@ impl Activity for BrakeController {
     }
 
     #[instrument(name = "BrakeController shutdown")]
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) {
+        debug!(
+            "Shutting down BrakeController activity {}",
+            self.activity_id
+        );
+    }
 }
 
 /// Environment renderer activity
@@ -422,7 +438,12 @@ impl Activity for EnvironmentRenderer {
     }
 
     #[instrument(name = "EnvironmentRenderer shutdown")]
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) {
+        debug!(
+            "Shutting down EnvironmentRenderer activity {}",
+            self.activity_id
+        );
+    }
 }
 
 /// Steering controller activity
@@ -470,7 +491,12 @@ impl Activity for SteeringController {
     }
 
     #[instrument(name = "SteeringController shutdown")]
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) {
+        debug!(
+            "Shutting down SteeringController activity {}",
+            self.activity_id
+        );
+    }
 }
 
 /// Create an activity input.

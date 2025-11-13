@@ -23,6 +23,7 @@ use core::time::Duration;
 pub enum Error {
     ActivityNotFound(ActivityId),
     Channel(&'static str),
+    ChannelClosed,
     ChannelNotFound(ChannelId),
     Io((std::io::Error, &'static str)),
     Timeout(Duration, &'static str),
@@ -38,6 +39,7 @@ impl core::fmt::Display for Error {
         match self {
             Error::ActivityNotFound(id) => write!(f, "failed to find activity with ID {id}"),
             Error::Channel(description) => write!(f, "channel error: {description}"),
+            Error::ChannelClosed => write!(f, "channel closed by peer"),
             Error::ChannelNotFound(id) => write!(f, "failed to find channel with ID {id}"),
             Error::Io((e, description)) => write!(f, "{description}: io error: {e}"),
             Error::Timeout(duration, action) => {

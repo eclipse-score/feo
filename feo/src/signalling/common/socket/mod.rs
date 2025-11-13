@@ -190,6 +190,12 @@ impl EncodeDecode for ProtocolSignal {
             ProtocolSignal::Core(Signal::Ready((activity_id, timestamp))) => {
                 encode_data!(w; SignalTag::CoreReady; activity_id => u64, timestamp => u128);
             }
+            ProtocolSignal::Core(Signal::Terminate(timestamp)) => {
+                encode_data!(w; SignalTag::CoreTerminate; timestamp => u128);
+            }
+            ProtocolSignal::Core(Signal::TerminateAck(agent_id)) => {
+                encode_data!(w; SignalTag::CoreTerminateAck; agent_id => u64);
+            }
 
             // Signalling-layer signals
             ProtocolSignal::ActivityHello(worker_id) => {
@@ -272,6 +278,12 @@ impl EncodeDecode for ProtocolSignal {
             CoreReady => {
                 decode_data!(src; Signal::Ready, ProtocolSignal::Core; u64 => ActivityId; u128 => Timestamp)
             }
+            CoreTerminate => {
+                decode_data!(src; Signal::Terminate, ProtocolSignal::Core; u128 => Timestamp)
+            }
+            CoreTerminateAck => {
+                decode_data!(src; Signal::TerminateAck, ProtocolSignal::Core; u64 => AgentId)
+            }
 
             // Signalling-layer signals
             ConnectorActivityHello => {
@@ -307,6 +319,8 @@ pub(crate) enum SignalTag {
     CoreStep = 22,
     CoreShutdown = 23,
     CoreReady = 24,
+    CoreTerminate = 25,
+    CoreTerminateAck = 26,
     ConnectorActivityHello = 31,
     ConnectorRecorderHello = 32,
     ConnectorChannelActivityHello = 33,
@@ -330,6 +344,8 @@ impl TryFrom<u8> for SignalTag {
             v if v == CoreStep as u8 => Ok(CoreStep),
             v if v == CoreShutdown as u8 => Ok(CoreShutdown),
             v if v == CoreReady as u8 => Ok(CoreReady),
+            v if v == CoreTerminate as u8 => Ok(CoreTerminate),
+            v if v == CoreTerminateAck as u8 => Ok(CoreTerminateAck),
             v if v == ConnectorActivityHello as u8 => Ok(ConnectorActivityHello),
             v if v == ConnectorRecorderHello as u8 => Ok(ConnectorRecorderHello),
             v if v == ConnectorChannelActivityHello as u8 => Ok(ConnectorChannelActivityHello),
@@ -355,6 +371,8 @@ fn connector_signal_roundtrips() {
         (ProtocolSignal::Core(Signal::Shutdown((ActivityId::from(123), timestamp))), 26),
         (ProtocolSignal::Core(Signal::Ready((ActivityId::from(123), timestamp))), 26),
         (ProtocolSignal::ActivityHello(ActivityId::from(123)), 10),
+        (ProtocolSignal::Core(Signal::Terminate(timestamp)), 18),
+        (ProtocolSignal::Core(Signal::TerminateAck(AgentId::from(123))), 10),
         (ProtocolSignal::RecorderHello(AgentId::from(123)), 10),
     ];
 

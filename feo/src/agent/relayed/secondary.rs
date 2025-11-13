@@ -106,7 +106,7 @@ impl Secondary {
                 thread::spawn(move || {
                     let mut connector = connector_builder();
                     connector.connect_remote().expect("failed to connect");
-                    let worker = Worker::new(id, activities, connector, timeout);
+                    let worker = Worker::new(id, config.id, activities, connector, timeout);
 
                     worker.run().expect("failed to run worker");
                 })
@@ -129,5 +129,6 @@ impl Secondary {
         for th in self.worker_threads {
             th.join().unwrap();
         }
+        debug!("Secondary with ID {:?} finished", self.id);
     }
 }

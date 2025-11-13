@@ -53,6 +53,9 @@ impl relayed::interface::ProtocolMultiSend for ProtocolMultiSender {
     fn send(&mut self, channel_id: ChannelId, signal: Self::ProtocolSignal) -> Result<(), Error> {
         self.send(channel_id, signal)
     }
+    fn broadcast(&mut self, signal: Self::ProtocolSignal) -> Result<(), Error> {
+        self.broadcast(signal)
+    }
 
     fn connect_receivers(&mut self, timeout: Duration) -> Result<(), Error> {
         self.connect_receivers(timeout)

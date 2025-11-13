@@ -117,14 +117,12 @@ where
         &mut self,
         events: &mut Events,
         timeout: Duration,
-    ) -> Option<ProtocolSignal> {
+    ) -> Result<Option<ProtocolSignal>, Error> {
         if self.connection.is_readable() {
             match self.connection.read() {
-                Ok(Some(msg)) => return Some(msg),
-                Ok(None) => {}
-                Err(e) => {
-                    panic!("connection to server died: {e}");
-                }
+                Ok(Some(msg)) => return Ok(Some(msg)),
+                Ok(None) => {} // Not enough data yet, proceed to poll
+                Err(e) => return Err(e.into()),
             }
         }
 
@@ -138,15 +136,13 @@ where
 
         if self.connection.is_readable() {
             match self.connection.read() {
-                Ok(Some(msg)) => return Some(msg),
-                Ok(None) => {}
-                Err(e) => {
-                    panic!("connection to server died: {e}");
-                }
+                Ok(Some(msg)) => return Ok(Some(msg)),
+                Ok(None) => {} // Not enough data yet
+                Err(e) => return Err(e.into()),
             }
         }
 
-        None
+        Ok(None)
     }
 
     /// Send a signal to the scheduler

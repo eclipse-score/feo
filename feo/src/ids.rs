@@ -38,7 +38,7 @@ impl GetPrefix for ActivityIdMarker {
 pub type AgentId = GenericId<AgentIdMarker>;
 
 #[cfg_attr(feature = "recording", derive(Serialize, Deserialize, MaxSize))]
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AgentIdMarker;
 
 impl GetPrefix for AgentIdMarker {
