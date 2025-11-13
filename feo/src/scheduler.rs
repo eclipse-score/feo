@@ -390,7 +390,13 @@ impl Scheduler {
                     }
                     break id;
                 }
-                Some(Signal::TerminateAck(_)) => continue, // Ignore during normal operation
+                Some(Signal::TerminateAck(agent_id)) => {
+                    trace!(
+                        "Ignoring TerminateAck from agent {} during normal operation",
+                        agent_id
+                    );
+                    continue;
+                }
                 Some(other) => {
                     error!("Received unexpected signal {other:?} while waiting for ready signal");
                 }

@@ -30,10 +30,6 @@ use core::sync::atomic::AtomicBool;
 use core::time::Duration;
 use feo_log::info;
 use std::collections::HashMap;
-<<<<<<< HEAD
-=======
-use std::sync::{atomic::AtomicBool, Arc};
->>>>>>> 999c8dd (ctrlc is not built after rebasing)
 use std::thread::{self, JoinHandle};
 
 /// Configuration of the primary agent
@@ -75,10 +71,7 @@ impl Primary {
             recorder_ids,
             endpoint,
             timeout,
-<<<<<<< HEAD
             connection_timeout,
-=======
->>>>>>> 999c8dd (ctrlc is not built after rebasing)
             activity_agent_map,
             ..
         } = config;

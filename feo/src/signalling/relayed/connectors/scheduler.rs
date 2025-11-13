@@ -21,17 +21,10 @@ use crate::signalling::relayed::connectors::relays::{PrimaryReceiveRelay, Primar
 use crate::signalling::relayed::interface::{
     Builder, IsChannel, ProtocolMultiRecv, ProtocolMultiSend,
 };
-<<<<<<< HEAD
 use alloc::{collections::BTreeSet, vec::Vec};
 use core::time::Duration;
 use feo_log::debug;
 use std::collections::{HashMap, HashSet};
-=======
-use alloc::vec::Vec;
-use core::time::Duration;
-use feo_log::debug;
-use std::collections::{BTreeSet, HashMap, HashSet};
->>>>>>> 999c8dd (ctrlc is not built after rebasing)
 use std::thread::JoinHandle;
 
 pub(crate) struct SchedulerConnector<Inter: IsChannel, Intra: IsChannel> {
