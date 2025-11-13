@@ -14,11 +14,7 @@ postcard = { workspace = true, features = [
     "experimental-derive",
 ], optional = true }
 serde = { workspace = true, optional = true }
-<<<<<<< HEAD
 ctrlc = { workspace = true, features = ["termination"] }
-=======
-ctrlc = { workspace = true}
->>>>>>> 999c8dd (ctrlc is not built after rebasing)
 
 [dev-dependencies]
 feo-logger = { workspace = true }

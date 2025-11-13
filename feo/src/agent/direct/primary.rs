@@ -28,7 +28,6 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::sync::atomic::AtomicBool;
 use core::time::Duration;
-use ctrlc;
 use feo_log::info;
 use std::collections::HashMap;
 <<<<<<< HEAD
