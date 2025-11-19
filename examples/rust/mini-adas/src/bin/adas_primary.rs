@@ -106,7 +106,6 @@ mod cfg {
             recorder_ids: vec![],
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
-            connection_timeout: Duration::from_secs(10),
         }
     }
 }
