@@ -67,7 +67,15 @@ where
         }
 
         // There was no readable connection -> poll
-        self.poll.poll(events, Some(timeout)).unwrap();
+        loop {
+            match self.poll.poll(events, Some(timeout)) {
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {
+                    // ignore system interrupts
+                }
+                Ok(_) => break,
+                e => panic!("{e:?}"),
+            }
+        }
         for event in events.iter() {
             match event.token() {
                 LISTENER_TOKEN => self.accept_connections(),
