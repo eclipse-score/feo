@@ -217,22 +217,27 @@ impl<Inter: SocketChannel> scheduler::SchedulerConnector<Inter, IntraChannel> {
             intra_builders::multi_sender_builder(&local_worker_channels);
         let worker_sender = worker_sender_builder();
 
-        // Create an IPC relay for receiving from remote processes
         let channel_ids: Vec<ChannelId> = remote_agents
             .iter()
             .copied()
             .map(ChannelId::Agent)
             .collect();
 
-        let relay_sender_builder = local_sender_builders.remove(&relay_channel).unwrap();
-        let relay_receiver_builder =
-            Inter::multi_receiver_builder(channel_ids.clone(), bind_address_senders);
-        let ipc_receive_relay =
-            PrimaryReceiveRelay::new(relay_sender_builder, relay_receiver_builder, timeout);
+        // Create IPC relays only if there are remote agents to communicate with.
+        let (ipc_receive_relay, ipc_send_relay) = if !remote_agents.is_empty() {
+            let relay_sender_builder = local_sender_builders.remove(&relay_channel).unwrap();
+            let relay_receiver_builder =
+                Inter::multi_receiver_builder(channel_ids.clone(), bind_address_senders);
+            let receive_relay =
+                PrimaryReceiveRelay::new(relay_sender_builder, relay_receiver_builder, timeout);
 
-        let ipc_sender = Inter::new_multi_sender(&channel_ids, bind_address_receivers);
+            let ipc_sender = Inter::new_multi_sender(&channel_ids, bind_address_receivers);
+            let send_relay = PrimarySendRelay::new(remote_agents, ipc_sender, timeout);
 
-        let ipc_send_relay = PrimarySendRelay::new(remote_agents, ipc_sender, timeout);
+            (Some(receive_relay), Some(send_relay))
+        } else {
+            (None, None)
+        };
 
         // Create worker connector builders for local workers
         let worker_connector_builders: HashMap<WorkerId, Builder<WorkerConnector>> =

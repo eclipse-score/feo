@@ -133,7 +133,12 @@ pub fn agent_assignments() -> HashMap<AgentId, Vec<(WorkerId, Vec<ActivityIdAndB
     ]
     .into_iter()
     .collect();
-
+    //testing single agent mode for other signalling mechanisms.
+    // let assignment = [
+    //     (100.into(), vec![w40, w41, w42, w43, w44]),
+    // ]
+    // .into_iter()
+    // .collect();
     #[cfg(feature = "signalling_direct_mpsc")]
     let assignment = [(100.into(), vec![w40, w41, w42, w43, w44])]
         .into_iter()
