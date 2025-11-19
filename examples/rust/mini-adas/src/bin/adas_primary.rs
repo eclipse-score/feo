@@ -105,7 +105,7 @@ mod cfg {
             // With only one agent, we cannot attach a recorder
             recorder_ids: vec![],
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
-            timeout: Duration::from_secs(60),
+            timeout: Duration::from_secs(10),
         }
     }
 }
@@ -142,7 +142,7 @@ mod cfg {
             activity_dependencies: activity_dependencies(),
             recorder_ids: params.recorder_ids,
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
-            timeout: Duration::from_secs(60),
+            timeout: Duration::from_secs(10),
             connection_timeout: Duration::from_secs(10),
             endpoint: NodeAddress::Tcp(BIND_ADDR),
             activity_agent_map: activity_worker_map
@@ -188,7 +188,7 @@ mod cfg {
             activity_dependencies: activity_dependencies(),
             recorder_ids: params.recorder_ids,
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
-            timeout: Duration::from_secs(60),
+            timeout: Duration::from_secs(10),
             connection_timeout: Duration::from_secs(10),
             endpoint: NodeAddress::UnixSocket(socket_paths().0),
             activity_agent_map: activity_worker_map
@@ -231,7 +231,7 @@ mod cfg {
             activity_dependencies: activity_dependencies(),
             recorder_ids: params.recorder_ids,
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
-            timeout: Duration::from_secs(60),
+            timeout: Duration::from_secs(10),
             connection_timeout: Duration::from_secs(10),
             bind_address_senders: NodeAddress::Tcp(BIND_ADDR),
             bind_address_receivers: NodeAddress::Tcp(BIND_ADDR2),
@@ -271,7 +271,7 @@ mod cfg {
             activity_dependencies: activity_dependencies(),
             recorder_ids: params.recorder_ids,
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
-            timeout: Duration::from_secs(60),
+            timeout: Duration::from_secs(10),
             connection_timeout: Duration::from_secs(10),
             bind_address_senders: NodeAddress::UnixSocket(socket_paths().0),
             bind_address_receivers: NodeAddress::UnixSocket(socket_paths().1),
