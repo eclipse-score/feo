@@ -184,7 +184,7 @@ impl Primary {
             th.join().unwrap();
         }
         // Wait for the communication relay threads to complete their shutdown.
-        for th in self.relay_threads.drain(..) {
+        for th in core::mem::take(&mut self.relay_threads) {
             th.join().unwrap();
         }
         debug!("Primary finished!!");
