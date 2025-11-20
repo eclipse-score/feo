@@ -56,6 +56,7 @@ pub(crate) struct Scheduler {
 }
 
 impl Scheduler {
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(
         agent_id: AgentId,
         feo_cycle_time: feo_time::Duration,
