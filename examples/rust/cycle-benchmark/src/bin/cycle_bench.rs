@@ -195,6 +195,7 @@ mod direct_mpsc {
             recorder_ids: vec![],
             worker_assignments: app_config.worker_assignments().remove(&agent_id).unwrap(),
             timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
         }
     }
 
@@ -245,6 +246,7 @@ mod direct_sockets {
             worker_assignments: app_config.worker_assignments().remove(&agent_id).unwrap(),
             timeout: Duration::from_secs(10),
             connection_timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
             endpoint: endpoint(&app_config, signalling),
             activity_agent_map: app_config
                 .activity_worker_map()
@@ -337,6 +339,7 @@ mod relayed_sockets {
             worker_assignments: app_config.worker_assignments().remove(&agent_id).unwrap(),
             timeout: Duration::from_secs(10),
             connection_timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
             bind_address_senders: endpoints.0,
             bind_address_receivers: endpoints.1,
             id: agent_id,

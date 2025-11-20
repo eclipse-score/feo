@@ -106,6 +106,7 @@ mod cfg {
             recorder_ids: vec![],
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
         }
     }
 }
@@ -144,6 +145,7 @@ mod cfg {
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
             connection_timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
             endpoint: NodeAddress::Tcp(BIND_ADDR),
             activity_agent_map: activity_worker_map
                 .iter()
@@ -190,6 +192,7 @@ mod cfg {
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
             connection_timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
             endpoint: NodeAddress::UnixSocket(socket_paths().0),
             activity_agent_map: activity_worker_map
                 .iter()
@@ -233,6 +236,7 @@ mod cfg {
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
             connection_timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
             bind_address_senders: NodeAddress::Tcp(BIND_ADDR),
             bind_address_receivers: NodeAddress::Tcp(BIND_ADDR2),
             id: AGENT_ID,
@@ -273,6 +277,7 @@ mod cfg {
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
             connection_timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
             bind_address_senders: NodeAddress::UnixSocket(socket_paths().0),
             bind_address_receivers: NodeAddress::UnixSocket(socket_paths().1),
             id: AGENT_ID,
