@@ -48,6 +48,8 @@ pub struct PrimaryConfig {
     pub timeout: Duration,
     /// Timeout for waiting on initial connections from workers/recorders.
     pub connection_timeout: Duration,
+    /// Timeout for waiting on activities to become ready during startup.
+    pub startup_timeout: Duration,
     /// Endpoint on which the connector of the scheduler waits for connections
     pub endpoint: NodeAddress,
     /// Map of all activities to agent ids
@@ -72,6 +74,7 @@ impl Primary {
             endpoint,
             timeout,
             connection_timeout,
+            startup_timeout,
             activity_agent_map,
             ..
         } = config;
@@ -145,6 +148,7 @@ impl Primary {
             config.id,
             cycle_time,
             timeout,
+            startup_timeout,
             activity_dependencies,
             connector,
             recorder_ids,

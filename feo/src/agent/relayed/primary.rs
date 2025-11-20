@@ -47,6 +47,8 @@ pub struct PrimaryConfig {
     pub timeout: Duration,
     /// Timeout for waiting on initial connections from workers/recorders.
     pub connection_timeout: Duration,
+    /// Timeout for waiting on activities to become ready during startup.
+    pub startup_timeout: Duration,
     /// The socket address to which secondary agents' senders shall connect
     pub bind_address_senders: NodeAddress,
     /// The socket address to which secondary agents' receivers shall connect
@@ -80,6 +82,7 @@ impl Primary {
             worker_assignments,
             timeout,
             connection_timeout,
+            startup_timeout,
             worker_agent_map,
             activity_worker_map,
         } = config;
@@ -152,6 +155,7 @@ impl Primary {
             id,
             cycle_time,
             timeout,
+            startup_timeout,
             activity_dependencies,
             connector,
             recorder_ids,

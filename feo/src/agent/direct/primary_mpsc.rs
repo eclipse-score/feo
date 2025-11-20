@@ -44,6 +44,8 @@ pub struct PrimaryConfig {
     pub worker_assignments: Vec<(WorkerId, Vec<ActivityIdAndBuilder>)>,
     /// Receive timeout of the scheduler's connector
     pub timeout: Duration,
+    /// Timeout for waiting on activities to become ready during startup.
+    pub startup_timeout: Duration,
 }
 
 /// Primary agent
@@ -62,6 +64,7 @@ impl Primary {
             activity_dependencies,
             recorder_ids,
             timeout,
+            startup_timeout,
             ..
         } = config;
 
@@ -112,6 +115,7 @@ impl Primary {
             config.id,
             cycle_time,
             timeout,
+            startup_timeout,
             activity_dependencies,
             connector,
             recorder_ids,

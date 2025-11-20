@@ -37,7 +37,8 @@ pub(crate) struct Scheduler {
     cycle_time: feo_time::Duration,
     /// Timeout of receive function
     receive_timeout: core::time::Duration,
-
+    /// Timeout for waiting on activities to become ready during startup.
+    startup_timeout: core::time::Duration,
     /// For each activity: list of activities it depends on
     activity_depends: HashMap<ActivityId, Vec<ActivityId>>,
     /// Map keeping track of activity states
@@ -59,6 +60,7 @@ impl Scheduler {
         agent_id: AgentId,
         feo_cycle_time: feo_time::Duration,
         receive_timeout: core::time::Duration,
+        startup_timeout: core::time::Duration,
         activity_depends: HashMap<ActivityId, Vec<ActivityId>>,
         connector: Box<dyn ConnectScheduler>,
         recorder_ids: Vec<AgentId>,
@@ -84,6 +86,7 @@ impl Scheduler {
             agent_id,
             cycle_time: feo_cycle_time,
             receive_timeout,
+            startup_timeout,
             activity_depends,
             connector,
             activity_states,
@@ -117,10 +120,28 @@ impl Scheduler {
             Self::startup_activity(activity_id, &self.recorder_ids, &mut self.connector).unwrap();
         }
 
-        // Wait until all activities have returned their ready signal
+        // Wait until all activities have returned their ready signal, with a timeout.
+        let startup_start = Instant::now();
         while !self.all_ready() {
-            self.wait_next_ready()
-                .expect("failed while waiting for ready signal");
+            if startup_start.elapsed() > self.startup_timeout {
+                let reason = alloc::format!(
+                    "Startup timeout of {:?} exceeded. Not all activities became ready.",
+                    self.startup_timeout
+                );
+                error!("{}", reason);
+                self.shutdown_gracefully(&reason);
+                return;
+            }
+            if self.wait_next_ready().is_err() {
+                // An error here (like a timeout on receive) can also be a startup failure.
+                let reason = alloc::format!(
+                    "Failed to receive ready signal from all activities within startup timeout {:?}.",
+                    self.startup_timeout
+                );
+                error!("{}", reason);
+                self.shutdown_gracefully(&reason);
+                return;
+            }
         }
 
         // Loop the FEO task chain
