@@ -164,8 +164,7 @@ impl Scheduler {
                 // Step all activities that have their dependencies met
                 self.step_ready_activities();
                 // Wait until a new ready signal has been received.
-                // If we receive an error (i.e., an ActivityFailed signal), break the
-                // main loop to proceed to graceful shutdown.
+                // If we receive an error (i.e., an ActivityFailed signal), proceed to graceful shutdown.
                 if let Err(e) = self.wait_next_ready() {
                     let reason = alloc::format!("A failure occurred during step execution: {:?}", e);
                     error!("{}", &reason);
