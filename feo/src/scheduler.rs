@@ -166,7 +166,8 @@ impl Scheduler {
                 // Wait until a new ready signal has been received.
                 // If we receive an error (i.e., an ActivityFailed signal), proceed to graceful shutdown.
                 if let Err(e) = self.wait_next_ready() {
-                    let reason = alloc::format!("A failure occurred during step execution: {:?}", e);
+                    let reason =
+                        alloc::format!("A failure occurred during step execution: {:?}", e);
                     error!("{}", &reason);
                     self.shutdown_gracefully(&reason);
                     return;
@@ -328,7 +329,10 @@ impl Scheduler {
                     }
                     Ok(Some(Signal::ActivityFailed((id, err)))) => {
                         // This handles "Activity shutdown error".
-                        error!("Activity {} failed during shutdown: {:?}. Continuing.", id, err);
+                        error!(
+                            "Activity {} failed during shutdown: {:?}. Continuing.",
+                            id, err
+                        );
                         // Remove it from the pending list so we don't wait forever.
                         pending_shutdown_ack.remove(&id);
                     }

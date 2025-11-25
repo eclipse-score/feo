@@ -13,8 +13,8 @@
 
 //! Signals
 
-use crate::ids::{ActivityId, AgentId};
 use crate::error::ActivityError;
+use crate::ids::{ActivityId, AgentId};
 use crate::timestamp::{SyncInfo, Timestamp};
 use core::fmt::Display;
 #[cfg(feature = "recording")]

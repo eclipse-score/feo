@@ -12,8 +12,8 @@
  ********************************************************************************/
 
 //! Activity and related structs and traits
-use crate::ids::ActivityId;
 use crate::error::ActivityError;
+use crate::ids::ActivityId;
 use alloc::boxed::Box;
 
 /// Activity trait, to be implemented by any activity intended to run in a WorkerPool

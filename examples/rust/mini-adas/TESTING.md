@@ -4,7 +4,7 @@ This document provides instructions for running specific test scenarios to verif
 
 ## Testing Error Handling
 
-The framework includes robust error handling for activity failures, compliant with ASIL B requirements. To test these scenarios, the `mini-adas` example can be run with a special feature flag and environment variables to inject failures at runtime.
+The framework includes robust error handling for activity failures. To test these scenarios, the `mini-adas` example can be run with a special feature flag and environment variables to inject failures at runtime.
 
 ### Enabling the Test Feature
 
@@ -12,7 +12,7 @@ All test commands must include the `--features test-error-injection` flag to com
 
 ### Test 1: Step Failure
 
-**Requirement**: If an activity fails its `step()` function, the primary process shall orchestrate a system-wide graceful shutdown.
+**Requirement**: If an activity fails in the step function, the primary process shall call shutdown for all activities in arbitrary sequence and terminate itself.
 
 This test is triggered by setting the `FAIL_STEP_AFTER=N` environment variable, where `N` is the number of steps to execute before failing.
 
@@ -67,7 +67,7 @@ Inject a failure into the `NeuralNet` activity (Activity 2), which runs on `adas
 
 ### Test 2: Shutdown Failure
 
-**Requirement**: If an activity fails its `shutdown()` function, the primary process shall log the error but continue to shut down all other activities and agents gracefully.
+**Requirement**: If an activity fails in the shutdown function, the primary process shall shutdown all remaining activities in arbitrary sequence and terminate itself.
 
 This test is triggered by setting the `FAIL_ON_SHUTDOWN=1` environment variable and then stopping the primary agent with `Ctrl-C`.
 

@@ -13,8 +13,8 @@
 
 use crate::activities::DummyActivity;
 use crate::config::ActivityDependencies;
-use feo::error::ActivityError;
 use feo::activity::{Activity, ActivityBuilder, ActivityIdAndBuilder};
+use feo::error::ActivityError;
 use feo::ids::{ActivityId, WorkerId};
 use feo_tracing::{instrument, tracing};
 use std::collections::{HashMap, HashSet};
