@@ -163,9 +163,15 @@ impl Scheduler {
             while !self.all_ready() {
                 // Step all activities that have their dependencies met
                 self.step_ready_activities();
-                // Wait until a new ready signal has been received
-                self.wait_next_ready()
-                    .expect("failed while waiting for ready signal");
+                // Wait until a new ready signal has been received.
+                // If we receive an error (i.e., an ActivityFailed signal), break the
+                // main loop to proceed to graceful shutdown.
+                if let Err(e) = self.wait_next_ready() {
+                    let reason = alloc::format!("A failure occurred during step execution: {:?}", e);
+                    error!("{}", &reason);
+                    self.shutdown_gracefully(&reason);
+                    return;
+                }
             }
 
             // Record end of task chain on registered recorders => recorders will flush
@@ -336,8 +342,11 @@ impl Scheduler {
         }
 
         // --- PHASE 2: Terminate all agents ---
+        self.terminate_all_agents();
+    }
 
-        // 4. Broadcast Terminate signal to all agents.
+    fn terminate_all_agents(&mut self) {
+        // Broadcast Terminate signal to all agents.
         info!("Broadcasting Terminate signal to all agents.");
         if let Err(e) = self
             .connector
@@ -346,7 +355,7 @@ impl Scheduler {
             error!("Failed to broadcast Terminate signal: {:?}", e);
         }
 
-        // 5. Wait for TerminateAck from all connected agents.
+        // Wait for TerminateAck from all connected agents.
         // We only wait for remote agents, so we filter out our own agent ID.
         let mut pending_agent_acks: BTreeSet<_> = self
             .connector
