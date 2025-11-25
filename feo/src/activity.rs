@@ -13,6 +13,7 @@
 
 //! Activity and related structs and traits
 use crate::ids::ActivityId;
+use crate::error::ActivityError;
 use alloc::boxed::Box;
 
 /// Activity trait, to be implemented by any activity intended to run in a WorkerPool
@@ -24,10 +25,10 @@ pub trait Activity {
     fn startup(&mut self);
 
     /// Called upon each step
-    fn step(&mut self);
+    fn step(&mut self) -> Result<(), ActivityError>;
 
     /// Called upon shutdown
-    fn shutdown(&mut self);
+    fn shutdown(&mut self) -> Result<(), ActivityError>;
 }
 
 /// Activity Builder trait.

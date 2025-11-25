@@ -14,6 +14,7 @@
 //! Signals
 
 use crate::ids::{ActivityId, AgentId};
+use crate::error::ActivityError;
 use crate::timestamp::{SyncInfo, Timestamp};
 use core::fmt::Display;
 #[cfg(feature = "recording")]
@@ -40,6 +41,9 @@ pub enum Signal {
     // Signal sent to indicate that a previously triggered activity method has finished
     Ready((ActivityId, Timestamp)),
 
+    // Signal sent from a worker when an activity's step or shutdown method fails.
+    ActivityFailed((ActivityId, ActivityError)),
+
     // Signal sent by the scheduler to the recorders whenever the taskchain starts
     TaskChainStart(Timestamp),
 
@@ -64,6 +68,7 @@ impl Display for Signal {
             Signal::Shutdown((id, t)) => write!(f, "Shutdown({id}, {t:?})"),
             Signal::Step((id, t)) => write!(f, "Step({id}, {t:?})"),
             Signal::Ready((id, t)) => write!(f, "Ready({id}, {t:?})"),
+            Signal::ActivityFailed((id, err)) => write!(f, "ActivityFailed({id}, {err:?})"),
             Signal::TaskChainStart(t) => write!(f, "TaskChainStart({t:?})"),
             Signal::TaskChainEnd(t) => write!(f, "TaskChainEnd({t:?})"),
             Signal::RecorderReady((id, t)) => write!(f, "RecorderReady({id}, {t:?})"),

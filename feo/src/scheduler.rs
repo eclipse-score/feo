@@ -315,15 +315,20 @@ impl Scheduler {
                     );
                     break;
                 }
-
-                // We can't use `wait_next_ready` here as it has side effects.
-                // We just need to listen for the `Ready` signal.
-                if let Ok(Some(Signal::Ready((id, _)))) =
-                    self.connector.receive(self.receive_timeout)
-                {
-                    if pending_shutdown_ack.remove(&id) {
-                        info!("Received shutdown confirmation from activity {:?}", id);
+                match self.connector.receive(self.receive_timeout) {
+                    Ok(Some(Signal::Ready((id, _)))) => {
+                        if pending_shutdown_ack.remove(&id) {
+                            info!("Received shutdown confirmation from activity {:?}", id);
+                        }
                     }
+                    Ok(Some(Signal::ActivityFailed((id, err)))) => {
+                        // This handles "Activity shutdown error".
+                        error!("Activity {} failed during shutdown: {:?}. Continuing.", id, err);
+                        // Remove it from the pending list so we don't wait forever.
+                        pending_shutdown_ack.remove(&id);
+                    }
+                    Ok(_) => {} // Ignore other signals or timeouts
+                    Err(e) => error!("Error receiving shutdown confirmation: {:?}", e),
                 }
             }
         } else {
@@ -411,6 +416,13 @@ impl Scheduler {
                         self.connector.send_to_recorder(*recorder_id, &signal)?;
                     }
                     break id;
+                }
+                Some(Signal::ActivityFailed((id, err))) => {
+                    error!(
+                        "Received failure signal {:?} from activity {}. Initiating graceful shutdown.",
+                        err, id
+                    );
+                    return Err(Error::ActivityFailed(id, err));
                 }
                 Some(Signal::TerminateAck(agent_id)) => {
                     trace!(

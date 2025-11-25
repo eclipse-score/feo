@@ -13,6 +13,7 @@
 
 use crate::activities::DummyActivity;
 use crate::config::ActivityDependencies;
+use feo::error::ActivityError;
 use feo::activity::{Activity, ActivityBuilder, ActivityIdAndBuilder};
 use feo::ids::{ActivityId, WorkerId};
 use feo_tracing::{instrument, tracing};
@@ -55,18 +56,20 @@ impl Activity for CompositeActivity {
     }
 
     #[instrument(name = "Composite step")]
-    fn step(&mut self) {
+    fn step(&mut self) -> Result<(), ActivityError> {
         tracing::event!(tracing::Level::TRACE, id = self._activity_id_str);
         for activity in &mut self.activities {
-            activity.step();
+            activity.step()?;
         }
+        Ok(())
     }
 
     #[instrument(name = "Composite shutdown")]
-    fn shutdown(&mut self) {
+    fn shutdown(&mut self) -> Result<(), ActivityError> {
         for activity in &mut self.activities {
-            activity.shutdown();
+            activity.shutdown()?;
         }
+        Ok(())
     }
 }
 

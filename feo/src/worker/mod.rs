@@ -21,7 +21,7 @@ use crate::signalling::common::signals::Signal;
 use crate::timestamp;
 use alloc::boxed::Box;
 use core::time::Duration;
-use feo_log::debug;
+use feo_log::{debug, error};
 use feo_time::Instant;
 use std::collections::HashMap;
 use std::thread;
@@ -127,26 +127,36 @@ impl<T: ConnectWorker> Worker<T> {
         let start = Instant::now();
 
         match signal {
-            Signal::Startup((activity_id, _)) => {
+            Signal::Startup((activity_id, _ts)) => {
                 activity.startup();
                 let elapsed = start.elapsed();
                 debug!("Ran startup of activity {id:?} in {elapsed:?}");
                 self.connector
                     .send_to_scheduler(&Signal::Ready((*activity_id, timestamp::timestamp())))
             }
-            Signal::Step((activity_id, _)) => {
-                activity.step();
+            Signal::Step((activity_id, _ts)) => {
+                let response_signal = match activity.step() {
+                    Ok(()) => Signal::Ready((*activity_id, timestamp::timestamp())),
+                    Err(e) => {
+                        error!("Activity {} failed during step: {:?}", id, e);
+                        Signal::ActivityFailed((*id, e))
+                    }
+                };
                 let elapsed = start.elapsed();
                 debug!("Stepped activity {id:?} in {elapsed:?}");
-                self.connector
-                    .send_to_scheduler(&Signal::Ready((*activity_id, timestamp::timestamp())))
+                self.connector.send_to_scheduler(&response_signal)
             }
-            Signal::Shutdown((activity_id, _)) => {
-                activity.shutdown();
+            Signal::Shutdown((activity_id, _ts)) => {
+                let response_signal = match activity.shutdown() {
+                    Ok(()) => Signal::Ready((*activity_id, timestamp::timestamp())),
+                    Err(e) => {
+                        error!("Activity {} failed during shutdown: {:?}", id, e);
+                        Signal::ActivityFailed((*id, e))
+                    }
+                };
                 let elapsed = start.elapsed();
                 debug!("Ran shutdown of activity {id:?} in {elapsed:?}");
-                self.connector
-                    .send_to_scheduler(&Signal::Ready((*activity_id, timestamp::timestamp())))
+                self.connector.send_to_scheduler(&response_signal)
             }
             other => Err(Error::UnexpectedSignal(*other)),
         }
