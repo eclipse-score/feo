@@ -12,6 +12,7 @@
  ********************************************************************************/
 
 //! Activity and related structs and traits
+use crate::error::ActivityError;
 use crate::ids::ActivityId;
 use alloc::boxed::Box;
 
@@ -24,10 +25,10 @@ pub trait Activity {
     fn startup(&mut self);
 
     /// Called upon each step
-    fn step(&mut self);
+    fn step(&mut self) -> Result<(), ActivityError>;
 
     /// Called upon shutdown
-    fn shutdown(&mut self);
+    fn shutdown(&mut self) -> Result<(), ActivityError>;
 }
 
 /// Activity Builder trait.

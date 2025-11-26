@@ -16,11 +16,18 @@
 use crate::ids::{ActivityId, ChannelId, WorkerId};
 use crate::signalling::common::signals::Signal;
 use core::time::Duration;
+#[cfg(feature = "recording")]
+use postcard::experimental::max_size::MaxSize;
+#[cfg(feature = "recording")]
+use serde::Deserialize;
+#[cfg(feature = "recording")]
+use serde::Serialize;
 
 /// FEO Error type
 #[non_exhaustive]
 #[derive(Debug)]
 pub enum Error {
+    ActivityFailed(ActivityId, ActivityError),
     ActivityNotFound(ActivityId),
     Channel(&'static str),
     ChannelClosed,
@@ -32,11 +39,24 @@ pub enum Error {
     WorkerNotFound(WorkerId),
 }
 
+/// Defines the types of failures an Activity can report.
+#[cfg_attr(feature = "recording", derive(Serialize, Deserialize, MaxSize))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ActivityError {
+    /// A failure during a regular `step()` execution.
+    Step,
+    /// A failure during the `shutdown()` method.
+    Shutdown,
+}
+
 impl core::error::Error for Error {}
 
 impl core::fmt::Display for Error {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         match self {
+            Error::ActivityFailed(id, err) => {
+                write!(f, "activity {id} reported a failure: {err:?}")
+            }
             Error::ActivityNotFound(id) => write!(f, "failed to find activity with ID {id}"),
             Error::Channel(description) => write!(f, "channel error: {description}"),
             Error::ChannelClosed => write!(f, "channel closed by peer"),
