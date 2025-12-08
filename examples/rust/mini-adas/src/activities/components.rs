@@ -26,8 +26,6 @@ use feo_com::iox2::{Iox2Input, Iox2Output};
 #[cfg(feature = "com_linux_shm")]
 use feo_com::linux_shm::{LinuxShmInput, LinuxShmOutput};
 use feo_log::debug;
-#[cfg(feature = "test-error-injection")]
-use feo_log::error;
 use feo_tracing::instrument;
 use std::hash::RandomState;
 use std::thread;
@@ -47,8 +45,6 @@ pub struct Camera {
     num_people: usize,
     num_cars: usize,
     distance_obstacle: f64,
-    #[cfg(feature = "test-error-injection")]
-    step_count: u32,
 }
 
 impl Camera {
@@ -59,8 +55,6 @@ impl Camera {
             num_people: 4,
             num_cars: 10,
             distance_obstacle: 40.0,
-            #[cfg(feature = "test-error-injection")]
-            step_count: 0,
         })
     }
 
@@ -92,24 +86,6 @@ impl Activity for Camera {
 
     #[instrument(name = "Camera")]
     fn step(&mut self) -> Result<(), ActivityError> {
-        #[cfg(feature = "test-error-injection")]
-        {
-            // === TEST FAILURE INJECTION ===
-            self.step_count += 1;
-            if let Ok(fail_after_str) = std::env::var("FAIL_STEP_AFTER") {
-                if let Ok(fail_after) = fail_after_str.parse::<u32>() {
-                    if self.step_count >= fail_after {
-                        error!(
-                            "TEST: Injecting STEP failure for activity {} after {} steps.",
-                            self.activity_id, self.step_count
-                        );
-                        return Err(ActivityError::Step);
-                    }
-                }
-            }
-            // =============================
-        }
-
         debug!("Stepping Camera");
         sleep_random();
 
@@ -124,19 +100,6 @@ impl Activity for Camera {
 
     #[instrument(name = "Camera shutdown")]
     fn shutdown(&mut self) -> Result<(), ActivityError> {
-        #[cfg(feature = "test-error-injection")]
-        {
-            // === TEST FAILURE INJECTION ===
-            if std::env::var("FAIL_ON_SHUTDOWN").is_ok() {
-                error!(
-                    "TEST: Injecting SHUTDOWN failure for activity {}",
-                    self.activity_id
-                );
-                return Err(ActivityError::Shutdown);
-            }
-            // =============================
-        }
-
         debug!("Shutting down Camera activity {}", self.activity_id);
         Ok(())
     }
@@ -224,8 +187,6 @@ pub struct NeuralNet {
     input_scan: Box<dyn ActivityInput<RadarScan>>,
     /// Scene output
     output_scene: Box<dyn ActivityOutput<Scene>>,
-    #[cfg(feature = "test-error-injection")]
-    step_count: u32,
 }
 
 impl NeuralNet {
@@ -240,8 +201,6 @@ impl NeuralNet {
             input_image: activity_input(image_topic),
             input_scan: activity_input(scan_topic),
             output_scene: activity_output(scene_topic),
-            #[cfg(feature = "test-error-injection")]
-            step_count: 0,
         })
     }
 
@@ -281,24 +240,6 @@ impl Activity for NeuralNet {
 
     #[instrument(name = "NeuralNet")]
     fn step(&mut self) -> Result<(), ActivityError> {
-        #[cfg(feature = "test-error-injection")]
-        {
-            // === TEST FAILURE INJECTION ===
-            self.step_count += 1;
-            if let Ok(fail_after_str) = std::env::var("FAIL_STEP_AFTER") {
-                if let Ok(fail_after) = fail_after_str.parse::<u32>() {
-                    if self.step_count >= fail_after {
-                        error!(
-                            "TEST: Injecting STEP failure for activity {} after {} steps.",
-                            self.activity_id, self.step_count
-                        );
-                        return Err(ActivityError::Step);
-                    }
-                }
-            }
-            // =============================
-        }
-
         debug!("Stepping NeuralNet");
         sleep_random();
 
@@ -320,19 +261,6 @@ impl Activity for NeuralNet {
 
     #[instrument(name = "NeuralNet shutdown")]
     fn shutdown(&mut self) -> Result<(), ActivityError> {
-        #[cfg(feature = "test-error-injection")]
-        {
-            // === TEST FAILURE INJECTION ===
-            if std::env::var("FAIL_ON_SHUTDOWN").is_ok() {
-                error!(
-                    "TEST: Injecting SHUTDOWN failure for activity {}",
-                    self.activity_id
-                );
-                return Err(ActivityError::Shutdown);
-            }
-            // =============================
-        }
-
         debug!("Shutting down NeuralNet activity {}", self.activity_id);
         Ok(())
     }
