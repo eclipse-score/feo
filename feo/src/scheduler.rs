@@ -125,22 +125,20 @@ impl Scheduler {
         let startup_start = Instant::now();
         while !self.all_ready() {
             if startup_start.elapsed() > self.startup_timeout {
-                let reason = alloc::format!(
+                error!(
                     "Startup timeout of {:?} exceeded. Not all activities became ready.",
                     self.startup_timeout
                 );
-                error!("{}", reason);
-                self.shutdown_gracefully(&reason);
+                self.shutdown_gracefully("Startup timeout exceeded.");
                 return;
             }
             if self.wait_next_ready().is_err() {
                 // An error here (like a timeout on receive) can also be a startup failure.
-                let reason = alloc::format!(
+                error!(
                     "Failed to receive ready signal from all activities within startup timeout {:?}.",
                     self.startup_timeout
                 );
-                error!("{}", reason);
-                self.shutdown_gracefully(&reason);
+                self.shutdown_gracefully("Failed to receive ready signals during startup.");
                 return;
             }
         }
@@ -166,10 +164,8 @@ impl Scheduler {
                 // Wait until a new ready signal has been received.
                 // If we receive an error (i.e., an ActivityFailed signal), proceed to graceful shutdown.
                 if let Err(e) = self.wait_next_ready() {
-                    let reason =
-                        alloc::format!("A failure occurred during step execution: {:?}", e);
-                    error!("{}", &reason);
-                    self.shutdown_gracefully(&reason);
+                    error!("A failure occurred during step execution: {:?}", e);
+                    self.shutdown_gracefully("A failure occurred during step execution.");
                     return;
                 }
             }
