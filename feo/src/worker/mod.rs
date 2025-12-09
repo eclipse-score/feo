@@ -128,11 +128,16 @@ impl<T: ConnectWorker> Worker<T> {
 
         match signal {
             Signal::Startup((activity_id, _ts)) => {
-                activity.startup();
+                let response_signal = match activity.startup() {
+                    Ok(()) => Signal::Ready((*activity_id, timestamp::timestamp())),
+                    Err(e) => {
+                        error!("Activity {} failed during startup: {:?}", id, e);
+                        Signal::ActivityFailed((*id, e))
+                    }
+                };
                 let elapsed = start.elapsed();
                 debug!("Ran startup of activity {id:?} in {elapsed:?}");
-                self.connector
-                    .send_to_scheduler(&Signal::Ready((*activity_id, timestamp::timestamp())))
+                self.connector.send_to_scheduler(&response_signal)
             }
             Signal::Step((activity_id, _ts)) => {
                 let response_signal = match activity.step() {

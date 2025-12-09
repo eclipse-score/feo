@@ -132,13 +132,14 @@ impl Scheduler {
                 self.shutdown_gracefully("Startup timeout exceeded.");
                 return;
             }
-            if self.wait_next_ready().is_err() {
-                // An error here (like a timeout on receive) can also be a startup failure.
+            if let Err(err) = self.wait_next_ready() {
+                // An error here, such as ActivityFailed or a timeout, constitutes a startup failure.
+                // Log the specific error, but pass a generic reason to shutdown_gracefully
                 error!(
-                    "Failed to receive ready signal from all activities within startup timeout {:?}.",
-                    self.startup_timeout
+                    "A failure occurred during startup: {:?}. Aborting.",
+                    err
                 );
-                self.shutdown_gracefully("Failed to receive ready signals during startup.");
+                self.shutdown_gracefully("Startup failed due to an activity error.");
                 return;
             }
         }

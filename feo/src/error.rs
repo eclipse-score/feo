@@ -43,6 +43,8 @@ pub enum Error {
 #[cfg_attr(feature = "recording", derive(Serialize, Deserialize, MaxSize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ActivityError {
+    /// A failure during the `startup()` method.
+    Startup,
     /// A failure during a regular `step()` execution.
     Step,
     /// A failure during the `shutdown()` method.

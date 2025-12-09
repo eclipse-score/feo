@@ -318,8 +318,9 @@ impl EncodeDecode for ProtocolSignal {
 impl From<u8> for ActivityError {
     fn from(value: u8) -> Self {
         match value {
-            0 => ActivityError::Step,
-            1 => ActivityError::Shutdown,
+            0 => ActivityError::Startup,
+            1 => ActivityError::Step,
+            2 => ActivityError::Shutdown,
             _ => panic!("Invalid u8 value for ActivityError"),
         }
     }
@@ -328,8 +329,9 @@ impl From<u8> for ActivityError {
 impl From<ActivityError> for u8 {
     fn from(value: ActivityError) -> Self {
         match value {
-            ActivityError::Step => 0,
-            ActivityError::Shutdown => 1,
+            ActivityError::Startup => 0,
+            ActivityError::Step => 1,
+            ActivityError::Shutdown => 2,
         }
     }
 }

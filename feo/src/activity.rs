@@ -22,7 +22,7 @@ pub trait Activity {
     fn id(&self) -> ActivityId;
 
     /// Called upon startup
-    fn startup(&mut self);
+    fn startup(&mut self) -> Result<(), ActivityError>;
 
     /// Called upon each step
     fn step(&mut self) -> Result<(), ActivityError>;
