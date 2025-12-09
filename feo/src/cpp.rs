@@ -86,7 +86,7 @@ macro_rules! cpp_activity {
                 }
 
                 #[instrument(name = "startup")]
-                fn startup(&mut self) -> Result<(), ActivityError>{
+                fn startup(&mut self) -> Result<(), ActivityError> {
                     // Safety: Call of external C functions belonging to C++ activitiy, to be reviewed
                     unsafe { make_fn_call!($name, _startup, (self.cpp_activity)) };
                     Ok(())

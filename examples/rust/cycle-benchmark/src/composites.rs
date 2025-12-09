@@ -49,10 +49,11 @@ impl Activity for CompositeActivity {
     }
 
     #[instrument(name = "Composite startup")]
-    fn startup(&mut self) {
+    fn startup(&mut self) -> Result<(), ActivityError> {
         for activity in &mut self.activities {
-            activity.startup();
+            activity.startup()?;
         }
+        Ok(())
     }
 
     #[instrument(name = "Composite step")]

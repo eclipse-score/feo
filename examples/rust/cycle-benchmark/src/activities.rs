@@ -40,7 +40,9 @@ impl Activity for DummyActivity {
     }
 
     #[instrument(name = "Activity startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "Activity step")]
     fn step(&mut self) -> Result<(), ActivityError> {

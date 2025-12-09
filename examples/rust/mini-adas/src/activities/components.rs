@@ -82,7 +82,9 @@ impl Activity for Camera {
     }
 
     #[instrument(name = "Camera startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "Camera")]
     fn step(&mut self) -> Result<(), ActivityError> {
@@ -149,7 +151,9 @@ impl Activity for Radar {
     }
 
     #[instrument(name = "Radar startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "Radar")]
     fn step(&mut self) -> Result<(), ActivityError> {
@@ -236,7 +240,9 @@ impl Activity for NeuralNet {
     }
 
     #[instrument(name = "NeuralNet startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "NeuralNet")]
     fn step(&mut self) -> Result<(), ActivityError> {
@@ -302,7 +308,9 @@ impl Activity for EmergencyBraking {
     }
 
     #[instrument(name = "EmergencyBraking startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "EmergencyBraking")]
     fn step(&mut self) -> Result<(), ActivityError> {
@@ -379,7 +387,9 @@ impl Activity for BrakeController {
     }
 
     #[instrument(name = "BrakeController startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "BrakeController")]
     fn step(&mut self) -> Result<(), ActivityError> {
@@ -435,7 +445,9 @@ impl Activity for EnvironmentRenderer {
     }
 
     #[instrument(name = "EnvironmentRenderer startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "EnvironmentRenderer")]
     fn step(&mut self) -> Result<(), ActivityError> {
@@ -487,7 +499,9 @@ impl Activity for SteeringController {
     }
 
     #[instrument(name = "SteeringController startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "SteeringController")]
     fn step(&mut self) -> Result<(), ActivityError> {
