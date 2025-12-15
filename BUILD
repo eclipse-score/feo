@@ -52,3 +52,13 @@ exports_files([
     "clippy.toml",
     "MODULE.bazel",
 ])
+
+test_suite(
+    name = "unit_tests",
+    tests = [
+        "//feo-logger:libfeo_logger_rust_test",
+        "//feo-time:libfeo_time_cc_test",
+        "//feo-time:libfeo_time_test",
+        "//logd:liblogd_test",
+    ],
+)
