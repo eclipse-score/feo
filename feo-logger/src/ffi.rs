@@ -13,7 +13,7 @@
 
 use std::ffi::c_int;
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn __init(level_filter: c_int, console: bool, logd: bool) {
     let level_filter = match level_filter {
         0 => feo_log::LevelFilter::Off,

@@ -61,8 +61,8 @@ impl PrimaryLauncher for Signalling {
                 Primary::new(config).unwrap().run().unwrap();
             }
             Signalling::DirectTcp => {
-                use feo::agent::direct::primary::{Primary, PrimaryConfig};
                 use feo::agent::NodeAddress;
+                use feo::agent::direct::primary::{Primary, PrimaryConfig};
 
                 let config = PrimaryConfig {
                     cycle_time: DEFAULT_FEO_CYCLE_TIME,
@@ -83,8 +83,8 @@ impl PrimaryLauncher for Signalling {
                 Primary::new(config).unwrap().run().unwrap();
             }
             Signalling::DirectUnix => {
-                use feo::agent::direct::primary::{Primary, PrimaryConfig};
                 use feo::agent::NodeAddress;
+                use feo::agent::direct::primary::{Primary, PrimaryConfig};
 
                 let config = PrimaryConfig {
                     cycle_time: DEFAULT_FEO_CYCLE_TIME,

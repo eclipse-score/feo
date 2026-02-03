@@ -11,9 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+use crate::Scenario;
 use crate::activities::{Monitor, Receiver, Sender};
 use crate::config::TOPIC_COUNTER;
-use crate::Scenario;
 use feo::activity::{ActivityBuilder, ActivityIdAndBuilder};
 use feo::ids::{ActivityId, AgentId, WorkerId};
 use feo::topicspec::{Direction, TopicSpecification};

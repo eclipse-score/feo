@@ -22,4 +22,4 @@ pub mod protocol;
 /// Initialize tracing
 pub use feo_subscriber::init;
 /// Re-export of the `tracing` crate.
-pub use tracing::{self, event, instrument, level_filters::LevelFilter, span, Level};
+pub use tracing::{self, Level, event, instrument, level_filters::LevelFilter, span};

@@ -106,7 +106,10 @@ impl<T: ConnectWorker> Worker<T> {
                         .connector
                         .send_to_scheduler(&Signal::TerminateAck(self.agent_id))
                     {
-                        debug!("Worker {} failed to send TerminateAck (this is often expected during shutdown): {:?}", self.id, e);
+                        debug!(
+                            "Worker {} failed to send TerminateAck (this is often expected during shutdown): {:?}",
+                            self.id, e
+                        );
                     }
                     debug!("Worker {} sent termination ack. Exiting.", self.id);
                     // Linger for a moment to ensure  TerminateAck has time to be sent

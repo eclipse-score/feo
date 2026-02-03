@@ -74,7 +74,9 @@ impl<'s> Recorder<'s> {
             }
 
             _ => {
-                panic!("bind addresses must either be both TCP socket addresses or both Unix socket paths")
+                panic!(
+                    "bind addresses must either be both TCP socket addresses or both Unix socket paths"
+                )
             }
         };
 

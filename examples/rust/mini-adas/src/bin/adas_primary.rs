@@ -13,10 +13,10 @@
 
 use feo::agent::com_init::initialize_com_primary;
 use feo::ids::AgentId;
-use feo_log::{info, LevelFilter};
+use feo_log::{LevelFilter, info};
 use feo_time::Duration;
 use mini_adas::config::{
-    agent_assignments_ids, topic_dependencies, COM_BACKEND, MAX_ADDITIONAL_SUBSCRIBERS,
+    COM_BACKEND, MAX_ADDITIONAL_SUBSCRIBERS, agent_assignments_ids, topic_dependencies,
 };
 use std::collections::HashSet;
 
@@ -92,7 +92,7 @@ impl Params {
 
 #[cfg(feature = "signalling_direct_mpsc")]
 mod cfg {
-    use super::{Duration, Params, AGENT_ID};
+    use super::{AGENT_ID, Duration, Params};
     use mini_adas::config::{activity_dependencies, agent_assignments};
 
     pub(super) use feo::agent::direct::primary_mpsc::{Primary, PrimaryConfig};
@@ -113,13 +113,13 @@ mod cfg {
 
 #[cfg(feature = "signalling_direct_tcp")]
 mod cfg {
-    use super::{check_ids, Duration, Params, AGENT_ID};
+    use super::{AGENT_ID, Duration, Params, check_ids};
     use feo::{
         agent::NodeAddress,
         ids::{ActivityId, AgentId, WorkerId},
     };
     use mini_adas::config::{
-        activity_dependencies, agent_assignments, worker_agent_map, BIND_ADDR,
+        BIND_ADDR, activity_dependencies, agent_assignments, worker_agent_map,
     };
     use std::collections::{HashMap, HashSet};
 
@@ -160,7 +160,7 @@ mod cfg {
 
 #[cfg(feature = "signalling_direct_unix")]
 mod cfg {
-    use super::{check_ids, Duration, Params, AGENT_ID};
+    use super::{AGENT_ID, Duration, Params, check_ids};
     use feo::{
         agent::NodeAddress,
         ids::{ActivityId, AgentId, WorkerId},
@@ -207,11 +207,11 @@ mod cfg {
 
 #[cfg(feature = "signalling_relayed_tcp")]
 mod cfg {
-    use super::{check_ids, Duration, Params, AGENT_ID};
+    use super::{AGENT_ID, Duration, Params, check_ids};
     use feo::agent::NodeAddress;
     use feo::ids::{ActivityId, AgentId, WorkerId};
     use mini_adas::config::{
-        activity_dependencies, agent_assignments, worker_agent_map, BIND_ADDR, BIND_ADDR2,
+        BIND_ADDR, BIND_ADDR2, activity_dependencies, agent_assignments, worker_agent_map,
     };
     use std::collections::{HashMap, HashSet};
 
@@ -248,7 +248,7 @@ mod cfg {
 
 #[cfg(feature = "signalling_relayed_unix")]
 mod cfg {
-    use super::{check_ids, Duration, Params, AGENT_ID};
+    use super::{AGENT_ID, Duration, Params, check_ids};
     use feo::agent::NodeAddress;
     use feo::ids::{ActivityId, AgentId, WorkerId};
     use mini_adas::config::{
