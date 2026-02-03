@@ -22,7 +22,7 @@ resolver = "2"
 anyhow = "1.0.99"
 argh = "0.1.13"
 async-stream = "0.3.6"
-bytes = "1.10.1"
+bytes = "1.11.1"
 cc = "1.2.34"
 console = "0.16.0"
 clap = { version = "4.5.50", features = ["derive"] }
