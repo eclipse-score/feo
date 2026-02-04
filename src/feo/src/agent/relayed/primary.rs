@@ -26,8 +26,8 @@ use alloc::boxed::Box;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::sync::atomic::AtomicBool;
-use core::time::Duration;
-use feo_log::{debug, info};
+use feo_time::Duration;
+use score_log::{debug, info};
 use std::collections::HashMap;
 use std::thread::{self, JoinHandle};
 

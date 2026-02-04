@@ -15,7 +15,7 @@ use crate::error::Error;
 use crate::ids::{ActivityId, AgentId};
 use crate::signalling::common::signals::Signal;
 use alloc::vec::Vec;
-use core::time::Duration;
+use feo_time::Duration;
 use std::thread::JoinHandle;
 
 /// Trait for the connector of a scheduler

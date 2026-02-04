@@ -11,7 +11,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // *******************************************************************************
 
-use core::time::Duration;
+use feo_time::Duration;
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -20,7 +20,7 @@ use feo::agent::com_init::initialize_com_secondary;
 use feo::agent::NodeAddress;
 use feo::error::Error;
 use feo::ids::{ActivityId, AgentId};
-use feo_log::info;
+use score_log::info;
 
 use crate::scenario::ScenarioConfig as _;
 use crate::{config::PRIMARY_AGENT_ID, Scenario, Signalling};

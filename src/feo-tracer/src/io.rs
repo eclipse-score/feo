@@ -15,9 +15,9 @@
 
 use crate::data;
 use anyhow::{Context, Error};
-use feo_log::{debug, info, warn};
 use feo_tracing::protocol;
 use postcard::accumulator::{CobsAccumulator, FeedResult};
+use score_log::{debug, info, warn};
 use std::collections::HashMap;
 use std::fs;
 use std::io::ErrorKind;
@@ -32,11 +32,11 @@ const READ_BUFFER_SIZE: usize = 32 * protocol::MAX_PACKET_SIZE;
 
 pub async fn listen(path: &Path, sink: mpsc::Sender<data::TraceRecord>) -> Result<(), Error> {
     // Bind
-    info!("Binding to {path:?}");
+    info!("Binding to {}", format!("{path:?}"));
     let listener = UnixListener::bind(path)?;
 
     // Listen
-    info!("Listening on {path:?}");
+    info!("Listening on {}", format!("{path:?}"));
     loop {
         let (socket, _) = listener.accept().await.context("failed to accept connection")?;
 
@@ -55,7 +55,8 @@ async fn connection(socket: UnixStream, sink: mpsc::Sender<data::TraceRecord>) {
         .ok();
 
     info!(
-        "Processing messages from {pid:x} ({})",
+        "Processing messages from {:x} ({})",
+        pid,
         process_name.as_deref().unwrap_or("")
     );
 
@@ -84,7 +85,7 @@ async fn connection(socket: UnixStream, sink: mpsc::Sender<data::TraceRecord>) {
 
         let len = match socket.try_read(&mut read_buffer) {
             Ok(0) => {
-                info!("Connection from {pid} closed");
+                info!("Connection from {} closed", pid);
                 break;
             },
             Ok(len) => len,
@@ -92,7 +93,11 @@ async fn connection(socket: UnixStream, sink: mpsc::Sender<data::TraceRecord>) {
                 continue;
             },
             Err(e) => {
-                warn!("Failed to receive data from {pid}: {e:?}. Closing connection");
+                warn!(
+                    "Failed to receive data from {}: {}. Closing connection",
+                    pid,
+                    format!("{e:?}")
+                );
                 break;
             },
         };
@@ -104,7 +109,7 @@ async fn connection(socket: UnixStream, sink: mpsc::Sender<data::TraceRecord>) {
             remaining = match cobs_buffer.feed_ref::<protocol::TracePacket>(remaining) {
                 FeedResult::Consumed => break,
                 FeedResult::OverFull(_) => {
-                    warn!("Deserialization buffer overflow in {pid}. Closing connection");
+                    warn!("Deserialization buffer overflow in {}. Closing connection", pid);
                     break 'deser;
                 },
                 FeedResult::DeserError(remaining) => remaining,
@@ -114,7 +119,11 @@ async fn connection(socket: UnixStream, sink: mpsc::Sender<data::TraceRecord>) {
                     let packet = match data::decode_packet(pid, data, &mut thread_name_cache, process_name.clone()) {
                         Ok(packet) => packet,
                         Err(e) => {
-                            warn!("Failed to decode packet from {pid}: {e:?}. Closing connection",);
+                            warn!(
+                                "Failed to decode packet from {}: {}. Closing connection",
+                                pid,
+                                format!("{e:?}")
+                            );
                             break 'deser;
                         },
                     };

@@ -106,28 +106,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "async-stream"
-version = "0.3.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b5a71a6f37880a80d1d7f19efd781e4b5de42c88f0722cc13bcb6cc2cfe8476"
-dependencies = [
- "async-stream-impl",
- "futures-core",
- "pin-project-lite",
-]
-
-[[package]]
-name = "async-stream-impl"
-version = "0.3.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7c24de15d275a1ecfd47a380fb4d5ec9bfe0933f309ed5e705b775596a3574d"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "atomic-polyfill"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -358,8 +336,6 @@ name = "cycle-benchmark"
 version = "0.1.0"
 dependencies = [
  "feo",
- "feo-log",
- "feo-logger",
  "feo-time",
  "feo-tracing",
  "postcard",
@@ -473,8 +449,6 @@ version = "0.0.1"
 dependencies = [
  "ctrlc",
  "feo-com",
- "feo-log",
- "feo-logger",
  "feo-time",
  "feo-tracing",
  "libc 1.0.0-alpha.1",
@@ -487,7 +461,6 @@ dependencies = [
 name = "feo-com"
 version = "0.1.0"
 dependencies = [
- "feo-log",
  "iceoryx2",
  "nix",
  "rand",
@@ -505,30 +478,10 @@ name = "feo-cpp-macros"
 version = "0.1.0"
 
 [[package]]
-name = "feo-log"
-version = "0.1.0"
-dependencies = [
- "feo-logger",
- "log",
-]
-
-[[package]]
-name = "feo-logger"
-version = "0.1.0"
-dependencies = [
- "console",
- "feo-log",
- "feo-time",
- "libc 1.0.0-alpha.1",
- "time",
-]
-
-[[package]]
 name = "feo-time"
 version = "0.1.0"
 dependencies = [
- "feo-log",
- "feo-logger",
+ "serde",
  "time",
 ]
 
@@ -538,13 +491,10 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "argh",
- "feo-log",
- "feo-logger",
  "feo-tracing",
  "futures",
  "human_bytes",
  "indicatif",
- "indicatif-log-bridge",
  "perfetto-model",
  "postcard",
  "prost",
@@ -556,21 +506,11 @@ dependencies = [
 name = "feo-tracing"
 version = "0.1.0"
 dependencies = [
- "feo-log",
  "libc 1.0.0-alpha.1",
  "postcard",
  "serde",
  "tracing",
  "tracing-subscriber",
-]
-
-[[package]]
-name = "filedesc"
-version = "0.6.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4960c866d9cf4c48f64f11ef0020c98900d0cb32e9b019c000ed838470daa1d"
-dependencies = [
- "libc 0.2.177",
 ]
 
 [[package]]
@@ -956,16 +896,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "indicatif-log-bridge"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63703cf9069b85dbe6fe26e1c5230d013dee99d3559cd3d02ba39e099ef7ab02"
-dependencies = [
- "indicatif",
- "log",
-]
-
-[[package]]
 name = "integration_test"
 version = "0.1.0"
 dependencies = [
@@ -1121,24 +1051,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
 
 [[package]]
-name = "logd"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-stream",
- "bytes",
- "env_logger",
- "feo-log",
- "feo-logger",
- "feo-time",
- "futures",
- "socket2",
- "tokio",
- "tokio-seqpacket",
- "tokio-util",
-]
-
-[[package]]
 name = "memchr"
 version = "2.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1152,8 +1064,6 @@ dependencies = [
  "feo-com",
  "feo-cpp-build",
  "feo-cpp-macros",
- "feo-log",
- "feo-logger",
  "feo-time",
  "feo-tracing",
  "postcard",
@@ -1733,8 +1643,6 @@ dependencies = [
  "feo",
  "feo-com",
  "feo-cpp-macros",
- "feo-log",
- "feo-logger",
  "feo-time",
  "feo-tracing",
  "ipc-channel",
@@ -1824,30 +1732,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "tokio-seqpacket"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6eb09d9a154bede1fafb3a9b13f4347de87e1ec07fa6fb42f52041800f18fe06"
-dependencies = [
- "filedesc",
- "libc 0.2.177",
- "tokio",
-]
-
-[[package]]
-name = "tokio-util"
-version = "0.7.17"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2efa149fe76073d6e8fd97ef4f4eca7b67f599660115591483572e406e165594"
-dependencies = [
- "bytes",
- "futures-core",
- "futures-sink",
- "pin-project-lite",
- "tokio",
 ]
 
 [[package]]

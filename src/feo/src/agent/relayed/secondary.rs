@@ -22,8 +22,8 @@ use crate::signalling::relayed::ConnectSecondary;
 use crate::worker::Worker;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-use core::time::Duration;
-use feo_log::debug;
+use feo_time::Duration;
+use score_log::debug;
 use std::collections::HashMap;
 use std::thread::{self, JoinHandle};
 

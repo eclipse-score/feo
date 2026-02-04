@@ -15,9 +15,11 @@
 
 use crate::ids::{ActivityId, ChannelId, WorkerId};
 use crate::signalling::common::signals::Signal;
-use core::time::Duration;
+use feo_time::Duration;
+use feo_tracing::ScoreDebugIoError;
 #[cfg(feature = "recording")]
 use postcard::experimental::max_size::MaxSize;
+use score_log::ScoreDebug;
 #[cfg(feature = "recording")]
 use serde::Deserialize;
 #[cfg(feature = "recording")]
@@ -25,14 +27,14 @@ use serde::Serialize;
 
 /// FEO Error type
 #[non_exhaustive]
-#[derive(Debug)]
+#[derive(Debug, ScoreDebug)]
 pub enum Error {
     ActivityFailed(ActivityId, ActivityError),
     ActivityNotFound(ActivityId),
     Channel(&'static str),
     ChannelClosed,
     ChannelNotFound(ChannelId),
-    Io((std::io::Error, &'static str)),
+    Io((ScoreDebugIoError, &'static str)),
     Timeout(Duration, &'static str),
     UnexpectedProtocolSignal,
     UnexpectedSignal(Signal),
@@ -41,7 +43,7 @@ pub enum Error {
 
 /// Defines the types of failures an Activity can report.
 #[cfg_attr(feature = "recording", derive(Serialize, Deserialize, MaxSize))]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, ScoreDebug)]
 pub enum ActivityError {
     /// A failure during the `startup()` method.
     Startup,
@@ -76,6 +78,6 @@ impl core::fmt::Display for Error {
 
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
-        Error::Io((err, "failed"))
+        Error::Io((ScoreDebugIoError(err), "failed"))
     }
 }

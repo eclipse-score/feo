@@ -15,7 +15,7 @@ use crate::error::Error;
 use crate::signalling::common::interface::ConnectWorker;
 use crate::signalling::common::mpsc::endpoint::{ProtocolReceiver, ProtocolSender, ProtocolSignal};
 use crate::signalling::common::signals::Signal;
-use core::time::Duration;
+use feo_time::Duration;
 
 pub(crate) struct WorkerConnector {
     receiver: ProtocolReceiver,

@@ -16,6 +16,7 @@ use crate::recording::transcoder::{ComRecTranscoderBuilder, RecordingTranscoder}
 use alloc::borrow::ToOwned as _;
 use alloc::boxed::Box;
 use feo_com::interface::ActivityInput;
+use score_log::fmt::ScoreDebug;
 use serde::Serialize;
 use std::collections::HashMap;
 
@@ -51,7 +52,7 @@ impl TypeRegistry {
     /// This method will panic if
     /// - a type with identical type id (i.e. the same type) has already been registered
     /// - the explicitly or implicitly provided type name is not unique
-    pub fn add<T: Serialize + postcard::experimental::max_size::MaxSize + core::fmt::Debug + 'static>(
+    pub fn add<T: Serialize + postcard::experimental::max_size::MaxSize + core::fmt::Debug + ScoreDebug + 'static>(
         &mut self,
         type_name: Option<&'static str>,
         input_builder: impl Fn(&str) -> Box<dyn ActivityInput<T>> + Clone + Send + 'static,
@@ -147,7 +148,7 @@ fn test_type_registry() {
     // Dummy input implementation for the test
     struct DummyInput;
 
-    impl<T: core::fmt::Debug> ActivityInput<T> for DummyInput {
+    impl<T: core::fmt::Debug + ScoreDebug> ActivityInput<T> for DummyInput {
         fn read(&self) -> Result<feo_com::interface::InputGuard<T>, feo_com::interface::Error> {
             todo!()
         }

@@ -37,10 +37,9 @@ rust_library(
         "//src/feo:libfeo_rust",
         "//src/feo-com:libfeo_com_rust",
         "//src/feo-cpp-build:libfeo_cpp_build_rust",
-        "//src/feo-log:libfeo_log_rust",
-        "//src/feo-logger:libfeo_logger_rust",
         "//src/feo-time:libfeo_time_rust",
         "//src/feo-tracing:libfeo_tracing_rust",
+        "@score_baselibs_rust//src/log/score_log",
         "@score_crates//:tracing",
     ],
 )
@@ -70,10 +69,9 @@ rust_library(
         "//src/feo:libfeo_recording_rust",
         "//src/feo-com:libfeo_com_rust",
         "//src/feo-cpp-build:libfeo_cpp_build_rust",
-        "//src/feo-log:libfeo_log_rust",
-        "//src/feo-logger:libfeo_logger_rust",
         "//src/feo-time:libfeo_time_rust",
         "//src/feo-tracing:libfeo_tracing_rust",
+        "@score_baselibs_rust//src/log/score_log",
         "@score_crates//:postcard",
         "@score_crates//:serde",
         "@score_crates//:tracing",
@@ -95,10 +93,10 @@ rust_binary(
     deps = [
         ":libmini_adas_rust",
         "//src/feo:libfeo_rust",
-        "//src/feo-log:libfeo_log_rust",
-        "//src/feo-logger:libfeo_logger_rust",
         "//src/feo-time:libfeo_time_rust",
         "//src/feo-tracing:libfeo_tracing_rust",
+        "@score_baselibs_rust//src/log/score_log",
+        "@score_baselibs_rust//src/log/stdout_logger",
     ],
 )
 
@@ -117,10 +115,10 @@ rust_binary(
     deps = [
         ":libmini_adas_rust",
         "//src/feo:libfeo_rust",
-        "//src/feo-log:libfeo_log_rust",
-        "//src/feo-logger:libfeo_logger_rust",
         "//src/feo-time:libfeo_time_rust",
         "//src/feo-tracing:libfeo_tracing_rust",
+        "@score_baselibs_rust//src/log/score_log",
+        "@score_baselibs_rust//src/log/stdout_logger",
     ],
 )
 
@@ -137,10 +135,10 @@ rust_binary(
     deps = [
         ":libmini_adas_recording_rust",
         "//src/feo:libfeo_recording_rust",
-        "//src/feo-log:libfeo_log_rust",
-        "//src/feo-logger:libfeo_logger_rust",
         "//src/feo-time:libfeo_time_rust",
         "//src/feo-tracing:libfeo_tracing_rust",
+        "@score_baselibs_rust//src/log/score_log",
+        "@score_baselibs_rust//src/log/stdout_logger",
     ],
 )
 
@@ -154,9 +152,9 @@ rust_binary(
     deps = [
         ":libmini_adas_recording_rust",
         "//src/feo:libfeo_recording_rust",
-        "//src/feo-log:libfeo_log_rust",
-        "//src/feo-logger:libfeo_logger_rust",
         "//src/feo-tracing:libfeo_tracing_rust",
+        "@score_baselibs_rust//src/log/score_log",
+        "@score_baselibs_rust//src/log/stdout_logger",
         "@score_crates//:postcard",
         "@score_crates//:serde",
     ],

@@ -15,6 +15,7 @@
 
 use crate::activity::ActivityIdAndBuilder;
 use crate::agent::NodeAddress;
+use crate::debug_fmt::ScoreDebugDebug;
 use crate::error::Error;
 use crate::ids::{ActivityId, AgentId, WorkerId};
 use crate::scheduler::Scheduler;
@@ -27,8 +28,8 @@ use alloc::boxed::Box;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::sync::atomic::AtomicBool;
-use core::time::Duration;
-use feo_log::info;
+use feo_time::Duration;
+use score_log::{error, info};
 use std::collections::HashMap;
 use std::thread::{self, JoinHandle};
 
@@ -95,7 +96,7 @@ impl Primary {
                         let worker = Worker::new(id, agent_id, activity_builders, connector, timeout);
 
                         if let Err(e) = worker.run() {
-                            feo_log::error!("Worker {} in primary agent failed: {:?}", id, e);
+                            error!("Worker {} in primary agent failed: {:?}", id, e);
                         }
                     },
                     NodeAddress::UnixSocket(path) => {
@@ -106,7 +107,7 @@ impl Primary {
                         let worker = Worker::new(id, agent_id, activity_builders, connector, timeout);
 
                         if let Err(e) = worker.run() {
-                            feo_log::error!("Worker {} in primary agent failed: {:?}", id, e);
+                            error!("Worker {} in primary agent failed: {:?}", id, e);
                         }
                     },
                 })
@@ -172,7 +173,10 @@ impl Primary {
         // We can now safely join our local worker threads.
         for th in self.worker_threads.drain(..) {
             if let Err(e) = th.join() {
-                feo_log::error!("A local worker thread in the primary agent panicked: {:?}", e);
+                error!(
+                    "A local worker thread in the primary agent panicked: {:?}",
+                    ScoreDebugDebug::<_, 1024>(&e)
+                );
             }
         }
 

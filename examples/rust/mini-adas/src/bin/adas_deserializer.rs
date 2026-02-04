@@ -12,13 +12,20 @@
  ********************************************************************************/
 
 use feo::recording::recorder::{DataDescriptionRecord, Record};
-use feo_log::info;
 use mini_adas::activities::messages;
+use score_log::{info, LevelFilter};
 use serde::Deserialize;
 use std::io::Read;
+use stdout_logger::StdoutLoggerBuilder;
 
 fn main() {
-    feo_logger::init(feo_log::LevelFilter::Trace, true, false);
+    StdoutLoggerBuilder::new()
+        .context("adas-deserializer")
+        .show_module(true)
+        .show_file(true)
+        .show_line(true)
+        .log_level(LevelFilter::Trace)
+        .set_as_default_logger();
 
     let mut serialized_data = Vec::new();
     std::fs::File::open("rec.bin")
@@ -27,7 +34,8 @@ fn main() {
         .read_to_end(&mut serialized_data)
         .expect("failed to read recording");
 
-    info!("Read file with {} bytes", serialized_data.len());
+    let serialized_data_len = serialized_data.len();
+    info!("Read file with {} bytes", serialized_data_len);
     let mut remaining_bytes = serialized_data.as_slice();
     while !remaining_bytes.is_empty() {
         let (record, remaining) = postcard::take_from_bytes(remaining_bytes).expect("deserializing failed");

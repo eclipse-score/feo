@@ -15,9 +15,11 @@ use crate::protocol::{truncate, EventInfo, TraceData, TracePacket, MAX_INFO_SIZE
 use core::sync::atomic;
 use core::sync::atomic::AtomicBool;
 use core::time::Duration;
-use feo_log::error;
+use score_log::error;
+use score_log::fmt::{FormatSpec, ScoreDebug, ScoreWrite};
 use std::io::Write;
 use std::os::unix::net::UnixStream;
+use std::sync::mpsc::SendError;
 use std::sync::{mpsc, Arc};
 use std::thread::JoinHandle;
 use std::{io, thread};
@@ -57,6 +59,113 @@ pub fn init(level: LevelFilter) {
     set_global_default(subscriber).expect("setting tracing default failed");
 }
 
+/// ScoreDebug support for std::io::Error
+#[derive(Debug)]
+pub struct ScoreDebugIoError(pub std::io::Error);
+
+impl std::fmt::Display for ScoreDebugIoError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl ScoreDebug for ScoreDebugIoError {
+    fn fmt(
+        &self,
+        f: &mut dyn score_log::fmt::ScoreWrite,
+        spec: &score_log::fmt::FormatSpec,
+    ) -> Result<(), score_log::fmt::Error> {
+        use std::io::ErrorKind;
+
+        match self.0.kind() {
+            ErrorKind::NotFound => f.write_str("NotFound", spec),
+            ErrorKind::PermissionDenied => f.write_str("PermissionDenied", spec),
+            ErrorKind::ConnectionRefused => f.write_str("ConnectionRefused", spec),
+            ErrorKind::ConnectionReset => f.write_str("ConnectionReset", spec),
+            ErrorKind::HostUnreachable => f.write_str("HostUnreachable", spec),
+            ErrorKind::NetworkUnreachable => f.write_str("NetworkUnreachable", spec),
+            ErrorKind::ConnectionAborted => f.write_str("ConnectionAborted", spec),
+            ErrorKind::NotConnected => f.write_str("NotConnected", spec),
+            ErrorKind::AddrInUse => f.write_str("AddrInUse", spec),
+            ErrorKind::AddrNotAvailable => f.write_str("AddrNotAvailable", spec),
+            ErrorKind::NetworkDown => f.write_str("NetworkDown", spec),
+            ErrorKind::BrokenPipe => f.write_str("BrokenPipe", spec),
+            ErrorKind::AlreadyExists => f.write_str("AlreadyExists", spec),
+            ErrorKind::WouldBlock => f.write_str("WouldBlock", spec),
+            ErrorKind::NotADirectory => f.write_str("NotADirectory", spec),
+            ErrorKind::IsADirectory => f.write_str("IsADirectory", spec),
+            ErrorKind::DirectoryNotEmpty => f.write_str("DirectoryNotEmpty", spec),
+            ErrorKind::ReadOnlyFilesystem => f.write_str("ReadOnlyFilesystem", spec),
+            ErrorKind::StaleNetworkFileHandle => f.write_str("StaleNetworkFileHandle", spec),
+            ErrorKind::InvalidInput => f.write_str("InvalidInput", spec),
+            ErrorKind::InvalidData => f.write_str("InvalidData", spec),
+            ErrorKind::TimedOut => f.write_str("TimedOut", spec),
+            ErrorKind::WriteZero => f.write_str("WriteZero", spec),
+            ErrorKind::StorageFull => f.write_str("StorageFull", spec),
+            ErrorKind::NotSeekable => f.write_str("NotSeekable", spec),
+            ErrorKind::QuotaExceeded => f.write_str("QuotaExceeded", spec),
+            ErrorKind::FileTooLarge => f.write_str("FileTooLarge", spec),
+            ErrorKind::ResourceBusy => f.write_str("ResourceBusy", spec),
+            ErrorKind::ExecutableFileBusy => f.write_str("ExecutableFileBusy", spec),
+            ErrorKind::Deadlock => f.write_str("Deadlock", spec),
+            ErrorKind::CrossesDevices => f.write_str("CrossesDevices", spec),
+            ErrorKind::TooManyLinks => f.write_str("TooManyLinks", spec),
+            ErrorKind::InvalidFilename => f.write_str("InvalidFilename", spec),
+            ErrorKind::ArgumentListTooLong => f.write_str("ArgumentListTooLong", spec),
+            ErrorKind::Interrupted => f.write_str("Interrupted", spec),
+            ErrorKind::Unsupported => f.write_str("Unsupported", spec),
+            ErrorKind::UnexpectedEof => f.write_str("UnexpectedEof", spec),
+            ErrorKind::OutOfMemory => f.write_str("OutOfMemory", spec),
+            ErrorKind::Other => f.write_str("Other", spec),
+            _ => f.write_str("IO error", spec),
+        }
+    }
+}
+
+impl From<std::io::Error> for ScoreDebugIoError {
+    fn from(err: std::io::Error) -> Self {
+        ScoreDebugIoError(err)
+    }
+}
+
+struct ScoreDebugPostcardError(pub postcard::Error);
+
+impl ScoreDebug for ScoreDebugPostcardError {
+    fn fmt(&self, f: &mut dyn ScoreWrite, spec: &FormatSpec) -> Result<(), score_log::fmt::Error> {
+        use postcard::Error;
+        match self.0 {
+            Error::WontImplement => f.write_str("WontImplement", spec),
+            Error::NotYetImplemented => f.write_str("NotYetImplemented", spec),
+            Error::SerializeBufferFull => f.write_str("SerializeBufferFull", spec),
+            Error::SerializeSeqLengthUnknown => f.write_str("SerializeSeqLengthUnknown", spec),
+            Error::DeserializeUnexpectedEnd => f.write_str("DeserializeUnexpectedEnd", spec),
+            Error::DeserializeBadVarint => f.write_str("DeserializeBadVarint", spec),
+            Error::DeserializeBadBool => f.write_str("DeserializeBadBool", spec),
+            Error::DeserializeBadChar => f.write_str("DeserializeBadChar", spec),
+            Error::DeserializeBadUtf8 => f.write_str("DeserializeBadUtf8", spec),
+            Error::DeserializeBadOption => f.write_str("DeserializeBadOption", spec),
+            Error::DeserializeBadEnum => f.write_str("DeserializeBadEnum", spec),
+            Error::DeserializeBadEncoding => f.write_str("DeserializeBadEncoding", spec),
+            Error::DeserializeBadCrc => f.write_str("DeserializeBadCrc", spec),
+            Error::SerdeSerCustom => f.write_str("SerdeSerCustom", spec),
+            Error::SerdeDeCustom => f.write_str("SerdeDeCustom", spec),
+            Error::CollectStrError => f.write_str("CollectStrError", spec),
+            _ => f.write_str("postcard error", spec),
+        }
+    }
+}
+
+// The field is unused, but kept for consistency
+struct ScoreDebugSendError(#[allow(dead_code)] pub SendError<TracePacket>);
+
+impl ScoreDebug for ScoreDebugSendError {
+    fn fmt(&self, f: &mut dyn ScoreWrite, spec: &FormatSpec) -> Result<(), score_log::fmt::Error> {
+        // A send operation can only fail if the receiving end of a channel is
+        // disconnected (according to Ferrocene docs)
+        f.write_str("disconnected", spec)
+    }
+}
+
 /// A subscriber sending trace data to the feo-tracer via unix socket and postcard serialized data.
 ///
 /// See the `TraceData` and `TracePacket` types for the data format.
@@ -83,7 +192,7 @@ impl Subscriber {
         let connection = match UnixStream::connect(UNIX_PACKET_PATH) {
             Ok(connection) => connection,
             Err(e) => {
-                error!("Failed to connect to feo-tracer: {:?}, aborting", e);
+                error!("Failed to connect to feo-tracer: {:?}, aborting", ScoreDebugIoError(e));
                 // disable further tracing (TODO: add a time period of retrying)
                 enabled.store(false, atomic::Ordering::Relaxed);
                 return;
@@ -103,14 +212,14 @@ impl Subscriber {
             let serialized = match postcard::to_slice_cobs(&packet, &mut buffer[..]) {
                 Ok(serialized) => serialized,
                 Err(e) => {
-                    error!("Failed to serialize trace packet: {e:?}");
+                    error!("Failed to serialize trace packet: {:?}", ScoreDebugPostcardError(e));
                     continue;
                 },
             };
 
             let ret = socket_writer.write_all(serialized);
             if let Err(error) = ret {
-                error!("Failed to send to feo-tracer: {error:?}, aborting");
+                error!("Failed to send to feo-tracer: {:?}, aborting", ScoreDebugIoError(error));
                 enabled.store(false, atomic::Ordering::Relaxed);
                 return;
             }
@@ -129,7 +238,10 @@ impl Subscriber {
             return;
         }
         if let Err(e) = self.sender.send(packet) {
-            error!("Failed to connect to feo-tracer: {:?}, aborting", e);
+            error!(
+                "Failed to connect to feo-tracer: {:?}, aborting",
+                ScoreDebugSendError(e)
+            );
             self.enabled.store(false, atomic::Ordering::Relaxed);
         }
     }

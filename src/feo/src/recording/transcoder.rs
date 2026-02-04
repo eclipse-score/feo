@@ -17,16 +17,18 @@ use alloc::boxed::Box;
 use alloc::string::String;
 use core::ops::Deref as _;
 use feo_com::interface::ActivityInput;
+use score_log::fmt::ScoreDebug;
+use score_log::info;
 use serde::Serialize;
 
 /// Transcode data of the given type from com layer representation to recording serialization
-pub(crate) struct RecordingTranscoder<T: Serialize + 'static + core::fmt::Debug> {
+pub(crate) struct RecordingTranscoder<T: Serialize + 'static + core::fmt::Debug + ScoreDebug> {
     input: Box<dyn ActivityInput<T>>,
     topic: String,
     type_name: String,
 }
 
-impl<T: Serialize + postcard::experimental::max_size::MaxSize + core::fmt::Debug> RecordingTranscoder<T> {
+impl<T: Serialize + postcard::experimental::max_size::MaxSize + core::fmt::Debug + ScoreDebug> RecordingTranscoder<T> {
     /// Create a transcoder reading from the given com layer topic
     pub fn build(
         input_builder: impl Fn(&str) -> Box<dyn ActivityInput<T>> + Send,
@@ -46,7 +48,7 @@ impl<T: Serialize + postcard::experimental::max_size::MaxSize + core::fmt::Debug
         let input = self.input.read();
         if let Ok(value) = input {
             let value = value.deref();
-            feo_log::info!("Serializing {:?}", value);
+            info!("Serializing {:?}", value);
             let written = postcard::to_slice(value, buf).expect("serialization failed");
             return Some(written);
         }
@@ -70,7 +72,7 @@ pub trait ComRecTranscoder {
 }
 
 /// Implement the recording-and-serialization trait for all [`RecordingTranscoder`] types
-impl<T: Serialize + postcard::experimental::max_size::MaxSize + core::fmt::Debug> ComRecTranscoder
+impl<T: Serialize + postcard::experimental::max_size::MaxSize + core::fmt::Debug + ScoreDebug> ComRecTranscoder
     for RecordingTranscoder<T>
 {
     fn buffer_size(&self) -> usize {

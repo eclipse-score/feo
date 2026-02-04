@@ -20,7 +20,7 @@ use crate::recording::registry::TypeRegistry;
 use crate::signalling::common::interface::ConnectRecorder;
 use crate::signalling::relayed::sockets_mpsc::{RecorderConnectorTcp, RecorderConnectorUnix};
 use alloc::boxed::Box;
-use core::time::Duration;
+use feo_time::Duration;
 
 /// Configuration of a recorder
 pub struct RecorderConfig<'r> {

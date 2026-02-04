@@ -16,8 +16,6 @@ required-features = ["recording"]
 [dependencies]
 feo = { workspace = true }
 feo-com = { workspace = true }
-feo-log = { workspace = true }
-feo-logger = { workspace = true }
 feo-cpp-macros = { workspace = true }
 feo-time = { workspace = true }
 feo-tracing = { workspace = true }

@@ -16,13 +16,14 @@ use crate::ids::ChannelId;
 use crate::signalling::common::signals::Signal;
 use alloc::boxed::Box;
 use core::fmt::Debug;
-use core::time::Duration;
+use feo_time::Duration;
+use score_log::fmt::ScoreDebug;
 
 pub(crate) type Builder<T> = Box<dyn FnOnce() -> T + Send>;
 
 /// Collection of types needed to implement a signalling channel
 pub(crate) trait IsChannel: 'static {
-    type ProtocolSignal: From<Signal> + TryInto<Signal> + Copy + Debug;
+    type ProtocolSignal: From<Signal> + TryInto<Signal> + Copy + Debug + ScoreDebug;
     type Sender: ProtocolSend<ProtocolSignal = Self::ProtocolSignal>;
     type Receiver: ProtocolRecv<ProtocolSignal = Self::ProtocolSignal>;
     type MultiSender: ProtocolMultiSend<ProtocolSignal = Self::ProtocolSignal>;
@@ -30,7 +31,7 @@ pub(crate) trait IsChannel: 'static {
 }
 
 pub(crate) trait ProtocolSend {
-    type ProtocolSignal: From<Signal> + TryInto<Signal> + Copy + Debug;
+    type ProtocolSignal: From<Signal> + TryInto<Signal> + Copy + Debug + ScoreDebug;
 
     fn send(&mut self, signal: Self::ProtocolSignal) -> Result<(), Error>;
 
@@ -38,7 +39,7 @@ pub(crate) trait ProtocolSend {
 }
 
 pub(crate) trait ProtocolRecv {
-    type ProtocolSignal: From<Signal> + TryInto<Signal> + Copy + Debug;
+    type ProtocolSignal: From<Signal> + TryInto<Signal> + Copy + Debug + ScoreDebug;
 
     fn receive(&mut self, timeout: Duration) -> Result<Option<Self::ProtocolSignal>, Error>;
 
@@ -46,7 +47,7 @@ pub(crate) trait ProtocolRecv {
 }
 
 pub(crate) trait ProtocolMultiRecv {
-    type ProtocolSignal: From<Signal> + TryInto<Signal> + Copy + Debug;
+    type ProtocolSignal: From<Signal> + TryInto<Signal> + Copy + Debug + ScoreDebug;
 
     fn receive(&mut self, timeout: Duration) -> Result<Option<Self::ProtocolSignal>, Error>;
 
@@ -54,7 +55,7 @@ pub(crate) trait ProtocolMultiRecv {
 }
 
 pub(crate) trait ProtocolMultiSend {
-    type ProtocolSignal: From<Signal> + TryInto<Signal> + Copy + Debug;
+    type ProtocolSignal: From<Signal> + TryInto<Signal> + Copy + Debug + ScoreDebug;
 
     fn send(&mut self, channel_id: ChannelId, signal: Self::ProtocolSignal) -> Result<(), Error>;
     /// Broadcast a signal to all channels

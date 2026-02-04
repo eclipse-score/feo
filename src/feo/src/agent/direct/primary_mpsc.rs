@@ -14,6 +14,7 @@
 //! Implementation of the primary agent for mpsc-only signalling
 
 use crate::activity::ActivityIdAndBuilder;
+use crate::debug_fmt::ScoreDebugDebug;
 use crate::error::Error;
 use crate::ids::{ActivityId, AgentId, WorkerId};
 use crate::scheduler::Scheduler;
@@ -25,8 +26,8 @@ use alloc::boxed::Box;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::sync::atomic::AtomicBool;
-use core::time::Duration;
-use feo_log::{debug, info};
+use feo_time::Duration;
+use score_log::{debug, error, info};
 use std::collections::HashMap;
 use std::thread::{self, JoinHandle};
 
@@ -139,7 +140,10 @@ impl Primary {
 
         for th in self.worker_threads.drain(..) {
             if let Err(e) = th.join() {
-                feo_log::error!("A local worker thread in the primary agent panicked: {:?}", e);
+                error!(
+                    "A local worker thread in the primary agent panicked: {:?}",
+                    ScoreDebugDebug::<_, 1024>(&e)
+                );
             }
         }
         debug!("Primary agent finished");

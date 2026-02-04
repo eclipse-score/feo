@@ -15,7 +15,7 @@ use crate::error::Error;
 use crate::signalling::common::interface::ConnectRecorder;
 use crate::signalling::common::signals::Signal;
 use crate::signalling::relayed::interface::{IsChannel, ProtocolRecv, ProtocolSend};
-use core::time::Duration;
+use feo_time::Duration;
 
 /// Connector for a recorder
 pub(crate) struct RecorderConnector<C: IsChannel> {

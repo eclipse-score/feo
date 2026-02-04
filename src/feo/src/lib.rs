@@ -44,6 +44,7 @@ extern crate std;
 pub mod activity;
 pub mod agent;
 pub mod cpp;
+pub mod debug_fmt;
 pub mod error;
 pub mod ids;
 #[cfg(feature = "recording")]

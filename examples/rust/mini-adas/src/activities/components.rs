@@ -25,8 +25,9 @@ use feo_com::interface::{ActivityInput, ActivityOutput};
 use feo_com::iox2::{Iox2Input, Iox2Output};
 #[cfg(feature = "com_linux_shm")]
 use feo_com::linux_shm::{LinuxShmInput, LinuxShmOutput};
-use feo_log::debug;
 use feo_tracing::instrument;
+use score_log::debug;
+use score_log::fmt::ScoreDebug;
 use std::hash::RandomState;
 use std::thread;
 const SLEEP_RANGE: Range<i64> = 10..45;
@@ -93,7 +94,7 @@ impl Activity for Camera {
 
         if let Ok(camera) = self.output_image.write_uninit() {
             let image = self.get_image();
-            debug!("Sending image: {image:?}");
+            debug!("Sending image: {:?}", image);
             let camera = camera.write_payload(image);
             camera.send().unwrap();
         }
@@ -162,7 +163,7 @@ impl Activity for Radar {
 
         if let Ok(radar) = self.output_scan.write_uninit() {
             let scan = self.get_scan();
-            debug!("Sending scan: {scan:?}");
+            debug!("Sending scan: {}", scan);
             let radar = radar.write_payload(scan);
             radar.send().unwrap();
         }
@@ -254,7 +255,7 @@ impl Activity for NeuralNet {
             Self::infer(camera.deref(), radar.deref(), scene.deref_mut());
             // Safety: `Scene` has `repr(C)` and was fully initialized by `Self::infer` above.
             let scene = unsafe { scene.assume_init() };
-            debug!("Sending Scene {:?}", scene.deref());
+            debug!("Sending Scene {}", scene.deref());
             scene.send().unwrap();
         }
         Ok(())
@@ -502,7 +503,7 @@ impl Activity for SteeringController {
 /// Create an activity input.
 fn activity_input<T>(topic: &str) -> Box<dyn ActivityInput<T>>
 where
-    T: fmt::Debug + 'static,
+    T: fmt::Debug + ScoreDebug + 'static,
 {
     #[cfg(feature = "com_iox2")]
     return Box::new(Iox2Input::new(topic));
@@ -513,7 +514,7 @@ where
 /// Create an activity output.
 fn activity_output<T>(topic: &str) -> Box<dyn ActivityOutput<T>>
 where
-    T: fmt::Debug + 'static,
+    T: fmt::Debug + ScoreDebug + 'static,
 {
     #[cfg(feature = "com_iox2")]
     return Box::new(Iox2Output::new(topic));

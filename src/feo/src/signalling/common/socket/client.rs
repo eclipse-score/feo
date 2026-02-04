@@ -14,11 +14,13 @@
 use crate::error::Error;
 use crate::signalling::common::socket::connection::Connection;
 use crate::signalling::common::socket::{FdExt, ProtocolSignal};
+use alloc::format;
 use core::net::SocketAddr;
-use core::time::Duration;
-use feo_log::{info, trace};
+use feo_time::Duration;
+use feo_tracing::ScoreDebugIoError;
 use mio::net::{TcpStream, UnixStream};
 use mio::{Events, Interest, Poll, Token};
+use score_log::{info, trace};
 use std::path::Path;
 use std::{io, thread};
 
@@ -51,15 +53,15 @@ impl SocketClient<TcpStream> {
                 break TcpStream::from_std(stream);
             }
 
-            thread::sleep(Duration::from_millis(300));
+            thread::sleep(Duration::from_millis(300).into());
         };
-        info!("Successfully connected to {address:?}");
+        info!("Successfully connected to {}", format!("{address:?}"));
         stream.set_nodelay(true).unwrap();
         let mut connection = Connection::<TcpStream, ProtocolSignal>::new(stream);
 
         for signal in connect_signals {
             connection.send(&signal).unwrap();
-            trace!("Sent message {signal:?}");
+            trace!("Sent message {:?}", signal);
         }
 
         let poll = Poll::new().unwrap();
@@ -79,14 +81,14 @@ impl SocketClient<UnixStream> {
                 break stream;
             }
 
-            thread::sleep(Duration::from_millis(300));
+            thread::sleep(Duration::from_millis(300).into());
         };
-        info!("Successfully connected to {path:?}");
+        info!("Successfully connected to {:?}", path.to_str().expect("invalid path"));
         let mut connection = Connection::<UnixStream, ProtocolSignal>::new(stream);
 
         for signal in connect_signals {
             connection.send(&signal).unwrap();
-            trace!("Sent message {signal:?}");
+            trace!("Sent message {:?}", signal);
         }
 
         let poll = Poll::new().unwrap();
@@ -115,7 +117,7 @@ where
             }
         }
 
-        self.poll.poll(events, Some(timeout)).unwrap();
+        self.poll.poll(events, Some(timeout.into())).unwrap();
 
         for event in events.iter() {
             if event.token() == CLIENT_TOKEN {
@@ -138,6 +140,6 @@ where
     pub(crate) fn send(&mut self, msg: &ProtocolSignal) -> Result<(), Error> {
         self.connection
             .send(msg)
-            .map_err(|e| Error::Io((e, "failed to send on connection")))
+            .map_err(|e| Error::Io((ScoreDebugIoError(e), "failed to send on connection")))
     }
 }

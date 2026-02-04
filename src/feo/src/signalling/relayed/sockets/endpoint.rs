@@ -19,13 +19,14 @@ use crate::signalling::common::signals::Signal;
 use crate::signalling::common::socket::client::{TcpClient, UnixClient};
 use crate::signalling::common::socket::server::{TcpServer, UnixServer};
 // Re-use protocol signal definition from socket building blocks
+use crate::debug_fmt::ScoreDebugHashSet;
 pub(crate) use crate::signalling::common::socket::ProtocolSignal;
 use crate::signalling::relayed;
 use core::net::SocketAddr;
-use core::time::Duration;
-use feo_log::{debug, error, trace, warn};
-use feo_time::Instant;
+use feo_time::{Duration, Instant};
+use feo_tracing::ScoreDebugIoError;
 use mio::{Events, Token};
+use score_log::{debug, error, trace, warn};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
@@ -158,10 +159,13 @@ impl<S: IsServer> ProtocolMultiEndpoint<S> {
         let deadline = Instant::now() + timeout;
         let mut missing_peers: HashSet<ChannelId> = self.channel_ids.clone();
         while !missing_peers.is_empty() {
-            trace!("Connecting missing channels {:?}", missing_peers);
+            trace!("Connecting missing channels {:?}", ScoreDebugHashSet(&missing_peers));
             let time_left = deadline.saturating_duration_since(Instant::now());
             if time_left.is_zero() {
-                return Err(Error::Io((std::io::ErrorKind::TimedOut.into(), "CONNECTION_TIMEOUT")));
+                return Err(Error::Io((
+                    ScoreDebugIoError(std::io::ErrorKind::TimedOut.into()),
+                    "CONNECTION_TIMEOUT",
+                )));
             }
             // TODO: server to reject connections from unexpected peers
             if let Ok(Some((token, signal))) = server.receive(&mut self.events, time_left) {
@@ -169,12 +173,12 @@ impl<S: IsServer> ProtocolMultiEndpoint<S> {
                     ProtocolSignal::ChannelHello(channel_id) => {
                         self.channel_token_map.insert(channel_id, token);
                         missing_peers.remove(&channel_id);
-                        debug!("Channel connected {channel_id:?}");
+                        debug!("Channel connected {:?}", channel_id);
                     },
                     other => {
                         warn!(
                             "Received unexpected signal {:?} from unknown token {:?} during connect",
-                            other, token
+                            other, token.0
                         );
                     },
                 }
@@ -217,7 +221,7 @@ impl<S: IsServer> ProtocolMultiEndpoint<S> {
         // Iterate over all known connection tokens and send the signal.
         for token in self.channel_token_map.values() {
             if let Err(e) = server.send(token, &signal) {
-                error!("Failed to broadcast to token {:?}: {:?}", token, e);
+                error!("Failed to broadcast to token {}: {:?}", token.0, e);
             }
         }
         Ok(())

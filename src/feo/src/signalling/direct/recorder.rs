@@ -18,10 +18,10 @@ use crate::signalling::common::signals::Signal;
 use crate::signalling::common::socket::client::{SocketClient, TcpClient, UnixClient};
 use crate::signalling::common::socket::ProtocolSignal;
 use core::net::SocketAddr;
-use core::time::Duration;
-use feo_log::warn;
+use feo_time::Duration;
 use mio::net::{TcpStream, UnixStream};
 use mio::Events;
+use score_log::warn;
 use std::io;
 use std::path::PathBuf;
 
@@ -59,7 +59,7 @@ where
         {
             Ok(Some(ProtocolSignal::Core(signal))) => Ok(Some(signal)),
             Ok(Some(signal)) => {
-                warn!("Received unexpected signal {signal:?}");
+                warn!("Received unexpected signal {:?}", signal);
                 Ok(None)
             },
             Ok(None) => Ok(None),

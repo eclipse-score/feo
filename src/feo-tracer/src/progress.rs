@@ -62,11 +62,6 @@ impl Progress {
         })
     }
 
-    /// Return a copy of the multi progress bar
-    pub fn bar(&self) -> MultiProgress {
-        self.bar.clone()
-    }
-
     /// Add a writer to the progress bar
     pub fn add_writer<T: Write>(&mut self, name: &str, writer: T) -> impl Write + use<T> {
         let pb = indicatif::ProgressBar::new(0)

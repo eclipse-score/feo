@@ -17,6 +17,7 @@ use crate::error::ActivityError;
 use crate::ids::{ActivityId, AgentId, ChannelId, RelayId, WorkerId};
 use crate::signalling::common::signals::Signal;
 use crate::timestamp::{SyncInfo, Timestamp};
+use score_log::ScoreDebug;
 use std::io::{self, Write};
 use std::os::fd::AsRawFd;
 
@@ -72,7 +73,7 @@ where
 ///
 /// This type wraps the core [Signal] type and adds signal variants
 /// which are only needed by this particular implementation.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ScoreDebug)]
 pub(crate) enum ProtocolSignal {
     /// Core [Signal] as known to schedulers, workers and recorders
     Core(Signal),

@@ -20,11 +20,12 @@ use crate::signalling::common::socket::ProtocolSignal;
 use crate::timestamp::sync_info;
 use alloc::vec::Vec;
 use core::net::SocketAddr;
-use core::time::Duration;
-use feo_log::warn;
+use feo_time::Duration;
 use feo_time::Instant;
+use feo_tracing::ScoreDebugIoError;
 use mio::net::{TcpListener, UnixListener};
 use mio::{Events, Token};
+use score_log::warn;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
@@ -136,7 +137,10 @@ where
         while !missing_activities.is_empty() || !missing_recorders.is_empty() {
             let elapsed = start_time.elapsed();
             if elapsed >= self.connection_timeout {
-                return Err(Error::Io((std::io::ErrorKind::TimedOut.into(), "CONNECTION_TIMEOUT")));
+                return Err(Error::Io((
+                    ScoreDebugIoError(std::io::ErrorKind::TimedOut.into()),
+                    "CONNECTION_TIMEOUT",
+                )));
             }
             let remaining_timeout = self.connection_timeout.saturating_sub(elapsed);
             // Wait for a new connection, but no longer than the remaining overall timeout.
@@ -151,7 +155,10 @@ where
                         missing_recorders.remove(&agent_id);
                     },
                     other => {
-                        warn!("received unexpected signal {other:?} from connection with token {token:?}");
+                        warn!(
+                            "received unexpected signal {:?} from connection with token {}",
+                            other, token.0
+                        );
                     },
                 }
             }
@@ -171,7 +178,7 @@ where
         {
             self.server
                 .send(token, &ProtocolSignal::Core(signal))
-                .map_err(|e| Error::Io((e, "failed to send")))?;
+                .map_err(|e| Error::Io((ScoreDebugIoError(e), "failed to send")))?;
         }
 
         Ok(())
@@ -206,7 +213,7 @@ where
             .unwrap_or_else(|| panic!("failed to find token for activity ID {activity_id}"));
         self.server
             .send(token, &ProtocolSignal::Core(*signal))
-            .map_err(|e| Error::Io((e, "failed to send")))
+            .map_err(|e| Error::Io((ScoreDebugIoError(e), "failed to send")))
     }
 
     fn send_to_recorder(&mut self, recorder_id: AgentId, signal: &Signal) -> Result<(), Error> {
@@ -216,7 +223,7 @@ where
             .unwrap_or_else(|| panic!("failed to find token for recorder ID {recorder_id}"));
         self.server
             .send(token, &ProtocolSignal::Core(*signal))
-            .map_err(|e| Error::Io((e, "failed to send")))
+            .map_err(|e| Error::Io((ScoreDebugIoError(e), "failed to send")))
     }
     fn broadcast_terminate(&mut self, signal: &Signal) -> Result<(), Error> {
         let protocol_signal = ProtocolSignal::Core(*signal);

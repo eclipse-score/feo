@@ -15,13 +15,14 @@
 
 use crate::activity::ActivityIdAndBuilder;
 use crate::agent::NodeAddress;
+use crate::debug_fmt::ScoreDebugDebug;
 use crate::ids::{AgentId, WorkerId};
 use crate::signalling::common::interface::ConnectWorker;
 use crate::signalling::direct::worker::{TcpWorkerConnector, UnixWorkerConnector};
 use crate::worker::Worker;
 use alloc::vec::Vec;
-use core::time::Duration;
-use feo_log::{debug, error};
+use feo_time::Duration;
+use score_log::{debug, error};
 use std::thread::{self, JoinHandle};
 
 /// Configuration of a secondary agent
@@ -98,7 +99,11 @@ impl Secondary {
 
         for th in self.worker_threads {
             if let Err(e) = th.join() {
-                error!("Worker thread for agent {:?} panicked: {:?}", self.id, e);
+                error!(
+                    "Worker thread for agent {:?} panicked: {:?}",
+                    self.id,
+                    ScoreDebugDebug::<_, 1024>(&e)
+                );
             }
         }
 

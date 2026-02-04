@@ -22,6 +22,12 @@ bazel_dep(name = "score_bazel_platforms", version = "0.0.4")
 # SCORE bazel module dependencies
 bazel_dep(name = "score_tooling", version = "1.1.0")
 bazel_dep(name = "score_crates", version = "0.0.6")
+bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
+git_override(
+    module_name = "score_baselibs_rust",
+    commit = "1b9f2786cd746ae9745dd2e81bf9073b4185a5e2",
+    remote = "https://github.com/eclipse-score/baselibs_rust.git",
+)
 
 # Rust rules for Bazel
 bazel_dep(name = "rules_rust", version = "0.67.0")

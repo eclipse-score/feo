@@ -13,6 +13,7 @@
 
 //! Global activity scheduler
 
+use crate::debug_fmt::ScoreDebugBTreeSet;
 use crate::error::Error;
 use crate::ids::{ActivityId, AgentId};
 use crate::signalling::common::interface::ConnectScheduler;
@@ -22,8 +23,8 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use alloc::{boxed::Box, collections::BTreeSet};
 use core::sync::atomic::{AtomicBool, Ordering};
-use feo_log::{debug, error, info, trace};
 use feo_time::Instant;
+use score_log::{debug, error, info, trace};
 use std::collections::HashMap;
 use std::thread;
 
@@ -36,9 +37,9 @@ pub(crate) struct Scheduler {
     /// Target duration of a task chain cycle
     cycle_time: feo_time::Duration,
     /// Timeout of receive function
-    receive_timeout: core::time::Duration,
+    receive_timeout: feo_time::Duration,
     /// Timeout for waiting on activities to become ready during startup.
-    startup_timeout: core::time::Duration,
+    startup_timeout: feo_time::Duration,
     /// For each activity: list of activities it depends on
     activity_depends: HashMap<ActivityId, Vec<ActivityId>>,
     /// Map keeping track of activity states
@@ -60,8 +61,8 @@ impl Scheduler {
     pub(crate) fn new(
         agent_id: AgentId,
         feo_cycle_time: feo_time::Duration,
-        receive_timeout: core::time::Duration,
-        startup_timeout: core::time::Duration,
+        receive_timeout: feo_time::Duration,
+        startup_timeout: feo_time::Duration,
         activity_depends: HashMap<ActivityId, Vec<ActivityId>>,
         connector: Box<dyn ConnectScheduler>,
         recorder_ids: Vec<AgentId>,
@@ -175,7 +176,7 @@ impl Scheduler {
             self.record_task_chain_end().unwrap();
             self.wait_recorders_ready().unwrap();
             let flush_duration = start_flush.elapsed();
-            trace!("Flushing recorders took {flush_duration:?}");
+            trace!("Flushing recorders took {:?}", flush_duration);
 
             let task_chain_duration = task_chain_start.elapsed();
 
@@ -185,12 +186,15 @@ impl Scheduler {
             let time_left = self.cycle_time.saturating_sub(task_chain_duration);
             if time_left.is_zero() {
                 error!(
-                    "Finished task chain after {task_chain_duration:?}. Expected to be less than {:?}",
-                    self.cycle_time
+                    "Finished task chain after {:?}. Expected to be less than {:?}",
+                    task_chain_duration, self.cycle_time
                 );
             } else {
-                debug!("Finished task chain after {task_chain_duration:?}. Sleeping for {time_left:?}");
-                thread::sleep(time_left);
+                debug!(
+                    "Finished task chain after {:?}. Sleeping for {:?}",
+                    task_chain_duration, time_left
+                );
+                thread::sleep(time_left.into());
             }
 
             // Check for an external shutdown request (e.g., from Ctrl-C).
@@ -281,7 +285,7 @@ impl Scheduler {
             // 2. Send a shutdown signal to only the started activities.
             info!(
                 "Sending Shutdown signal to started activities: {:?}",
-                started_activities
+                ScoreDebugBTreeSet(&started_activities)
             );
             for activity_id in &started_activities {
                 Self::shutdown_activity(activity_id, &self.recorder_ids, &mut self.connector)
@@ -291,7 +295,10 @@ impl Scheduler {
             // 3. Wait for confirmation from the activities that were told to shut down.
             // A worker sends a `Ready` signal after completing its shutdown.
             let mut pending_shutdown_ack = started_activities;
-            info!("Waiting for shutdown confirmation from: {:?}", pending_shutdown_ack);
+            info!(
+                "Waiting for shutdown confirmation from: {:?}",
+                ScoreDebugBTreeSet(&pending_shutdown_ack)
+            );
 
             let shutdown_timeout = self.receive_timeout * (pending_shutdown_ack.len() as u32 + 2);
             let start = Instant::now();
@@ -300,7 +307,7 @@ impl Scheduler {
                 if start.elapsed() > shutdown_timeout {
                     error!(
                         "Timeout waiting for shutdown confirmation. Still waiting for: {:?}",
-                        pending_shutdown_ack
+                        ScoreDebugBTreeSet(&pending_shutdown_ack)
                     );
                     break;
                 }
@@ -348,15 +355,18 @@ impl Scheduler {
             return;
         }
 
-        info!("Waiting for TerminateAck from agents: {:?}", pending_agent_acks);
+        info!(
+            "Waiting for TerminateAck from agents: {}",
+            ScoreDebugBTreeSet(&pending_agent_acks)
+        );
         let agent_ack_timeout = self.receive_timeout * (pending_agent_acks.len() as u32 + 4);
         let start = Instant::now();
 
         while !pending_agent_acks.is_empty() {
             if start.elapsed() > agent_ack_timeout {
                 error!(
-                    "Timeout waiting for TerminateAck. Still waiting for: {:?}",
-                    pending_agent_acks
+                    "Timeout waiting for TerminateAck. Still waiting for: {}",
+                    ScoreDebugBTreeSet(&pending_agent_acks)
                 );
                 break;
             }
@@ -410,7 +420,7 @@ impl Scheduler {
                     continue;
                 },
                 Some(other) => {
-                    error!("Received unexpected signal {other:?} while waiting for ready signal");
+                    error!("Received unexpected signal {:?} while waiting for ready signal", other);
                 },
             }
         };
@@ -465,11 +475,14 @@ impl Scheduler {
                     if let Some(value) = self.recorders_ready.get_mut(&id) {
                         *value = true;
                     } else {
-                        error!("Received unexpected id {id} in recorder ready signal");
+                        error!("Received unexpected id {} in recorder ready signal", id);
                     }
                 },
                 Some(other) => {
-                    error!("Received unexpected signal {other} while waiting for recorder ready signal");
+                    error!(
+                        "Received unexpected signal {} while waiting for recorder ready signal",
+                        other
+                    );
                 },
             }
         }

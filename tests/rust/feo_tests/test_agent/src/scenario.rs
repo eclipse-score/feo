@@ -17,6 +17,7 @@ use crate::Scenario;
 use feo::activity::{ActivityBuilder, ActivityIdAndBuilder};
 use feo::ids::{ActivityId, AgentId, WorkerId};
 use feo::topicspec::{Direction, TopicSpecification};
+use score_log::ScoreDebug;
 use std::collections::HashMap;
 
 // For each activity, list the activities it needs to wait for
@@ -128,7 +129,7 @@ impl ScenarioConfig for Scenario {
 }
 
 /// COM type for Sender and Receiver activities' data exchange
-#[derive(Debug, Default)]
+#[derive(Debug, Default, ScoreDebug)]
 pub struct Counter {
     pub counter: usize,
 }

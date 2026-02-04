@@ -13,13 +13,14 @@
 
 //! Basic components for mpsc channel signalling protocol
 
+use crate::debug_fmt::ScoreDebugHashSet;
 use crate::error::Error;
 use crate::ids::ChannelId;
 use crate::signalling::common::mpsc::primitives::{channel, Receiver, Sender};
 use crate::signalling::common::signals::Signal;
-use core::time::Duration;
-use feo_log::{debug, error, trace};
+use feo_time::Duration;
 use feo_time::Instant;
+use score_log::{debug, error, trace, ScoreDebug};
 use std::collections::{HashMap, HashSet};
 
 pub(crate) struct ProtocolSender {
@@ -71,7 +72,7 @@ impl ProtocolReceiver {
             self.channel_id = match protocol_signal {
                 Some(ProtocolSignal::Connect(c)) => Some(c),
                 Some(other) => {
-                    error!("Received unexpected protocol signal {other:?}");
+                    error!("Received unexpected protocol signal {:?}", other);
                     continue;
                 },
                 None => return Err(Error::Timeout(timeout, "connecting sender")),
@@ -118,25 +119,28 @@ impl ProtocolMultiReceiver {
         let mut missing = self.channel_ids.clone();
         let start = Instant::now();
         while !missing.is_empty() && start.elapsed() < timeout {
-            trace!("Connecting, missing channels {missing:?}");
+            trace!("Connecting, missing channels {:?}", ScoreDebugHashSet(&missing));
             let protocol_signal = self.receiver.receive(timeout)?;
             let channel_id = match protocol_signal {
                 Some(ProtocolSignal::Connect(c)) => c,
                 Some(other) => {
-                    error!("Received unexpected protocol signal {other:?}");
+                    error!("Received unexpected protocol signal {:?}", other);
                     continue;
                 },
                 None => return Err(Error::Timeout(timeout, "connecting senders")),
             };
             if !self.channel_ids.contains(&channel_id) {
-                error!("Received connect signal from unexpected channel {channel_id:?}");
+                error!("Received connect signal from unexpected channel {:?}", channel_id);
                 continue;
             }
             let is_new = missing.remove(&channel_id);
             if !is_new {
-                error!("Ignoring connect signal from previously connected channel {channel_id:?}");
+                error!(
+                    "Ignoring connect signal from previously connected channel {:?}",
+                    channel_id
+                );
             } else {
-                trace!("Sender channel connected: {channel_id:?}");
+                trace!("Sender channel connected: {:?}", channel_id);
             }
         }
         self.connected = true;
@@ -190,7 +194,7 @@ impl ProtocolMultiSender {
 }
 
 /// Internal input signal specific to this signalling implementation
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ScoreDebug)]
 pub(crate) enum ProtocolSignal {
     Core(Signal),
     Connect(ChannelId),

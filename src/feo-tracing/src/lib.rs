@@ -21,5 +21,6 @@ pub mod protocol;
 
 /// Initialize tracing
 pub use feo_subscriber::init;
+pub use feo_subscriber::ScoreDebugIoError;
 /// Re-export of the `tracing` crate.
 pub use tracing::{self, event, instrument, level_filters::LevelFilter, span, Level};

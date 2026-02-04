@@ -16,7 +16,7 @@ use crate::composites::{composite_builder, find_composites};
 use core::net::{IpAddr, Ipv4Addr, SocketAddr};
 use feo::activity::ActivityIdAndBuilder;
 use feo::ids::{ActivityId, AgentId, WorkerId};
-use feo_log::info;
+use score_log::info;
 use serde::Deserialize;
 use serde_json;
 use std::collections::{HashMap, HashSet};
@@ -252,7 +252,7 @@ fn application_config() -> ApplicationConfig {
         .join(CONFIG_PATH)
         .canonicalize()
         .unwrap();
-    info!("Reading configuration from {}", config_file.display());
+    info!("Reading configuration from {}", format!("{config_file:?}"));
 
     let file = File::open(config_file).unwrap_or_else(|e| panic!("failed to open config file: {e}"));
     let reader = BufReader::new(file);
