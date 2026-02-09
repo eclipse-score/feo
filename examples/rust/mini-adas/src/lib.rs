@@ -17,4 +17,3 @@
 
 pub mod activities;
 pub mod config;
-mod ffi;

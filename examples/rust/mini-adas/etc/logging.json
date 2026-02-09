@@ -1,0 +1,8 @@
+{
+  "ecuId": "Rust",
+  "appId": "miniadas",
+  "appDesc": "mini-adas",
+  "logLevel": "kDebug",
+  "logMode": "kFile",
+  "logFilePath": "/tmp"
+}

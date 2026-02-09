@@ -17,10 +17,8 @@ rust_library(
     name = "libmini_adas_rust",
     srcs = [
         "src/activities/components.rs",
-        "src/activities/messages.rs",
         "src/activities/mod.rs",
         "src/config.rs",
-        "src/ffi.rs",
         "src/lib.rs",
     ],
     crate_features = [
@@ -33,13 +31,14 @@ rust_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":cpp_activities",
+        "//examples/rust/mini-adas/mini-adas-gen:mini_adas_gen_rs",
         "//src/feo:libfeo_rust",
         "//src/feo-com:libfeo_com_rust",
         "//src/feo-cpp-build:libfeo_cpp_build_rust",
         "//src/feo-time:libfeo_time_rust",
         "//src/feo-tracing:libfeo_tracing_rust",
         "@score_baselibs_rust//src/log/score_log",
+        "@score_communication//score/mw/com/impl/rust/com-api/com-api",
         "@score_crates//:tracing",
     ],
 )
@@ -48,10 +47,8 @@ rust_library(
     name = "libmini_adas_recording_rust",
     srcs = [
         "src/activities/components.rs",
-        "src/activities/messages.rs",
         "src/activities/mod.rs",
         "src/config.rs",
-        "src/ffi.rs",
         "src/lib.rs",
     ],
     crate_features = [
@@ -65,13 +62,14 @@ rust_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":cpp_activities",
+        "//examples/rust/mini-adas/mini-adas-gen:mini_adas_gen_rs",
         "//src/feo:libfeo_recording_rust",
         "//src/feo-com:libfeo_com_rust",
         "//src/feo-cpp-build:libfeo_cpp_build_rust",
         "//src/feo-time:libfeo_time_rust",
         "//src/feo-tracing:libfeo_tracing_rust",
         "@score_baselibs_rust//src/log/score_log",
+        "@score_communication//score/mw/com/impl/rust/com-api/com-api",
         "@score_crates//:postcard",
         "@score_crates//:serde",
         "@score_crates//:tracing",
@@ -84,6 +82,13 @@ rust_binary(
         "src/bin/adas_primary.rs",
     ],
     crate_features = ["signalling_relayed_tcp"],
+    data = [
+        "etc/logging.json",
+        "etc/mw_com_config.json",
+    ],
+    env = {
+        "MW_LOG_CONFIG_FILE": "examples/rust/mini-adas/etc/logging.json",
+    },
     rustc_flags = [
         "-Clink-arg=-lstdc++",
         "-Clink-arg=-lm",
@@ -97,6 +102,7 @@ rust_binary(
         "//src/feo-tracing:libfeo_tracing_rust",
         "@score_baselibs_rust//src/log/score_log",
         "@score_baselibs_rust//src/log/stdout_logger",
+        "@score_communication//score/mw/com/impl/rust/com-api/com-api",
     ],
 )
 
@@ -106,6 +112,13 @@ rust_binary(
         "src/bin/adas_secondary.rs",
     ],
     crate_features = ["signalling_relayed_tcp"],
+    data = [
+        "etc/logging.json",
+        "etc/mw_com_config.json",
+    ],
+    env = {
+        "MW_LOG_CONFIG_FILE": "examples/rust/mini-adas/etc/logging.json",
+    },
     rustc_flags = [
         "-Clink-arg=-lstdc++",
         "-Clink-arg=-lm",
@@ -119,44 +132,7 @@ rust_binary(
         "//src/feo-tracing:libfeo_tracing_rust",
         "@score_baselibs_rust//src/log/score_log",
         "@score_baselibs_rust//src/log/stdout_logger",
-    ],
-)
-
-rust_binary(
-    name = "adas_recorder",
-    srcs = [
-        "src/bin/adas_recorder.rs",
-    ],
-    crate_features = [
-        "recording",
-        "signalling_direct_tcp",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        ":libmini_adas_recording_rust",
-        "//src/feo:libfeo_recording_rust",
-        "//src/feo-time:libfeo_time_rust",
-        "//src/feo-tracing:libfeo_tracing_rust",
-        "@score_baselibs_rust//src/log/score_log",
-        "@score_baselibs_rust//src/log/stdout_logger",
-    ],
-)
-
-rust_binary(
-    name = "adas_deserializer",
-    srcs = [
-        "src/bin/adas_deserializer.rs",
-    ],
-    crate_features = ["recording"],
-    visibility = ["//visibility:public"],
-    deps = [
-        ":libmini_adas_recording_rust",
-        "//src/feo:libfeo_recording_rust",
-        "//src/feo-tracing:libfeo_tracing_rust",
-        "@score_baselibs_rust//src/log/score_log",
-        "@score_baselibs_rust//src/log/stdout_logger",
-        "@score_crates//:postcard",
-        "@score_crates//:serde",
+        "@score_communication//score/mw/com/impl/rust/com-api/com-api",
     ],
 )
 

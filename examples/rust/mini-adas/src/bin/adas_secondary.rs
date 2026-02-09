@@ -56,25 +56,18 @@ fn main() {
         .copied()
         .collect();
 
-    // Initialize topics. Do not drop.
-    let _topic_guards = initialize_com_secondary(COM_BACKEND, topic_dependencies(), &local_activities);
-
     let secondary = Secondary::new(config);
     secondary.run();
 }
 
 #[cfg(feature = "signalling_relayed_tcp")]
 fn main() {
-    use feo::agent::com_init::initialize_com_secondary;
     use feo::agent::relayed::secondary::{Secondary, SecondaryConfig};
     use feo::agent::NodeAddress;
-    use feo::ids::ActivityId;
     use feo_time::Duration;
-    use mini_adas::config::{agent_assignments, topic_dependencies};
-    use mini_adas::config::{agent_assignments_ids, COM_BACKEND};
+    use mini_adas::config::agent_assignments;
     use mini_adas::config::{BIND_ADDR, BIND_ADDR2};
     use params::Params;
-    use std::collections::HashSet;
 
     init_logging();
 
@@ -90,18 +83,6 @@ fn main() {
         bind_address_senders: NodeAddress::Tcp(BIND_ADDR),
         bind_address_receivers: NodeAddress::Tcp(BIND_ADDR2),
     };
-
-    // determine set of activity ids belonging to this agent
-    let local_activities: HashSet<ActivityId> = agent_assignments_ids()
-        .remove(&params.agent_id)
-        .unwrap()
-        .iter()
-        .flat_map(|(_, acts)| acts.iter())
-        .copied()
-        .collect();
-
-    // Initialize topics. Do not drop.
-    let _topic_guards = initialize_com_secondary(COM_BACKEND, topic_dependencies(), &local_activities);
 
     let secondary = Secondary::new(config);
     secondary.run();
@@ -133,18 +114,6 @@ fn main() {
         bind_address_senders: NodeAddress::UnixSocket(socket_paths().0),
         bind_address_receivers: NodeAddress::UnixSocket(socket_paths().1),
     };
-
-    // determine set of activity ids belonging to this agent
-    let local_activities: HashSet<ActivityId> = agent_assignments_ids()
-        .remove(&params.agent_id)
-        .unwrap()
-        .iter()
-        .flat_map(|(_, acts)| acts.iter())
-        .copied()
-        .collect();
-
-    // Initialize topics. Do not drop.
-    let _topic_guards = initialize_com_secondary(COM_BACKEND, topic_dependencies(), &local_activities);
 
     let secondary = Secondary::new(config);
     secondary.run();

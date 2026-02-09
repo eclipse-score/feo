@@ -1,0 +1,261 @@
+{
+  "serviceTypes": [
+    {
+      "serviceTypeName": "/feo/com/CameraInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6432,
+          "events": [
+            {
+              "eventName": "image",
+              "eventId": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "serviceTypeName": "/feo/com/RadarInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6433,
+          "events": [
+            {
+              "eventName": "scan",
+              "eventId": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "serviceTypeName": "/feo/com/NeuralNetInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6434,
+          "events": [
+            {
+              "eventName": "scene",
+              "eventId": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "serviceTypeName": "/feo/com/BrakeControllerInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6435,
+          "events": [
+            {
+              "eventName": "brake_instruction",
+              "eventId": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "serviceTypeName": "/feo/com/SteeringControllerInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "bindings": [
+        {
+          "binding": "SHM",
+          "serviceId": 6436,
+          "events": [
+            {
+              "eventName": "steering",
+              "eventId": 5
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "serviceInstances": [
+    {
+      "instanceSpecifier": "/feo/com/MiniAdasCamera",
+      "serviceTypeName": "/feo/com/CameraInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 1,
+          "allowedConsumer": {
+            "QM": [
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0
+            ]
+          },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "image",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/feo/com/MiniAdasRadar",
+      "serviceTypeName": "/feo/com/RadarInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 2,
+          "allowedConsumer": {
+            "QM": [
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0
+            ]
+          },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "scan",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/feo/com/MiniAdasNeuralNet",
+      "serviceTypeName": "/feo/com/NeuralNetInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 3,
+          "allowedConsumer": {
+            "QM": [
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0
+            ]
+          },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "scene",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/feo/com/MiniAdasBrakeController",
+      "serviceTypeName": "/feo/com/BrakeControllerInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 4,
+          "allowedConsumer": {
+            "QM": [
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0
+            ]
+          },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "brake_instruction",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "instanceSpecifier": "/feo/com/MiniAdasSteeringController",
+      "serviceTypeName": "/feo/com/SteeringControllerInterface",
+      "version": {
+        "major": 1,
+        "minor": 0
+      },
+      "instances": [
+        {
+          "instanceId": 5,
+          "allowedConsumer": {
+            "QM": [
+              0
+            ]
+          },
+          "allowedProvider": {
+            "QM": [
+              0
+            ]
+          },
+          "asil-level": "QM",
+          "binding": "SHM",
+          "events": [
+            {
+              "eventName": "steering",
+              "numberOfSampleSlots": 10,
+              "maxSubscribers": 3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
