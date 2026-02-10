@@ -18,11 +18,10 @@ set -e
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 buildifier -r $SCRIPT_DIR
-bazelisk clean --expunge
 bazelisk mod tidy
-bazelisk build //:format.check
 bazelisk build //:format.fix
+bazelisk build //:format.check
 cargo fmt --all
-bazel build --config=lint-rust //...
+bazelisk build --config=lint-rust //...
 bazelisk build //...
 bazelisk test //...

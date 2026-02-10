@@ -19,7 +19,7 @@ use crate::recording::transcoder::ComRecTranscoder;
 use crate::signalling::common::interface::ConnectRecorder;
 use crate::signalling::common::signals::Signal;
 use crate::timestamp;
-use crate::timestamp::{timestamp, Timestamp};
+use crate::timestamp::{Timestamp, timestamp};
 use alloc::boxed::Box;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -282,6 +282,7 @@ pub struct DataDescriptionRecord<'s> {
 }
 
 impl MaxSize for DataDescriptionRecord<'_> {
+    #[allow(clippy::identity_op)]
     const POSTCARD_MAX_SIZE: usize = Timestamp::POSTCARD_MAX_SIZE +
         usize::POSTCARD_MAX_SIZE + // data_size
         2*( // type_name, topic

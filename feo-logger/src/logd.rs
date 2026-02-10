@@ -11,10 +11,10 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use crate::record::Record;
 use crate::MAX_RECORD_SIZE;
+use crate::record::Record;
 use core::mem;
-use libc::{sockaddr_un, AF_UNIX};
+use libc::{AF_UNIX, sockaddr_un};
 use std::io;
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
 use std::sync::Mutex;

@@ -17,8 +17,8 @@ use crate::activity::ActivityIdAndBuilder;
 use crate::agent::NodeAddress;
 use crate::ids::{ActivityId, AgentId, WorkerId};
 use crate::signalling::common::interface::ConnectWorker;
-use crate::signalling::relayed::sockets_mpsc::{SecondaryConnectorTcp, SecondaryConnectorUnix};
 use crate::signalling::relayed::ConnectSecondary;
+use crate::signalling::relayed::sockets_mpsc::{SecondaryConnectorTcp, SecondaryConnectorUnix};
 use crate::worker::Worker;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
@@ -93,7 +93,9 @@ impl Secondary {
                 (Box::new(connector) as Box<dyn ConnectSecondary>, builders)
             }
             _ => {
-                panic!("bind addresses must either be both TCP socket addresses or both Unix socket paths")
+                panic!(
+                    "bind addresses must either be both TCP socket addresses or both Unix socket paths"
+                )
             }
         };
 

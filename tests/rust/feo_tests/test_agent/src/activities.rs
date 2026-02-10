@@ -52,7 +52,9 @@ impl Activity for Sender {
     }
 
     #[instrument(name = "Sender startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "Sender")]
     fn step(&mut self) -> Result<(), ActivityError> {
@@ -101,7 +103,9 @@ impl Activity for Receiver {
     }
 
     #[instrument(name = "Receiver startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "Receiver")]
     fn step(&mut self) -> Result<(), ActivityError> {
@@ -164,9 +168,10 @@ impl Activity for Monitor {
     }
 
     #[instrument(name = "Monitor startup")]
-    fn startup(&mut self) {
+    fn startup(&mut self) -> Result<(), ActivityError> {
         // Notify testing app of a startup call
         self.sender.send(MonitorNotification::Startup).unwrap();
+        Ok(())
     }
 
     #[instrument(name = "Monitor")]

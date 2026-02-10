@@ -11,9 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+use crate::signalling::relayed::ConnectSecondary;
 use crate::signalling::relayed::connectors::relays::{SecondaryReceiveRelay, SecondarySendRelay};
 use crate::signalling::relayed::interface::IsChannel;
-use crate::signalling::relayed::ConnectSecondary;
 use feo_log::debug;
 
 pub(crate) struct SecondaryConnector<Inter: IsChannel, Intra: IsChannel> {

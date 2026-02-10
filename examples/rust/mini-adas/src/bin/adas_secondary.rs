@@ -14,17 +14,17 @@
 #[cfg(any(feature = "signalling_direct_tcp", feature = "signalling_direct_unix"))]
 fn main() {
     use core::time::Duration;
+    use feo::agent::NodeAddress;
     use feo::agent::com_init::initialize_com_secondary;
     use feo::agent::direct::secondary::{Secondary, SecondaryConfig};
-    use feo::agent::NodeAddress;
     use feo::ids::ActivityId;
-    use feo_log::{info, LevelFilter};
-    #[cfg(feature = "signalling_direct_unix")]
-    use mini_adas::config::socket_paths;
+    use feo_log::{LevelFilter, info};
     #[cfg(feature = "signalling_direct_tcp")]
     use mini_adas::config::BIND_ADDR;
+    #[cfg(feature = "signalling_direct_unix")]
+    use mini_adas::config::socket_paths;
+    use mini_adas::config::{COM_BACKEND, agent_assignments_ids};
     use mini_adas::config::{agent_assignments, topic_dependencies};
-    use mini_adas::config::{agent_assignments_ids, COM_BACKEND};
     use params::Params;
     use std::collections::HashSet;
 
@@ -64,14 +64,14 @@ fn main() {
 #[cfg(feature = "signalling_relayed_tcp")]
 fn main() {
     use core::time::Duration;
+    use feo::agent::NodeAddress;
     use feo::agent::com_init::initialize_com_secondary;
     use feo::agent::relayed::secondary::{Secondary, SecondaryConfig};
-    use feo::agent::NodeAddress;
     use feo::ids::ActivityId;
-    use feo_log::{info, LevelFilter};
-    use mini_adas::config::{agent_assignments, topic_dependencies};
-    use mini_adas::config::{agent_assignments_ids, COM_BACKEND};
+    use feo_log::{LevelFilter, info};
     use mini_adas::config::{BIND_ADDR, BIND_ADDR2};
+    use mini_adas::config::{COM_BACKEND, agent_assignments_ids};
+    use mini_adas::config::{agent_assignments, topic_dependencies};
     use params::Params;
     use std::collections::HashSet;
 
@@ -109,14 +109,14 @@ fn main() {
 #[cfg(feature = "signalling_relayed_unix")]
 fn main() {
     use core::time::Duration;
+    use feo::agent::NodeAddress;
     use feo::agent::com_init::initialize_com_secondary;
     use feo::agent::relayed::secondary::{Secondary, SecondaryConfig};
-    use feo::agent::NodeAddress;
     use feo::ids::ActivityId;
-    use feo_log::{info, LevelFilter};
+    use feo_log::{LevelFilter, info};
     use mini_adas::config::socket_paths;
+    use mini_adas::config::{COM_BACKEND, agent_assignments_ids};
     use mini_adas::config::{agent_assignments, topic_dependencies};
-    use mini_adas::config::{agent_assignments_ids, COM_BACKEND};
     use params::Params;
     use std::collections::HashSet;
 

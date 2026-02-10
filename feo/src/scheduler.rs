@@ -382,10 +382,9 @@ impl Scheduler {
             }
             if let Ok(Some(Signal::TerminateAck(agent_id))) =
                 self.connector.receive(self.receive_timeout)
+                && pending_agent_acks.remove(&agent_id)
             {
-                if pending_agent_acks.remove(&agent_id) {
-                    info!("Received TerminateAck from agent {}", agent_id);
-                }
+                info!("Received TerminateAck from agent {}", agent_id);
             }
         }
 
@@ -415,7 +414,7 @@ impl Scheduler {
                     return Err(Error::Timeout(
                         self.receive_timeout,
                         "waiting for ready signal",
-                    ))
+                    ));
                 }
                 Some(signal @ Signal::Ready((id, _))) => {
                     for recorder_id in self.recorder_ids.iter() {
@@ -497,7 +496,9 @@ impl Scheduler {
                     }
                 }
                 Some(other) => {
-                    error!("Received unexpected signal {other} while waiting for recorder ready signal");
+                    error!(
+                        "Received unexpected signal {other} while waiting for recorder ready signal"
+                    );
                 }
             }
         }

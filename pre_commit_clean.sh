@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # *******************************************************************************
 # Copyright (c) 2025 Contributors to the Eclipse Foundation
 #
@@ -11,23 +13,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//rust:defs.bzl", "rust_test")
+set -e
 
-rust_test(
-    name = "feo_tests",
-    size = "small",
-    srcs = [
-        "src/lib.rs",
-        "src/monitor.rs",
-    ],
-    data = ["//tests/rust/feo_tests/test_agent"],
-    edition = "2024",
-    deps = [
-        "@score_crates//:clap",
-        "@score_crates//:env_logger",
-        "@score_crates//:ipc_channel",
-        "@score_crates//:log",
-        "@score_crates//:nix",
-        "@score_crates//:serde",
-    ],
-)
+bazelisk clean --expunge
+./pre_commit.sh

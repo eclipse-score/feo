@@ -15,13 +15,13 @@ use crate::error::Error;
 use crate::ids::ActivityId;
 use crate::signalling::common::interface::ConnectWorker;
 use crate::signalling::common::signals::Signal;
-use crate::signalling::common::socket::client::{SocketClient, TcpClient, UnixClient};
 use crate::signalling::common::socket::ProtocolSignal;
+use crate::signalling::common::socket::client::{SocketClient, TcpClient, UnixClient};
 use alloc::vec::Vec;
 use core::net::SocketAddr;
 use core::time::Duration;
-use mio::net::{TcpStream, UnixStream};
 use mio::Events;
+use mio::net::{TcpStream, UnixStream};
 use std::io;
 use std::path::PathBuf;
 

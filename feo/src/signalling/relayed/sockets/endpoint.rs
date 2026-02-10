@@ -186,7 +186,10 @@ impl<S: IsServer> ProtocolMultiEndpoint<S> {
                         debug!("Channel connected {channel_id:?}");
                     }
                     other => {
-                        warn!("Received unexpected signal {:?} from unknown token {:?} during connect", other, token);
+                        warn!(
+                            "Received unexpected signal {:?} from unknown token {:?} during connect",
+                            other, token
+                        );
                     }
                 }
             }

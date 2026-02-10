@@ -15,8 +15,8 @@ use crate::ids::{ActivityId, AgentId, WorkerId};
 use crate::topicspec::{Direction, TopicSpecification};
 use alloc::vec::Vec;
 use feo_com::interface::{
-    run_backend, ComBackend, ComBackendTopicPrimaryInitialization,
-    ComBackendTopicSecondaryInitialization, TopicHandle,
+    ComBackend, ComBackendTopicPrimaryInitialization, ComBackendTopicSecondaryInitialization,
+    TopicHandle, run_backend,
 };
 use std::collections::{HashMap, HashSet};
 

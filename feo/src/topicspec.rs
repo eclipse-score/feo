@@ -18,8 +18,8 @@ use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::fmt;
 use feo_com::interface::{
-    init_topic_primary, init_topic_secondary, ComBackendTopicPrimaryInitialization,
-    ComBackendTopicSecondaryInitialization, Topic, TopicHandle,
+    ComBackendTopicPrimaryInitialization, ComBackendTopicSecondaryInitialization, Topic,
+    TopicHandle, init_topic_primary, init_topic_secondary,
 };
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]

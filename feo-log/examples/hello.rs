@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 use core::time;
-use feo_log::{error, log, warn, Level, LevelFilter};
+use feo_log::{Level, LevelFilter, error, log, warn};
 use std::thread;
 
 fn main() {
