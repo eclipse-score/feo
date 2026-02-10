@@ -11,31 +11,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 module(
-    name = "feo",
+    name = "score_feo",
     version = "0.1",
 )
 
 # SCORE bazel module dependencies
-bazel_dep(name = "communication", version = "1.0.0")
-git_override(
-    module_name = "communication",
-    commit = "044b251136c87d4281dcdeaa5626d76546c1947f",
-    remote = "https://github.com/eclipse-score/communication.git",
-)
-
-bazel_dep(name = "score-baselibs", version = "1.0.0")
-git_override(
-    module_name = "score-baselibs",
-    commit = "f02d7f427df1968df8d5f9f9aa85bf68baeb839e",
-    remote = "https://github.com/eclipse-score/baselibs.git",
-)
-
-bazel_dep(name = "score_crates", version = "1.0.0")
-git_override(
-    module_name = "score_crates",
-    commit = "7b960f4bdd36626b514e0c428419b8581e04c4f6",
-    remote = "https://github.com/eclipse-score/score-crates.git",
-)
+bazel_dep(name = "score_tooling", version = "1.1.0")
+bazel_dep(name = "score_crates", version = "0.0.6")
 
 # Rust rules for Bazel
 bazel_dep(name = "rules_rust", version = "0.67.0")
@@ -53,15 +35,14 @@ bazel_dep(name = "protobuf", version = "30.2", repo_name = "com_google_protobuf"
 bazel_dep(name = "rules_proto", version = "7.1.0")
 
 # Tooling
-bazel_dep(name = "score_tooling", version = "1.0.1")
 bazel_dep(name = "aspect_rules_lint", version = "1.5.3")
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2")
 bazel_dep(name = "googletest", version = "1.17.0")
-bazel_dep(name = "score_docs_as_code", version = "1.1.0")
+bazel_dep(name = "score_docs_as_code", version = "3.0.0")
 
 # Toolchains
 # GCC toolchain
-bazel_dep(name = "score_toolchains_gcc", version = "0.4", dev_dependency = True)
+bazel_dep(name = "score_toolchains_gcc", version = "0.5", dev_dependency = True)
 
 gcc = use_extension("@score_toolchains_gcc//extentions:gcc.bzl", "gcc", dev_dependency = True)
 gcc.toolchain(
@@ -89,21 +70,6 @@ gcc.warning_flags(
     treat_warnings_as_errors = ["-Werror"],
 )
 use_repo(gcc, "gcc_toolchain", "gcc_toolchain_gcc")
-
-bazel_dep(name = "rules_boost", repo_name = "com_github_nelhage_rules_boost")
-archive_override(
-    module_name = "rules_boost",
-    strip_prefix = "rules_boost-master",
-    urls = ["https://github.com/nelhage/rules_boost/archive/refs/heads/master.tar.gz"],
-)
-
-bazel_dep(name = "boost.program_options", version = "1.87.0")
-bazel_dep(name = "trlc", version = "0.0.0")
-git_override(
-    module_name = "trlc",
-    commit = "650b51a47264a4f232b3341f473527710fc32669",  # trlc-2.0.2 release
-    remote = "https://github.com/bmw-software-engineering/trlc.git",
-)
 
 # Rust toolchain
 RUST_EDITION = "2024"
