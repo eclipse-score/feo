@@ -192,7 +192,9 @@ impl<Inter: IsChannel, Intra: IsChannel> SecondaryReceiveRelay<Inter, Intra> {
             }
             Err(Error::ChannelClosed) => Err(Error::ChannelClosed),
             Err(Error::Io((e, _))) if e.kind() == ErrorKind::ConnectionReset => {
-                debug!("SecondaryReceiveRelay detected connection to primary reset (expected during shutdown)");
+                debug!(
+                    "SecondaryReceiveRelay detected connection to primary reset (expected during shutdown)"
+                );
                 Err(Error::Io((e, "connection reset")))
             }
             Err(e) => {
@@ -258,11 +260,15 @@ impl<Inter: IsChannel, Intra: IsChannel> SecondaryReceiveRelay<Inter, Intra> {
                     continue;
                 }
                 Err(Error::ChannelClosed) => {
-                    debug!("[SecondaryReceiveRelay]Connection to primary lost. Initiating self-shutdown.");
+                    debug!(
+                        "[SecondaryReceiveRelay]Connection to primary lost. Initiating self-shutdown."
+                    );
                     return; // Exit the relay thread. The workers will detect the closed channel.
                 }
                 Err(Error::Io((e, _))) if e.kind() == ErrorKind::ConnectionReset => {
-                    debug!("[SecondaryReceiveRelay]Connection to primary was reset (expected during shutdown). Exiting.");
+                    debug!(
+                        "[SecondaryReceiveRelay]Connection to primary was reset (expected during shutdown). Exiting."
+                    );
                     return; // Graceful exit
                 }
                 Err(e) => {
@@ -290,7 +296,9 @@ impl<Inter: IsChannel, Intra: IsChannel> SecondaryReceiveRelay<Inter, Intra> {
                     // This is a targeted signal for a specific activity.
                     // Lookup corresponding worker id.
                     let Some(worker_id) = activity_worker_map.get(&act_id) else {
-                        error!("[SecondaryReceiveRelay]Received unexpected activity id {act_id:?} in {core_signal:?}");
+                        error!(
+                            "[SecondaryReceiveRelay]Received unexpected activity id {act_id:?} in {core_signal:?}"
+                        );
                         continue;
                     };
 
@@ -316,7 +324,10 @@ impl<Inter: IsChannel, Intra: IsChannel> SecondaryReceiveRelay<Inter, Intra> {
                     }
                 }
                 other => {
-                    error!("[SecondaryReceiveRelay]Received unexpected signal '{:?}' from primary, discarding.", other);
+                    error!(
+                        "[SecondaryReceiveRelay]Received unexpected signal '{:?}' from primary, discarding.",
+                        other
+                    );
                 }
             }
         }

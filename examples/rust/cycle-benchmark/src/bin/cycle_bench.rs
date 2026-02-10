@@ -208,7 +208,7 @@ mod direct_mpsc {
         _: ApplicationConfig,
         _: &TypeRegistry,
         _: RecordingRules,
-    ) -> RecorderConfig {
+    ) -> RecorderConfig<'_> {
         panic!("direct mpsc signalling does not support recorders");
     }
 }
@@ -283,7 +283,7 @@ mod direct_sockets {
         type_registry: &TypeRegistry,
         recording_rules: RecordingRules,
         signalling: SignallingType,
-    ) -> RecorderConfig {
+    ) -> RecorderConfig<'_> {
         let agent_id = params.agent_id;
         RecorderConfig {
             id: agent_id,
@@ -371,7 +371,7 @@ mod relayed_sockets {
         type_registry: &TypeRegistry,
         recording_rules: RecordingRules,
         signalling: SignallingType,
-    ) -> RecorderConfig {
+    ) -> RecorderConfig<'_> {
         let agent_id = params.agent_id;
         let endpoints = endpoints(&app_config, signalling);
         RecorderConfig {

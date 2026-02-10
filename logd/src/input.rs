@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use crate::{RecordSender, MAX_RECORD_SIZE, UNIX_PACKET_PATH, UNIX_STREAM_PATH};
+use crate::{MAX_RECORD_SIZE, RecordSender, UNIX_PACKET_PATH, UNIX_STREAM_PATH};
 use anyhow::{Context, Error};
 use async_stream::stream;
 use bytes::BytesMut;

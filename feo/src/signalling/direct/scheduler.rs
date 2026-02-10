@@ -15,8 +15,8 @@ use crate::error::Error;
 use crate::ids::{ActivityId, AgentId};
 use crate::signalling::common::interface::ConnectScheduler;
 use crate::signalling::common::signals::Signal;
-use crate::signalling::common::socket::server::{Listen, SocketServer, TcpServer, UnixServer};
 use crate::signalling::common::socket::ProtocolSignal;
+use crate::signalling::common::socket::server::{Listen, SocketServer, TcpServer, UnixServer};
 use crate::timestamp::sync_info;
 use alloc::vec::Vec;
 use core::net::SocketAddr;
@@ -157,7 +157,9 @@ where
                         missing_recorders.remove(&agent_id);
                     }
                     other => {
-                        warn!("received unexpected signal {other:?} from connection with token {token:?}");
+                        warn!(
+                            "received unexpected signal {other:?} from connection with token {token:?}"
+                        );
                     }
                 }
             }

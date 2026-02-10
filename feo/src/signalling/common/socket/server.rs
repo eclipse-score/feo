@@ -18,7 +18,7 @@ use core::net::SocketAddr;
 use core::time::Duration;
 use feo_log::{debug, info, warn};
 use mio::net::{TcpListener, TcpStream, UnixListener, UnixStream};
-use mio::{event, Events, Interest, Poll, Token};
+use mio::{Events, Interest, Poll, Token, event};
 use std::collections::HashMap;
 use std::fs;
 use std::io;

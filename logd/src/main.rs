@@ -14,7 +14,7 @@
 //! Placeholder logging daemon that collects logs from various sources. Minimal effort implementation.
 
 use anyhow::Error;
-use feo_log::{info, LevelFilter};
+use feo_log::{LevelFilter, info};
 use tokio::runtime;
 
 fn main() -> Result<(), Error> {

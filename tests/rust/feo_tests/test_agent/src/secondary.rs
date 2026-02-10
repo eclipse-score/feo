@@ -16,14 +16,14 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 
 use crate::config::{BIND_ADDR, BIND_ADDR2, COM_BACKEND, SOCKET_PATH, SOCKET_PATH2};
-use feo::agent::com_init::initialize_com_secondary;
 use feo::agent::NodeAddress;
+use feo::agent::com_init::initialize_com_secondary;
 use feo::error::Error;
 use feo::ids::{ActivityId, AgentId};
 use feo_log::info;
 
 use crate::scenario::ScenarioConfig as _;
-use crate::{config::PRIMARY_AGENT_ID, Scenario, Signalling};
+use crate::{Scenario, Signalling, config::PRIMARY_AGENT_ID};
 
 pub trait SecondaryLauncher {
     /// Launch secondary FEO agent

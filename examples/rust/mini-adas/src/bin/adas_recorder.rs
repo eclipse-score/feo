@@ -13,7 +13,7 @@
 
 use feo::ids::AgentId;
 use feo::recording::recorder::RecordingRules;
-use feo_log::{debug, LevelFilter};
+use feo_log::{LevelFilter, debug};
 use mini_adas::activities::messages::{
     self, BrakeInstruction, CameraImage, RadarScan, Scene, Steering,
 };
@@ -21,8 +21,8 @@ use mini_adas::activities::messages::{
 use feo::agent::com_init::initialize_com_recorder;
 use feo::topicspec::TopicSpecification;
 use mini_adas::config::{
-    topic_dependencies, COM_BACKEND, TOPIC_CAMERA_FRONT, TOPIC_CONTROL_BRAKES,
-    TOPIC_CONTROL_STEERING, TOPIC_INFERRED_SCENE, TOPIC_RADAR_FRONT,
+    COM_BACKEND, TOPIC_CAMERA_FRONT, TOPIC_CONTROL_BRAKES, TOPIC_CONTROL_STEERING,
+    TOPIC_INFERRED_SCENE, TOPIC_RADAR_FRONT, topic_dependencies,
 };
 use std::collections::HashMap;
 
@@ -97,7 +97,7 @@ mod cfg {
         agent_id: AgentId,
         rules: RecordingRules,
         registry: &TypeRegistry,
-    ) -> RecorderConfig {
+    ) -> RecorderConfig<'_> {
         RecorderConfig {
             id: agent_id,
             record_file: "./rec.bin",

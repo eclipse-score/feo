@@ -117,7 +117,9 @@ impl Primary {
                 (connector as Box<dyn ConnectScheduler>, builders)
             }
             _ => {
-                panic!("bind addresses must either be both TCP socket addresses or both Unix socket paths")
+                panic!(
+                    "bind addresses must either be both TCP socket addresses or both Unix socket paths"
+                )
             }
         };
 

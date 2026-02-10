@@ -13,10 +13,10 @@
 
 //! Collect trace data - placeholder
 
-use anyhow::{bail, Context, Error};
+use anyhow::{Context, Error, bail};
 use argh::FromArgs;
 use core::future::pending;
-use feo_log::{debug, info, LevelFilter};
+use feo_log::{LevelFilter, debug, info};
 use feo_tracer::io::listen;
 use feo_tracer::perfetto;
 use futures::FutureExt;

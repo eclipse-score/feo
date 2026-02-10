@@ -15,7 +15,7 @@
 
 use crate::error::Error;
 use crate::ids::ChannelId;
-use crate::signalling::common::mpsc::primitives::{channel, Receiver, Sender};
+use crate::signalling::common::mpsc::primitives::{Receiver, Sender, channel};
 use crate::signalling::common::signals::Signal;
 use core::time::Duration;
 use feo_log::{debug, error, trace};

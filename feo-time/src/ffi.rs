@@ -21,13 +21,13 @@ struct FeoTimeSpec {
 }
 
 /// Set the clock speed factor.
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn feo_clock_speed(factor: i32) {
     crate::speed(factor);
 }
 
 /// Get the current time.
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn feo_clock_gettime(ts: *mut FeoTimeSpec) {
     debug_assert!(!ts.is_null());
 

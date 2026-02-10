@@ -377,10 +377,14 @@ fn check_consistency(
         .copied()
         .collect();
 
-    assert_eq!(all_activities_workers, depending_activities,
-               "Set of activities assigned to workers does not match set of activities listed as dependants in activity dependencies");
-    assert_eq!(all_activities_workers, all_activities_dependencies,
-               "Set of activities assigned to workers does not include all activities mentioned in activity dependencies");
+    assert_eq!(
+        all_activities_workers, depending_activities,
+        "Set of activities assigned to workers does not match set of activities listed as dependants in activity dependencies"
+    );
+    assert_eq!(
+        all_activities_workers, all_activities_dependencies,
+        "Set of activities assigned to workers does not include all activities mentioned in activity dependencies"
+    );
 }
 
 /// Configuration of the benchmark application

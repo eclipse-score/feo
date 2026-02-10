@@ -66,7 +66,7 @@ impl Progress {
     }
 
     /// Add a writer to the progress bar
-    pub fn add_writer(&mut self, name: &str, writer: impl Write) -> impl Write {
+    pub fn add_writer<T: Write>(&mut self, name: &str, writer: T) -> impl Write + use<T> {
         let pb = indicatif::ProgressBar::new(0)
             .with_prefix(name.to_string())
             .with_style(self.main_style.clone());
