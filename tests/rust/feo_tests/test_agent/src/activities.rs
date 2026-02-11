@@ -1,15 +1,15 @@
-/********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
- *
- * See the NOTICE file(s) distributed with this work for additional
- * information regarding copyright ownership.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Apache License Version 2.0 which is available at
- * https://www.apache.org/licenses/LICENSE-2.0
- *
- * SPDX-License-Identifier: Apache-2.0
- ********************************************************************************/
+// *******************************************************************************
+// Copyright (c) 2025 Contributors to the Eclipse Foundation
+//
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// <https://www.apache.org/licenses/LICENSE-2.0>
+//
+// SPDX-License-Identifier: Apache-2.0
+// *******************************************************************************
 
 use crate::config::TOPIC_COUNTER;
 use crate::monitor::{MonitorNotification, MonitorRequest};
@@ -60,9 +60,7 @@ impl Activity for Sender {
     fn step(&mut self) -> Result<(), ActivityError> {
         debug!("Stepping Sender");
         if let Ok(counter) = self.output.write_uninit() {
-            let camera = counter.write_payload(Counter {
-                counter: self.counter,
-            });
+            let camera = counter.write_payload(Counter { counter: self.counter });
             camera.send().unwrap();
         }
         self.counter += 1;
@@ -148,10 +146,8 @@ impl Monitor {
     pub fn build(activity_id: ActivityId, server_name: String) -> Box<dyn Activity> {
         let (request_tx, request_rx): (IpcSender<MonitorRequest>, IpcReceiver<MonitorRequest>) =
             ipc::channel().unwrap();
-        let (notification_tx, notification_rx): (
-            IpcSender<MonitorNotification>,
-            IpcReceiver<MonitorNotification>,
-        ) = ipc::channel().unwrap();
+        let (notification_tx, notification_rx): (IpcSender<MonitorNotification>, IpcReceiver<MonitorNotification>) =
+            ipc::channel().unwrap();
         let sender = IpcSender::connect(server_name).unwrap();
         sender.send((request_tx, notification_rx)).unwrap();
         Box::new(Self {

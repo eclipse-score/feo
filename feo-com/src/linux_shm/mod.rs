@@ -33,12 +33,11 @@
 pub(crate) mod shared_memory;
 
 use crate::interface::{
-    ActivityInput, ActivityOutput, ActivityOutputDefault, Error, InputGuard, OutputGuard,
-    OutputUninitGuard, Topic, TopicHandle,
+    ActivityInput, ActivityOutput, ActivityOutputDefault, Error, InputGuard, OutputGuard, OutputUninitGuard, Topic,
+    TopicHandle,
 };
 use crate::linux_shm::shared_memory::{
-    MappedPtrReadGuard, MappedPtrWriteGuard, MappingMode, ReadWriteAccessControlPtr,
-    TopicInitializationAgentRole,
+    MappedPtrReadGuard, MappedPtrWriteGuard, MappingMode, ReadWriteAccessControlPtr, TopicInitializationAgentRole,
 };
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
@@ -48,17 +47,17 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::fmt::Debug;
 use core::marker::PhantomData;
-use core::mem::{MaybeUninit, size_of};
+use core::mem::{size_of, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use core::slice::from_raw_parts;
 use core::sync::atomic::Ordering;
 use feo_log::{debug, error, info};
 use nix::fcntl::OFlag;
-use nix::sys::mman::{MapFlags, ProtFlags, mmap, shm_open};
+use nix::sys::mman::{mmap, shm_open, MapFlags, ProtFlags};
 use nix::sys::stat::Mode;
 use nix::unistd;
 use std::collections::HashMap;
-use std::io::{Write, read_to_string};
+use std::io::{read_to_string, Write};
 use std::net::Shutdown;
 use std::os::fd::OwnedFd;
 use std::os::unix::net::{UnixListener, UnixStream};
@@ -81,9 +80,7 @@ impl ReadWriteAccessControlPtr {
         let ptr = unsafe {
             mmap(
                 None,
-                self.size
-                    .try_into()
-                    .expect("zero-sized type is not allowed"),
+                self.size.try_into().expect("zero-sized type is not allowed"),
                 flags,
                 MapFlags::MAP_SHARED,
                 native_mapping,
@@ -122,8 +119,7 @@ impl ComRuntime {
     /// Run COM runtime services
     fn service_main(mut requests_to_serve: usize) {
         let _ = std::fs::remove_file(SOCKET);
-        let listener = UnixListener::bind(SOCKET)
-            .unwrap_or_else(|e| panic!("can't bind socket at {SOCKET}: {e}"));
+        let listener = UnixListener::bind(SOCKET).unwrap_or_else(|e| panic!("can't bind socket at {SOCKET}: {e}"));
         debug!("Listening for {requests_to_serve} topic mapping requests...");
         loop {
             if requests_to_serve < 1 {
@@ -134,10 +130,10 @@ impl ComRuntime {
                     if Self::serve_connection(socket) {
                         requests_to_serve -= 1;
                     }
-                }
+                },
                 Err(e) => {
                     error!("socket connection failed: {e}");
-                }
+                },
             }
         }
         debug!("COM primary service shutdown");
@@ -152,22 +148,18 @@ impl ComRuntime {
         let mut result = false;
         match com.topics.get(s.as_str()) {
             Some(mapping) => {
-                match stream.write_all(
-                    format!("ok\n{}\n{}", mapping.ptr.size, &mapping.mapping_id).as_bytes(),
-                ) {
+                match stream.write_all(format!("ok\n{}\n{}", mapping.ptr.size, &mapping.mapping_id).as_bytes()) {
                     Ok(_) => result = true,
                     Err(e) => error!("socket write failed: {e}"),
                 }
-            }
+            },
             None => {
                 if let Err(e) = stream.write_all(b"error\ntopic not found") {
                     error!("socket write failed: {e}");
                 }
-            }
+            },
         }
-        stream
-            .shutdown(Shutdown::Both)
-            .expect("socket shutdown failed");
+        stream.shutdown(Shutdown::Both).expect("socket shutdown failed");
         result
     }
 
@@ -192,10 +184,10 @@ impl ComRuntime {
         match initialization {
             TopicInitializationAgentRole::Primary { also_map } => {
                 self.init_topic_primary::<T>(topic, mapping_mode, also_map);
-            }
+            },
             TopicInitializationAgentRole::Secondary => {
                 self.init_topic_secondary::<T>(topic, mapping_mode);
-            }
+            },
         }
     }
 
@@ -232,11 +224,7 @@ impl ComRuntime {
         );
     }
 
-    fn init_topic_secondary<T: Debug + 'static>(
-        &mut self,
-        topic: Topic,
-        mapping_mode: MappingMode,
-    ) {
+    fn init_topic_secondary<T: Debug + 'static>(&mut self, topic: Topic, mapping_mode: MappingMode) {
         let (size, mapping_id) = Self::request_primary(topic);
         assert_eq!(size_of::<T>(), size);
         let native_mapping = shm_open(
@@ -263,18 +251,12 @@ impl ComRuntime {
 
     // Make a request to primary
     fn request_primary(topic: Topic) -> (usize, String) {
-        let mut stream = UnixStream::connect(SOCKET)
-            .unwrap_or_else(|e| panic!("can't connect to socket {SOCKET}: {e}"));
-        stream
-            .write_all(topic.as_bytes())
-            .expect("socket write failed");
-        stream
-            .shutdown(Shutdown::Write)
-            .expect("socket shutdown failed");
+        let mut stream =
+            UnixStream::connect(SOCKET).unwrap_or_else(|e| panic!("can't connect to socket {SOCKET}: {e}"));
+        stream.write_all(topic.as_bytes()).expect("socket write failed");
+        stream.shutdown(Shutdown::Write).expect("socket shutdown failed");
         let response = read_to_string(&mut stream).expect("socket read failed");
-        stream
-            .shutdown(Shutdown::Both)
-            .expect("socket shutdown failed");
+        stream.shutdown(Shutdown::Both).expect("socket shutdown failed");
         let response = response.split('\n').collect::<Vec<&str>>();
         let [status, size, mapping_id] = response.as_slice() else {
             panic!("invalid response")
@@ -291,17 +273,10 @@ impl ComRuntime {
     }
 
     // Create and register mapping for topic
-    pub(crate) fn topic_mapping<T>(
-        &mut self,
-        topic: Topic,
-        mode: MappingMode,
-    ) -> Arc<ReadWriteAccessControlPtr> {
+    pub(crate) fn topic_mapping<T>(&mut self, topic: Topic, mode: MappingMode) -> Arc<ReadWriteAccessControlPtr> {
         const {
             assert!(size_of::<T>() != 0, "zero-sized type is not allowed");
-            assert!(
-                size_of::<T>() <= isize::MAX as usize,
-                "type size is too big"
-            );
+            assert!(size_of::<T>() <= isize::MAX as usize, "type size is too big");
         }
         let mapping = self
             .topics

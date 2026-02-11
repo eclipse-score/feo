@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 use crate::record::{OwnedRecord, Record};
-use console::{Color, StyledObject, style};
+use console::{style, Color, StyledObject};
 use core::str;
 use core::sync::atomic::{self, AtomicUsize, Ordering};
 use feo_log::Level;
@@ -22,8 +22,7 @@ use time::macros::format_description;
 
 // TODO: Add monochrome support.
 
-const TIMESTAMP_FORMAT: &[FormatItem<'static>] =
-    format_description!("[hour]:[minute]:[second].[subsecond digits:3]");
+const TIMESTAMP_FORMAT: &[FormatItem<'static>] = format_description!("[hour]:[minute]:[second].[subsecond digits:3]");
 
 static TARGET_SIZE: atomic::AtomicUsize = atomic::AtomicUsize::new(16);
 static TGID_SIZE: atomic::AtomicUsize = atomic::AtomicUsize::new(4);
@@ -33,15 +32,10 @@ pub fn format<W: std::io::Write>(record: &Record, mut writer: W) -> Result<(), s
     let timestamp = {
         let timestamp = record.timestamp;
         let timestamp = time::OffsetDateTime::from_unix_timestamp_nanos(
-            timestamp
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos() as i128,
+            timestamp.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos() as i128,
         )
         .unwrap();
-        timestamp
-            .format(TIMESTAMP_FORMAT)
-            .expect("failed to format timestamp")
+        timestamp.format(TIMESTAMP_FORMAT).expect("failed to format timestamp")
     };
 
     let level = {
@@ -78,17 +72,11 @@ pub fn format<W: std::io::Write>(record: &Record, mut writer: W) -> Result<(), s
             "{timestamp} {target} ({tgid} {tid}): {level:<5}: {file}:{line}: {message}",
         )
     } else {
-        writeln!(
-            writer,
-            "{timestamp} {target} ({tgid} {tid}): {level:<5}: {message}"
-        )
+        writeln!(writer, "{timestamp} {target} ({tgid} {tid}): {level:<5}: {message}")
     }
 }
 
-pub fn format_owned<W: std::io::Write>(
-    record: OwnedRecord,
-    writer: W,
-) -> Result<(), std::io::Error> {
+pub fn format_owned<W: std::io::Write>(record: OwnedRecord, writer: W) -> Result<(), std::io::Error> {
     let record = Record {
         timestamp: record.timestamp,
         level: record.level,

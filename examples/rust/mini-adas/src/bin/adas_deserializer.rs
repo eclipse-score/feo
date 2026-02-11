@@ -30,8 +30,7 @@ fn main() {
     info!("Read file with {} bytes", serialized_data.len());
     let mut remaining_bytes = serialized_data.as_slice();
     while !remaining_bytes.is_empty() {
-        let (record, remaining) =
-            postcard::take_from_bytes(remaining_bytes).expect("deserializing failed");
+        let (record, remaining) = postcard::take_from_bytes(remaining_bytes).expect("deserializing failed");
         remaining_bytes = remaining;
 
         println!("{record:#?}");

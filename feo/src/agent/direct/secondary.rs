@@ -61,8 +61,7 @@ impl Secondary {
                 let agent_id = config.id; // Use the correct AgentId from the config.
                 thread::spawn(move || match endpoint {
                     NodeAddress::Tcp(addr) => {
-                        let mut connector =
-                            TcpWorkerConnector::new(addr, activities.iter().map(|(id, _)| *id));
+                        let mut connector = TcpWorkerConnector::new(addr, activities.iter().map(|(id, _)| *id));
                         if let Err(e) = connector.connect_remote() {
                             error!("Worker {} failed to connect to primary: {:?}", id, e);
                             return;
@@ -71,10 +70,9 @@ impl Secondary {
                         if let Err(e) = worker.run() {
                             error!("Worker {} failed with error: {:?}", id, e);
                         }
-                    }
+                    },
                     NodeAddress::UnixSocket(path) => {
-                        let mut connector =
-                            UnixWorkerConnector::new(path, activities.iter().map(|(id, _)| *id));
+                        let mut connector = UnixWorkerConnector::new(path, activities.iter().map(|(id, _)| *id));
                         if let Err(e) = connector.connect_remote() {
                             error!("Worker {} failed to connect to primary: {:?}", id, e);
                             return;
@@ -83,7 +81,7 @@ impl Secondary {
                         if let Err(e) = worker.run() {
                             error!("Worker {} failed with error: {:?}", id, e);
                         }
-                    }
+                    },
                 })
             })
             .collect();

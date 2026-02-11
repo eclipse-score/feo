@@ -11,16 +11,14 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use crate::protocol::{
-    EventInfo, MAX_INFO_SIZE, MAX_PACKET_SIZE, TraceData, TracePacket, truncate,
-};
+use crate::protocol::{truncate, EventInfo, TraceData, TracePacket, MAX_INFO_SIZE, MAX_PACKET_SIZE};
 use core::sync::atomic;
 use core::sync::atomic::AtomicBool;
 use core::time::Duration;
 use feo_log::error;
 use std::io::Write;
 use std::os::unix::net::UnixStream;
-use std::sync::{Arc, mpsc};
+use std::sync::{mpsc, Arc};
 use std::thread::JoinHandle;
 use std::{io, thread};
 use tracing::level_filters::LevelFilter;
@@ -89,7 +87,7 @@ impl Subscriber {
                 // disable further tracing (TODO: add a time period of retrying)
                 enabled.store(false, atomic::Ordering::Relaxed);
                 return;
-            }
+            },
         };
 
         // Create buffer for serialization
@@ -100,16 +98,14 @@ impl Subscriber {
         let mut last_flush = std::time::Instant::now();
 
         loop {
-            let packet = receiver
-                .recv()
-                .expect("trace subscriber failed to receive, aborting");
+            let packet = receiver.recv().expect("trace subscriber failed to receive, aborting");
 
             let serialized = match postcard::to_slice_cobs(&packet, &mut buffer[..]) {
                 Ok(serialized) => serialized,
                 Err(e) => {
                     error!("Failed to serialize trace packet: {e:?}");
                     continue;
-                }
+                },
             };
 
             let ret = socket_writer.write_all(serialized);
@@ -168,9 +164,7 @@ impl tracing::Subscriber for Subscriber {
     }
 
     fn record(&self, span: &span::Id, _: &span::Record) {
-        let trace_data = TraceData::Record {
-            span: span.into_u64(),
-        };
+        let trace_data = TraceData::Record { span: span.into_u64() };
         let trace_packet = TracePacket::now_with_data(trace_data);
         self.send(trace_packet);
     }
@@ -193,17 +187,13 @@ impl tracing::Subscriber for Subscriber {
     }
 
     fn enter(&self, span: &span::Id) {
-        let trace_data = TraceData::Enter {
-            span: span.into_u64(),
-        };
+        let trace_data = TraceData::Enter { span: span.into_u64() };
         let trace_packet = TracePacket::now_without_process(trace_data);
         self.send(trace_packet);
     }
 
     fn exit(&self, span: &span::Id) {
-        let trace_data = TraceData::Exit {
-            span: span.into_u64(),
-        };
+        let trace_data = TraceData::Exit { span: span.into_u64() };
         let trace_packet = TracePacket::now_without_process(trace_data);
         self.send(trace_packet);
     }

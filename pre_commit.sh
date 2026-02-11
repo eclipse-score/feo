@@ -19,9 +19,9 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 buildifier -r $SCRIPT_DIR
 bazelisk mod tidy
-bazelisk build //:format.fix
-bazelisk build //:format.check
-cargo fmt --all
+bazelisk run //:format.fix
+bazelisk run  //:format.check_Rust_with_rustfmt
+bazelisk run //:copyright.check
 bazelisk build --config=lint-rust //...
 bazelisk build //...
 bazelisk test //...

@@ -15,8 +15,7 @@ use crate::ids::{ActivityId, AgentId, WorkerId};
 use crate::topicspec::{Direction, TopicSpecification};
 use alloc::vec::Vec;
 use feo_com::interface::{
-    ComBackend, ComBackendTopicPrimaryInitialization, ComBackendTopicSecondaryInitialization,
-    TopicHandle, run_backend,
+    run_backend, ComBackend, ComBackendTopicPrimaryInitialization, ComBackendTopicSecondaryInitialization, TopicHandle,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -39,12 +38,7 @@ pub fn initialize_com_primary(
     max_additional_readers: usize,
 ) -> Vec<TopicHandle> {
     let num_local_requests = local_requests(agent_assignments, agent_id, &topic_specs);
-    let num_remote_requests = remote_requests(
-        agent_assignments,
-        agent_id,
-        &topic_specs,
-        max_additional_readers,
-    );
+    let num_remote_requests = remote_requests(agent_assignments, agent_id, &topic_specs, max_additional_readers);
 
     let mut handles = Vec::with_capacity(topic_specs.len());
     let local_activities = local_activities(agent_assignments, agent_id);
@@ -96,8 +90,7 @@ pub fn initialize_com_secondary(
     let mut handles = Vec::with_capacity(topic_specs.len());
     for spec in topic_specs {
         let is_local_write = is_write(local_activities, &spec);
-        let init_params =
-            ComBackendTopicSecondaryInitialization::new(spec.topic, backend, is_local_write);
+        let init_params = ComBackendTopicSecondaryInitialization::new(spec.topic, backend, is_local_write);
         let handle = (spec.init_secondary_fn)(&init_params);
         handles.push(handle);
     }
@@ -110,10 +103,7 @@ pub fn initialize_com_secondary(
 ///
 /// * backend: the com backend to use
 /// * topics_specs: Specifications of all topics possibly recorded
-pub fn initialize_com_recorder(
-    backend: ComBackend,
-    topic_specs: Vec<TopicSpecification>,
-) -> Vec<TopicHandle> {
+pub fn initialize_com_recorder(backend: ComBackend, topic_specs: Vec<TopicSpecification>) -> Vec<TopicHandle> {
     let mut handles = Vec::with_capacity(topic_specs.len());
     for spec in topic_specs {
         let init_params = ComBackendTopicSecondaryInitialization::new(spec.topic, backend, false);
@@ -132,12 +122,7 @@ fn local_requests(
     let local_activities = local_activities(agent_assignments, agent_id);
     topic_specs
         .iter()
-        .flat_map(|ts| {
-            ts.peers
-                .iter()
-                .map(|a| a.0)
-                .filter(|a| local_activities.contains(a))
-        })
+        .flat_map(|ts| ts.peers.iter().map(|a| a.0).filter(|a| local_activities.contains(a)))
         .count()
 }
 
@@ -153,12 +138,7 @@ fn remote_requests(
     // Calculate number of actual subscribers
     let num_requests = topic_specs
         .iter()
-        .flat_map(|ts| {
-            ts.peers
-                .iter()
-                .map(|a| a.0)
-                .filter(|a| remote_activities.contains(a))
-        })
+        .flat_map(|ts| ts.peers.iter().map(|a| a.0).filter(|a| remote_activities.contains(a)))
         .count();
 
     // Add `max_additional_subscribers` for each topic

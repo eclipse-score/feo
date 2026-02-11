@@ -57,20 +57,12 @@ impl<'s> Recorder<'s> {
         } = config;
 
         let mut connector = match endpoint {
-            NodeAddress::Tcp(addr) => {
-                Box::new(TcpRecorderConnector::new(id, addr)) as Box<dyn ConnectRecorder>
-            }
-            NodeAddress::UnixSocket(path) => {
-                Box::new(UnixRecorderConnector::new(id, path)) as Box<dyn ConnectRecorder>
-            }
+            NodeAddress::Tcp(addr) => Box::new(TcpRecorderConnector::new(id, addr)) as Box<dyn ConnectRecorder>,
+            NodeAddress::UnixSocket(path) => Box::new(UnixRecorderConnector::new(id, path)) as Box<dyn ConnectRecorder>,
         };
-        connector
-            .connect_remote()
-            .expect("failed to connect to scheduler");
+        connector.connect_remote().expect("failed to connect to scheduler");
 
-        let recorder =
-            FileRecorder::new(id, connector, receive_timeout, record_file, rules, registry)
-                .unwrap();
+        let recorder = FileRecorder::new(id, connector, receive_timeout, record_file, rules, registry).unwrap();
 
         Self { recorder }
     }

@@ -31,10 +31,7 @@ pub fn activity_lib(sources: &[&str], header_dirs: &[&str], library: &str, root_
     let cpp_include_dir = root_path.join(cpp_include_dir).canonicalize().unwrap();
 
     let mut build = cc::Build::new();
-    build
-        .cpp(true)
-        .includes([cpp_include_dir])
-        .includes(header_dirs);
+    build.cpp(true).includes([cpp_include_dir]).includes(header_dirs);
     for file in sources {
         build.file(file);
     }

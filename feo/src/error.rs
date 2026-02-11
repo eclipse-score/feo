@@ -58,19 +58,15 @@ impl core::fmt::Display for Error {
         match self {
             Error::ActivityFailed(id, err) => {
                 write!(f, "activity {id} reported a failure: {err:?}")
-            }
+            },
             Error::ActivityNotFound(id) => write!(f, "failed to find activity with ID {id}"),
             Error::Channel(description) => write!(f, "channel error: {description}"),
             Error::ChannelClosed => write!(f, "channel closed by peer"),
             Error::ChannelNotFound(id) => write!(f, "failed to find channel with ID {id}"),
             Error::Io((e, description)) => write!(f, "{description}: io error: {e}"),
             Error::Timeout(duration, action) => {
-                write!(
-                    f,
-                    "timeout reached ({:0.3}s) while {action}",
-                    duration.as_secs_f64()
-                )
-            }
+                write!(f, "timeout reached ({:0.3}s) while {action}", duration.as_secs_f64())
+            },
             Error::UnexpectedProtocolSignal => write!(f, "received unexpected protocol signal"),
             Error::UnexpectedSignal(signal) => write!(f, "received unexpected signal {signal}"),
             Error::WorkerNotFound(id) => write!(f, "failed to find worker with ID {id}"),

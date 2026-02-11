@@ -18,8 +18,8 @@ use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::fmt;
 use feo_com::interface::{
-    ComBackendTopicPrimaryInitialization, ComBackendTopicSecondaryInitialization, Topic,
-    TopicHandle, init_topic_primary, init_topic_secondary,
+    init_topic_primary, init_topic_secondary, ComBackendTopicPrimaryInitialization,
+    ComBackendTopicSecondaryInitialization, Topic, TopicHandle,
 };
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
@@ -45,10 +45,7 @@ pub struct TopicSpecification<'a> {
 }
 
 impl<'a> TopicSpecification<'a> {
-    pub fn new<T: Default + fmt::Debug + 'static>(
-        topic: Topic<'a>,
-        peers: Vec<(ActivityId, Direction)>,
-    ) -> Self {
+    pub fn new<T: Default + fmt::Debug + 'static>(topic: Topic<'a>, peers: Vec<(ActivityId, Direction)>) -> Self {
         let init_primary_fn = Box::new(init_topic_primary::<T>);
         let init_secondary_fn = Box::new(init_topic_secondary::<T>);
         Self {

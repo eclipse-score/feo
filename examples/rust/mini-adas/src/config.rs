@@ -12,8 +12,7 @@
  ********************************************************************************/
 
 use crate::activities::components::{
-    BrakeController, Camera, EmergencyBraking, EnvironmentRenderer, NeuralNet, Radar,
-    SteeringController,
+    BrakeController, Camera, EmergencyBraking, EnvironmentRenderer, NeuralNet, Radar, SteeringController,
 };
 use crate::activities::messages::{BrakeInstruction, CameraImage, RadarScan, Scene, Steering};
 use crate::ffi::{lane_assist, trajectory_visualizer};
@@ -58,10 +57,7 @@ pub fn agent_assignments() -> HashMap<AgentId, Vec<(WorkerId, Vec<ActivityIdAndB
     // Assign activities to different workers
     let w40: WorkerAssignment = (
         40.into(),
-        vec![(
-            0.into(),
-            Box::new(|id| Camera::build(id, TOPIC_CAMERA_FRONT)),
-        )],
+        vec![(0.into(), Box::new(|id| Camera::build(id, TOPIC_CAMERA_FRONT)))],
     );
     let w41: WorkerAssignment = (
         41.into(),
@@ -73,14 +69,7 @@ pub fn agent_assignments() -> HashMap<AgentId, Vec<(WorkerId, Vec<ActivityIdAndB
         vec![
             (
                 2.into(),
-                Box::new(|id| {
-                    NeuralNet::build(
-                        id,
-                        TOPIC_CAMERA_FRONT,
-                        TOPIC_RADAR_FRONT,
-                        TOPIC_INFERRED_SCENE,
-                    )
-                }),
+                Box::new(|id| NeuralNet::build(id, TOPIC_CAMERA_FRONT, TOPIC_RADAR_FRONT, TOPIC_INFERRED_SCENE)),
             ),
             (
                 3.into(),
@@ -94,9 +83,7 @@ pub fn agent_assignments() -> HashMap<AgentId, Vec<(WorkerId, Vec<ActivityIdAndB
         vec![
             (
                 4.into(),
-                Box::new(|id| {
-                    EmergencyBraking::build(id, TOPIC_INFERRED_SCENE, TOPIC_CONTROL_BRAKES)
-                }),
+                Box::new(|id| EmergencyBraking::build(id, TOPIC_INFERRED_SCENE, TOPIC_CONTROL_BRAKES)),
             ),
             (
                 6.into(),
@@ -112,10 +99,7 @@ pub fn agent_assignments() -> HashMap<AgentId, Vec<(WorkerId, Vec<ActivityIdAndB
                 7.into(),
                 Box::new(|id| SteeringController::build(id, TOPIC_CONTROL_STEERING)),
             ),
-            (
-                8.into(),
-                Box::new(|id| trajectory_visualizer::CppActivity::build(id)),
-            ),
+            (8.into(), Box::new(|id| trajectory_visualizer::CppActivity::build(id))),
         ],
     );
 
@@ -134,9 +118,7 @@ pub fn agent_assignments() -> HashMap<AgentId, Vec<(WorkerId, Vec<ActivityIdAndB
     .into_iter()
     .collect();
     #[cfg(feature = "signalling_direct_mpsc")]
-    let assignment = [(100.into(), vec![w40, w41, w42, w43, w44])]
-        .into_iter()
-        .collect();
+    let assignment = [(100.into(), vec![w40, w41, w42, w43, w44])].into_iter().collect();
 
     assignment
 }
@@ -181,14 +163,8 @@ pub fn topic_dependencies<'a>() -> Vec<TopicSpecification<'a>> {
     use Direction::*;
 
     vec![
-        TopicSpecification::new::<CameraImage>(
-            TOPIC_CAMERA_FRONT,
-            vec![(0.into(), Outgoing), (2.into(), Incoming)],
-        ),
-        TopicSpecification::new::<RadarScan>(
-            TOPIC_RADAR_FRONT,
-            vec![(1.into(), Outgoing), (2.into(), Incoming)],
-        ),
+        TopicSpecification::new::<CameraImage>(TOPIC_CAMERA_FRONT, vec![(0.into(), Outgoing), (2.into(), Incoming)]),
+        TopicSpecification::new::<RadarScan>(TOPIC_RADAR_FRONT, vec![(1.into(), Outgoing), (2.into(), Incoming)]),
         TopicSpecification::new::<Scene>(
             TOPIC_INFERRED_SCENE,
             vec![
@@ -202,10 +178,7 @@ pub fn topic_dependencies<'a>() -> Vec<TopicSpecification<'a>> {
             TOPIC_CONTROL_BRAKES,
             vec![(4.into(), Outgoing), (6.into(), Incoming)],
         ),
-        TopicSpecification::new::<Steering>(
-            TOPIC_CONTROL_STEERING,
-            vec![(5.into(), Outgoing), (7.into(), Incoming)],
-        ),
+        TopicSpecification::new::<Steering>(TOPIC_CONTROL_STEERING, vec![(5.into(), Outgoing), (7.into(), Incoming)]),
     ]
 }
 

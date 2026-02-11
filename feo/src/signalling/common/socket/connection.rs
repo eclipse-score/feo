@@ -141,7 +141,7 @@ where
                 Ok(0) => {
                     trace!("Read zero bytes");
                     return Err(io::ErrorKind::ConnectionReset.into());
-                }
+                },
                 Ok(n) => {
                     trace!("Read {n} bytes");
                     self.recv_end += n;
@@ -150,15 +150,15 @@ where
                     if self.recv_end == self.recv_buffer.len() {
                         return Ok(());
                     }
-                }
+                },
                 Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                     trace!("Received WouldBlock");
                     self.stream_readable = false;
                     return Ok(());
-                }
+                },
                 Err(e) => {
                     return Err(e);
-                }
+                },
             }
         }
     }
@@ -180,11 +180,11 @@ where
                 }
 
                 Some(msg)
-            }
+            },
             None => {
                 self.buffer_readable = false;
                 None
-            }
+            },
         }
     }
 

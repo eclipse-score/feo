@@ -13,7 +13,7 @@
 
 //! Central trace collector
 
-use anyhow::{Error, bail};
+use anyhow::{bail, Error};
 use feo_logger::fmt::format_owned;
 use feo_logger::record::OwnedRecord;
 use tokio::sync::mpsc;

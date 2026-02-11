@@ -1,19 +1,19 @@
-/********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
- *
- * See the NOTICE file(s) distributed with this work for additional
- * information regarding copyright ownership.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Apache License Version 2.0 which is available at
- * https://www.apache.org/licenses/LICENSE-2.0
- *
- * SPDX-License-Identifier: Apache-2.0
- ********************************************************************************/
+// *******************************************************************************
+// Copyright (c) 2025 Contributors to the Eclipse Foundation
+//
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// <https://www.apache.org/licenses/LICENSE-2.0>
+//
+// SPDX-License-Identifier: Apache-2.0
+// *******************************************************************************
 
-use crate::Scenario;
 use crate::activities::{Monitor, Receiver, Sender};
 use crate::config::TOPIC_COUNTER;
+use crate::Scenario;
 use feo::activity::{ActivityBuilder, ActivityIdAndBuilder};
 use feo::ids::{ActivityId, AgentId, WorkerId};
 use feo::topicspec::{Direction, TopicSpecification};
@@ -27,10 +27,8 @@ pub type WorkerAssignment = (WorkerId, Vec<(ActivityId, Box<dyn ActivityBuilder>
 pub trait ScenarioConfig {
     fn activity_dependencies(&self) -> ActivityDependencies;
 
-    fn agent_assignments(
-        &self,
-        monitor_server: String,
-    ) -> HashMap<AgentId, Vec<(WorkerId, Vec<ActivityIdAndBuilder>)>>;
+    fn agent_assignments(&self, monitor_server: String)
+        -> HashMap<AgentId, Vec<(WorkerId, Vec<ActivityIdAndBuilder>)>>;
 
     fn topic_dependencies(&self) -> Vec<TopicSpecification<'static>>;
 
@@ -95,10 +93,7 @@ impl ScenarioConfig for Scenario {
     ) -> HashMap<AgentId, Vec<(WorkerId, Vec<ActivityIdAndBuilder>)>> {
         match self {
             Scenario::SingleAgent => {
-                let w40: WorkerAssignment = (
-                    40.into(),
-                    vec![(0.into(), Box::new(|id| Sender::build(id)))],
-                );
+                let w40: WorkerAssignment = (40.into(), vec![(0.into(), Box::new(|id| Sender::build(id)))]);
                 let w41: WorkerAssignment = (
                     41.into(),
                     vec![
@@ -107,12 +102,9 @@ impl ScenarioConfig for Scenario {
                     ],
                 );
                 [(100.into(), vec![w40, w41])].into_iter().collect()
-            }
+            },
             Scenario::MultipleAgents => {
-                let w40: WorkerAssignment = (
-                    40.into(),
-                    vec![(0.into(), Box::new(|id| Sender::build(id)))],
-                );
+                let w40: WorkerAssignment = (40.into(), vec![(0.into(), Box::new(|id| Sender::build(id)))]);
                 let w41: WorkerAssignment = (
                     41.into(),
                     vec![
@@ -120,10 +112,8 @@ impl ScenarioConfig for Scenario {
                         (2.into(), Box::new(|id| Monitor::build(id, monitor_server))),
                     ],
                 );
-                [(100.into(), vec![w41]), (101.into(), vec![w40])]
-                    .into_iter()
-                    .collect()
-            }
+                [(100.into(), vec![w41]), (101.into(), vec![w40])].into_iter().collect()
+            },
         }
     }
 

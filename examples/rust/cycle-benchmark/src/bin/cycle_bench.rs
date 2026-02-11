@@ -55,21 +55,21 @@ fn run_as_primary(params: Params, app_config: ApplicationConfig) {
                 .expect("failed to create mpsc primary")
                 .run()
                 .unwrap();
-        }
+        },
         signalling @ SignallingType::DirectTcp | signalling @ SignallingType::DirectUnix => {
             let config = direct_sockets::make_primary_config(params, app_config, signalling);
             direct_sockets::Primary::new(config)
                 .expect("failed to create direct socket primary")
                 .run()
                 .unwrap();
-        }
+        },
         signalling @ SignallingType::RelayedTcp | signalling @ SignallingType::RelayedUnix => {
             let config = relayed_sockets::make_primary_config(params, app_config, signalling);
             relayed_sockets::Primary::new(config)
                 .expect("failed to create relayed socket primary")
                 .run()
                 .unwrap();
-        }
+        },
     }
 }
 
@@ -84,15 +84,15 @@ fn run_as_secondary(params: Params, app_config: ApplicationConfig) {
         SignallingType::DirectMpsc => {
             let config = direct_mpsc::make_secondary_config(params, app_config);
             direct_mpsc::Secondary::new(config).run();
-        }
+        },
         signalling @ SignallingType::DirectTcp | signalling @ SignallingType::DirectUnix => {
             let config = direct_sockets::make_secondary_config(params, app_config, signalling);
             direct_sockets::Secondary::new(config).run();
-        }
+        },
         signalling @ SignallingType::RelayedTcp | signalling @ SignallingType::RelayedUnix => {
             let config = relayed_sockets::make_secondary_config(params, app_config, signalling);
             relayed_sockets::Secondary::new(config).run();
-        }
+        },
     }
 }
 
@@ -112,19 +112,15 @@ fn run_as_recorder(params: Params, app_config: ApplicationConfig) {
         SignallingType::DirectMpsc => {
             let config = direct_mpsc::make_recorder_config(params, app_config, &registry, rules);
             direct_mpsc::Recorder::new(config).run();
-        }
+        },
         signalling @ SignallingType::DirectTcp | signalling @ SignallingType::DirectUnix => {
-            let config = direct_sockets::make_recorder_config(
-                params, app_config, &registry, rules, signalling,
-            );
+            let config = direct_sockets::make_recorder_config(params, app_config, &registry, rules, signalling);
             direct_sockets::Recorder::new(config).run();
-        }
+        },
         signalling @ SignallingType::RelayedTcp | signalling @ SignallingType::RelayedUnix => {
-            let config = relayed_sockets::make_recorder_config(
-                params, app_config, &registry, rules, signalling,
-            );
+            let config = relayed_sockets::make_recorder_config(params, app_config, &registry, rules, signalling);
             relayed_sockets::Recorder::new(config).run();
-        }
+        },
     }
 }
 
@@ -173,10 +169,7 @@ mod direct_mpsc {
     pub(super) use feo::agent::direct::recorder::{Recorder, RecorderConfig};
     pub(super) use feo::agent::direct::secondary::{Secondary, SecondaryConfig};
 
-    pub(super) fn make_primary_config(
-        params: Params,
-        app_config: ApplicationConfig,
-    ) -> PrimaryConfig {
+    pub(super) fn make_primary_config(params: Params, app_config: ApplicationConfig) -> PrimaryConfig {
         assert!(
             app_config.secondaries().is_empty(),
             "mpsc-only signalling does not support multi-agent configurations",
@@ -251,12 +244,7 @@ mod direct_sockets {
             activity_agent_map: app_config
                 .activity_worker_map()
                 .iter()
-                .map(|(act_id, w_id)| {
-                    (
-                        *act_id,
-                        app_config.worker_agent_map().get(w_id).copied().unwrap(),
-                    )
-                })
+                .map(|(act_id, w_id)| (*act_id, app_config.worker_agent_map().get(w_id).copied().unwrap()))
                 .collect(),
         }
     }
@@ -268,10 +256,7 @@ mod direct_sockets {
     ) -> SecondaryConfig {
         SecondaryConfig {
             id: params.agent_id,
-            worker_assignments: app_config
-                .worker_assignments()
-                .remove(&params.agent_id)
-                .unwrap(),
+            worker_assignments: app_config.worker_assignments().remove(&params.agent_id).unwrap(),
             timeout: Duration::from_secs(1),
             endpoint: endpoint(&app_config, signalling),
         }
@@ -307,10 +292,7 @@ mod relayed_sockets {
     pub(super) use feo::agent::relayed::recorder::{Recorder, RecorderConfig};
     pub(super) use feo::agent::relayed::secondary::{Secondary, SecondaryConfig};
 
-    fn endpoints(
-        app_config: &ApplicationConfig,
-        signalling: SignallingType,
-    ) -> (NodeAddress, NodeAddress) {
+    fn endpoints(app_config: &ApplicationConfig, signalling: SignallingType) -> (NodeAddress, NodeAddress) {
         match signalling {
             SignallingType::RelayedTcp => (
                 NodeAddress::Tcp(app_config.bind_addrs().0),

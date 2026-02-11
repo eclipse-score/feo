@@ -26,9 +26,7 @@ pub(crate) struct RecordingTranscoder<T: Serialize + 'static + core::fmt::Debug>
     type_name: String,
 }
 
-impl<T: Serialize + postcard::experimental::max_size::MaxSize + core::fmt::Debug>
-    RecordingTranscoder<T>
-{
+impl<T: Serialize + postcard::experimental::max_size::MaxSize + core::fmt::Debug> RecordingTranscoder<T> {
     /// Create a transcoder reading from the given com layer topic
     pub fn build(
         input_builder: impl Fn(&str) -> Box<dyn ActivityInput<T>> + Send,

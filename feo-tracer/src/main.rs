@@ -13,10 +13,10 @@
 
 //! Collect trace data - placeholder
 
-use anyhow::{Context, Error, bail};
+use anyhow::{bail, Context, Error};
 use argh::FromArgs;
 use core::future::pending;
-use feo_log::{LevelFilter, debug, info};
+use feo_log::{debug, info, LevelFilter};
 use feo_tracer::io::listen;
 use feo_tracer::perfetto;
 use futures::FutureExt;
@@ -104,8 +104,7 @@ fn main() -> Result<(), Error> {
         // Open the output file and create a progress bar for the writes
         let writer = io::BufWriter::with_capacity(
             FILE_BUFFER_SIZE,
-            fs::File::create(&out)
-                .with_context(|| format!("failed to create {}", out.display()))?,
+            fs::File::create(&out).with_context(|| format!("failed to create {}", out.display()))?,
         );
 
         // Wrap writer in a progress bar
