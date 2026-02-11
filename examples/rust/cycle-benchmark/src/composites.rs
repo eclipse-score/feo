@@ -27,12 +27,8 @@ pub struct CompositeActivity {
 }
 
 impl CompositeActivity {
-    pub fn build(
-        activity_id: ActivityId,
-        builders: Vec<ActivityIdAndBuilder>,
-    ) -> Box<dyn Activity> {
-        let activities: Vec<Box<dyn Activity>> =
-            builders.into_iter().map(|idb| idb.1(idb.0)).collect();
+    pub fn build(activity_id: ActivityId, builders: Vec<ActivityIdAndBuilder>) -> Box<dyn Activity> {
+        let activities: Vec<Box<dyn Activity>> = builders.into_iter().map(|idb| idb.1(idb.0)).collect();
 
         let composite = CompositeActivity {
             activity_id,
@@ -88,12 +84,7 @@ impl core::fmt::Debug for CompositeActivity {
 pub fn composite_builder(components: &[ActivityId]) -> Box<dyn ActivityBuilder> {
     let ids_builders: Vec<ActivityIdAndBuilder> = components
         .iter()
-        .map(|id| {
-            (
-                *id,
-                Box::new(DummyActivity::build) as Box<dyn ActivityBuilder>,
-            )
-        })
+        .map(|id| (*id, Box::new(DummyActivity::build) as Box<dyn ActivityBuilder>))
         .collect();
     Box::new(|id| CompositeActivity::build(id, ids_builders))
 }
@@ -141,9 +132,7 @@ pub fn find_composites(
         // skip activities depending on a single other activity having a single dependant
         // => not first in chain, will be included in another chain
         if have_single_dependency.contains(chain_start) {
-            let dependency = activity_deps
-                .get(chain_start)
-                .expect("missing dependencies")[0];
+            let dependency = activity_deps.get(chain_start).expect("missing dependencies")[0];
             if have_single_dependant.contains_key(&dependency) {
                 continue;
             }
@@ -164,9 +153,7 @@ pub fn find_composites(
             }
 
             // Get dependant
-            let dependant = have_single_dependant
-                .get(current)
-                .expect("missing dependant");
+            let dependant = have_single_dependant.get(current).expect("missing dependant");
 
             // Check, if dependant has a single dependency;
             // otherwise, it is not part of the chain and the chain ends

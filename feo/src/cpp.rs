@@ -62,8 +62,7 @@ macro_rules! cpp_activity {
                 pub fn build(activity_id: ActivityId) -> Box<dyn Activity> {
                     // Create C++ activity in heap memory of C++
                     // Safety: Call of external C functions belonging to C++ activitiy, to be reviewed
-                    let cpp_activity =
-                        unsafe { make_fn_call!($name, _create, (activity_id.into())) };
+                    let cpp_activity = unsafe { make_fn_call!($name, _create, (activity_id.into())) };
 
                     Box::new(Self {
                         activity_id,

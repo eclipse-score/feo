@@ -15,13 +15,13 @@ use crate::error::Error;
 use crate::ids::ActivityId;
 use crate::signalling::common::interface::ConnectWorker;
 use crate::signalling::common::signals::Signal;
-use crate::signalling::common::socket::ProtocolSignal;
 use crate::signalling::common::socket::client::{SocketClient, TcpClient, UnixClient};
+use crate::signalling::common::socket::ProtocolSignal;
 use alloc::vec::Vec;
 use core::net::SocketAddr;
 use core::time::Duration;
-use mio::Events;
 use mio::net::{TcpStream, UnixStream};
+use mio::Events;
 use std::io;
 use std::path::PathBuf;
 
@@ -74,10 +74,7 @@ where
 
 impl TcpWorkerConnector {
     /// Create a new instance
-    pub(crate) fn new(
-        address: SocketAddr,
-        activity_ids: impl IntoIterator<Item = ActivityId>,
-    ) -> Self {
+    pub(crate) fn new(address: SocketAddr, activity_ids: impl IntoIterator<Item = ActivityId>) -> Self {
         let activity_ids = activity_ids.into_iter().collect();
         Self {
             endpoint: address,
@@ -88,10 +85,7 @@ impl TcpWorkerConnector {
     }
 
     fn connect_remote(&mut self) -> Result<(), Error> {
-        let connect_signals = self
-            .activity_ids
-            .iter()
-            .map(|id| ProtocolSignal::ActivityHello(*id));
+        let connect_signals = self.activity_ids.iter().map(|id| ProtocolSignal::ActivityHello(*id));
         let tcp_client = TcpClient::connect(connect_signals, self.endpoint);
         self.client = Some(tcp_client);
         Ok(())
@@ -111,10 +105,7 @@ impl UnixWorkerConnector {
     }
 
     fn connect_remote(&mut self) -> Result<(), Error> {
-        let connect_signals = self
-            .activity_ids
-            .iter()
-            .map(|id| ProtocolSignal::ActivityHello(*id));
+        let connect_signals = self.activity_ids.iter().map(|id| ProtocolSignal::ActivityHello(*id));
         let unix_client = UnixClient::connect(connect_signals, &self.endpoint);
         self.client = Some(unix_client);
         Ok(())

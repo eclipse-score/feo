@@ -358,7 +358,7 @@ pub fn init_topic_primary<T: fmt::Debug + Default + 'static>(
                 }
             };
             linux_shm::init_topic::<T>(params.topic, mapping_mode, agent_role)
-        }
+        },
     }
 }
 
@@ -381,7 +381,7 @@ pub fn init_topic_secondary<T: fmt::Debug + Default + 'static>(
                 }
             };
             linux_shm::init_topic::<T>(params.topic, mapping_mode, agent_role)
-        }
+        },
     }
 }
 
@@ -403,10 +403,10 @@ impl<T: 'static> From<Box<T>> for TopicHandle {
 pub fn run_backend(backend: ComBackend, _local_requests: usize, _remote_requests: usize) {
     match backend {
         #[cfg(feature = "ipc_iceoryx2")]
-        ComBackend::Iox2 => {}
+        ComBackend::Iox2 => {},
         #[cfg(feature = "ipc_linux_shm")]
         ComBackend::LinuxShm => {
             linux_shm::ComRuntime::run_service(_remote_requests);
-        }
+        },
     }
 }

@@ -15,8 +15,8 @@ use crate::error::Error;
 use crate::ids::{ActivityId, AgentId};
 use crate::signalling::common::interface::ConnectScheduler;
 use crate::signalling::common::signals::Signal;
-use crate::signalling::common::socket::ProtocolSignal;
 use crate::signalling::common::socket::server::{Listen, SocketServer, TcpServer, UnixServer};
+use crate::signalling::common::socket::ProtocolSignal;
 use crate::timestamp::sync_info;
 use alloc::vec::Vec;
 use core::net::SocketAddr;
@@ -129,38 +129,30 @@ where
     L: Listen<ProtocolSignal>,
 {
     fn connect_remotes(&mut self) -> Result<(), Error> {
-        let mut missing_activities: HashSet<ActivityId> =
-            self.all_activities.iter().cloned().collect();
+        let mut missing_activities: HashSet<ActivityId> = self.all_activities.iter().cloned().collect();
         let mut missing_recorders: HashSet<AgentId> = self.all_recorders.iter().cloned().collect();
         let start_time = Instant::now();
 
         while !missing_activities.is_empty() || !missing_recorders.is_empty() {
             let elapsed = start_time.elapsed();
             if elapsed >= self.connection_timeout {
-                return Err(Error::Io((
-                    std::io::ErrorKind::TimedOut.into(),
-                    "CONNECTION_TIMEOUT",
-                )));
+                return Err(Error::Io((std::io::ErrorKind::TimedOut.into(), "CONNECTION_TIMEOUT")));
             }
             let remaining_timeout = self.connection_timeout.saturating_sub(elapsed);
             // Wait for a new connection, but no longer than the remaining overall timeout.
-            if let Ok(Some((token, signal))) =
-                self.server.receive(&mut self.events, remaining_timeout)
-            {
+            if let Ok(Some((token, signal))) = self.server.receive(&mut self.events, remaining_timeout) {
                 match signal {
                     ProtocolSignal::ActivityHello(activity_id) => {
                         self.activity_id_token_map.insert(activity_id, token);
                         missing_activities.remove(&activity_id);
-                    }
+                    },
                     ProtocolSignal::RecorderHello(agent_id) => {
                         self.recorder_id_token_map.insert(agent_id, token);
                         missing_recorders.remove(&agent_id);
-                    }
+                    },
                     other => {
-                        warn!(
-                            "received unexpected signal {other:?} from connection with token {token:?}"
-                        );
-                    }
+                        warn!("received unexpected signal {other:?} from connection with token {token:?}");
+                    },
                 }
             }
         }
@@ -201,7 +193,7 @@ where
             Ok(Some((_, other))) => {
                 warn!("received unexpected protocol signal {:?}", other);
                 Ok(None)
-            }
+            },
             Ok(None) => Ok(None),
             Err(e) => Err(e),
         }

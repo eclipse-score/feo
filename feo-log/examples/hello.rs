@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 use core::time;
-use feo_log::{Level, LevelFilter, error, log, warn};
+use feo_log::{error, log, warn, Level, LevelFilter};
 use std::thread;
 
 fn main() {
@@ -29,11 +29,7 @@ fn main() {
     );
 
     // Logs a format string on level `info`.
-    log!(
-        Level::Info,
-        "You ask your mom, please? but she still says, {}!",
-        "No"
-    );
+    log!(Level::Info, "You ask your mom, please? but she still says, {}!", "No");
 
     // Logs a static string on level `warn`.
     warn!("You missed two classes");

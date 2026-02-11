@@ -19,7 +19,7 @@ use crate::recording::transcoder::ComRecTranscoder;
 use crate::signalling::common::interface::ConnectRecorder;
 use crate::signalling::common::signals::Signal;
 use crate::timestamp;
-use crate::timestamp::{Timestamp, timestamp};
+use crate::timestamp::{timestamp, Timestamp};
 use alloc::boxed::Box;
 use alloc::vec;
 use alloc::vec::Vec;
@@ -127,30 +127,27 @@ impl<'s> FileRecorder<'s> {
             match signal {
                 Signal::StartupSync(sync_info) => {
                     timestamp::initialize_from(sync_info);
-                }
+                },
                 // If received a step signal, or an end-of-taskchain signal,
                 // record the current latest change of com data, then record the signal.
                 // Also, flush the recording file at whenever the end of the task chain is reached.
                 Signal::Step(_) => {
                     self.record_com_data(&mut msg_buf);
                     self.record_signal(signal);
-                }
+                },
                 Signal::TaskChainEnd(_) => {
                     self.record_com_data(&mut msg_buf);
                     self.record_signal(signal);
                     self.flush();
                     self.send_recorder_ready();
-                }
+                },
                 Signal::Terminate(_) => {
                     debug!(
                         "Recorder {} received Terminate signal. Acknowledging and exiting.",
                         self.id
                     );
                     // Send TerminateAck to the primary.
-                    if let Err(e) = self
-                        .connector
-                        .send_to_scheduler(&Signal::TerminateAck(self.id))
-                    {
+                    if let Err(e) = self.connector.send_to_scheduler(&Signal::TerminateAck(self.id)) {
                         error!("Recorder {} failed to send TerminateAck: {:?}", self.id, e);
                     }
                     debug!("Recorder {} sent termination ack. Exiting.", self.id);
@@ -158,12 +155,12 @@ impl<'s> FileRecorder<'s> {
                     // over the network before the thread exits and closes the socket.
                     thread::sleep(Duration::from_millis(100));
                     return; // Graceful exit from the run loop
-                }
+                },
 
                 // Otherwise, only record the signal
                 _ => {
                     self.record_signal(signal);
-                }
+                },
             }
         }
     }
@@ -197,8 +194,7 @@ impl<'s> FileRecorder<'s> {
                 };
                 let data_desc_record = Record::DataDescription(description);
                 let mut buf = [0u8; Record::POSTCARD_MAX_SIZE];
-                let serialized_header =
-                    postcard::to_slice(&data_desc_record, &mut buf).expect("serialization failed");
+                let serialized_header = postcard::to_slice(&data_desc_record, &mut buf).expect("serialization failed");
 
                 trace!("Writing data: {description:?}");
 
@@ -223,8 +219,7 @@ impl<'s> FileRecorder<'s> {
             timestamp: timestamp(),
         });
         let mut buf = [0u8; Record::POSTCARD_MAX_SIZE];
-        let serialized =
-            postcard::to_slice(&signal_record, &mut buf).expect("serialization failed");
+        let serialized = postcard::to_slice(&signal_record, &mut buf).expect("serialization failed");
         if let Err(e) = self.writer.write_all(serialized) {
             error!("Failed to write signal {signal:?}: {e:?}");
         }

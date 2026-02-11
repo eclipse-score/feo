@@ -162,10 +162,7 @@ fn time_info_now() -> TimeInfo {
         }
 
         tries_remaining -= 1;
-        assert!(
-            tries_remaining > 0,
-            "failed to get synchronized time information"
-        );
+        assert!(tries_remaining > 0, "failed to get synchronized time information");
     }
 }
 

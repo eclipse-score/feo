@@ -13,16 +13,14 @@
 
 use feo::ids::AgentId;
 use feo::recording::recorder::RecordingRules;
-use feo_log::{LevelFilter, debug};
-use mini_adas::activities::messages::{
-    self, BrakeInstruction, CameraImage, RadarScan, Scene, Steering,
-};
+use feo_log::{debug, LevelFilter};
+use mini_adas::activities::messages::{self, BrakeInstruction, CameraImage, RadarScan, Scene, Steering};
 
 use feo::agent::com_init::initialize_com_recorder;
 use feo::topicspec::TopicSpecification;
 use mini_adas::config::{
-    COM_BACKEND, TOPIC_CAMERA_FRONT, TOPIC_CONTROL_BRAKES, TOPIC_CONTROL_STEERING,
-    TOPIC_INFERRED_SCENE, TOPIC_RADAR_FRONT, topic_dependencies,
+    topic_dependencies, COM_BACKEND, TOPIC_CAMERA_FRONT, TOPIC_CONTROL_BRAKES, TOPIC_CONTROL_STEERING,
+    TOPIC_INFERRED_SCENE, TOPIC_RADAR_FRONT,
 };
 use std::collections::HashMap;
 
@@ -34,10 +32,7 @@ fn main() {
     let registry = &messages::type_registry();
     let rules: RecordingRules = HashMap::from([
         (TOPIC_CAMERA_FRONT, core::any::type_name::<CameraImage>()),
-        (
-            TOPIC_CONTROL_BRAKES,
-            core::any::type_name::<BrakeInstruction>(),
-        ),
+        (TOPIC_CONTROL_BRAKES, core::any::type_name::<BrakeInstruction>()),
         (TOPIC_CONTROL_STEERING, core::any::type_name::<Steering>()),
         (TOPIC_INFERRED_SCENE, core::any::type_name::<Scene>()),
         (TOPIC_RADAR_FRONT, core::any::type_name::<RadarScan>()),
@@ -93,11 +88,7 @@ mod cfg {
 
     pub(super) use feo::agent::direct::recorder::{Recorder, RecorderConfig};
 
-    pub(super) fn make_config(
-        agent_id: AgentId,
-        rules: RecordingRules,
-        registry: &TypeRegistry,
-    ) -> RecorderConfig<'_> {
+    pub(super) fn make_config(agent_id: AgentId, rules: RecordingRules, registry: &TypeRegistry) -> RecorderConfig<'_> {
         RecorderConfig {
             id: agent_id,
             record_file: "./rec.bin",
@@ -120,11 +111,7 @@ mod cfg {
 
     pub(super) use feo::agent::direct::recorder::{Recorder, RecorderConfig};
 
-    pub(super) fn make_config(
-        agent_id: AgentId,
-        rules: RecordingRules,
-        registry: &TypeRegistry,
-    ) -> RecorderConfig {
+    pub(super) fn make_config(agent_id: AgentId, rules: RecordingRules, registry: &TypeRegistry) -> RecorderConfig {
         RecorderConfig {
             id: agent_id,
             record_file: "./rec.bin",
@@ -147,11 +134,7 @@ mod cfg {
 
     pub(super) use feo::agent::relayed::recorder::{Recorder, RecorderConfig};
 
-    pub(super) fn make_config(
-        agent_id: AgentId,
-        rules: RecordingRules,
-        registry: &TypeRegistry,
-    ) -> RecorderConfig {
+    pub(super) fn make_config(agent_id: AgentId, rules: RecordingRules, registry: &TypeRegistry) -> RecorderConfig {
         RecorderConfig {
             id: agent_id,
             record_file: "./rec.bin",
@@ -175,11 +158,7 @@ mod cfg {
 
     pub(super) use feo::agent::relayed::recorder::{Recorder, RecorderConfig};
 
-    pub(super) fn make_config(
-        agent_id: AgentId,
-        rules: RecordingRules,
-        registry: &TypeRegistry,
-    ) -> RecorderConfig {
+    pub(super) fn make_config(agent_id: AgentId, rules: RecordingRules, registry: &TypeRegistry) -> RecorderConfig {
         RecorderConfig {
             id: agent_id,
             record_file: "./rec.bin",

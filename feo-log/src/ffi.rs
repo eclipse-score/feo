@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 use log::{Level, LevelFilter, Record};
-use std::ffi::{CStr, c_char, c_int};
+use std::ffi::{c_char, c_int, CStr};
 
 #[allow(non_camel_case_types)]
 type feo_log_Level = ::std::os::raw::c_int;
@@ -52,9 +52,7 @@ extern "C" fn __log(
     };
 
     // Extract the target. This mappes to the tag of the c api
-    let target = unsafe { CStr::from_ptr(target) }
-        .to_str()
-        .expect("invalid target");
+    let target = unsafe { CStr::from_ptr(target) }.to_str().expect("invalid target");
 
     // Construct metadata to be used for the pre check filtering
     let metadata = log::Metadata::builder().level(level).target(target).build();
@@ -64,13 +62,9 @@ extern "C" fn __log(
         return;
     }
 
-    let file = unsafe { CStr::from_ptr(file) }
-        .to_str()
-        .expect("invalid file");
+    let file = unsafe { CStr::from_ptr(file) }.to_str().expect("invalid file");
     let line = line as u32;
-    let message = unsafe { CStr::from_ptr(message) }
-        .to_str()
-        .expect("invalid message");
+    let message = unsafe { CStr::from_ptr(message) }.to_str().expect("invalid message");
 
     // Pass the record to the logger
     log::logger().log(

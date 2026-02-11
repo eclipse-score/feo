@@ -189,9 +189,7 @@ impl Scheduler {
                     self.cycle_time
                 );
             } else {
-                debug!(
-                    "Finished task chain after {task_chain_duration:?}. Sleeping for {time_left:?}"
-                );
+                debug!("Finished task chain after {task_chain_duration:?}. Sleeping for {time_left:?}");
                 thread::sleep(time_left);
             }
 
@@ -223,8 +221,7 @@ impl Scheduler {
                 .filter(|(id, _)| dependencies.contains(id))
                 .all(|(_, state)| state.ready);
             if is_ready {
-                Self::step_activity(act_id, &self.recorder_ids, &mut self.connector)
-                    .expect("failed to step activity");
+                Self::step_activity(act_id, &self.recorder_ids, &mut self.connector).expect("failed to step activity");
                 self.activity_states.get_mut(act_id).unwrap().triggered = true;
             }
         }
@@ -288,21 +285,13 @@ impl Scheduler {
             );
             for activity_id in &started_activities {
                 Self::shutdown_activity(activity_id, &self.recorder_ids, &mut self.connector)
-                    .unwrap_or_else(|e| {
-                        error!(
-                            "Failed to send Shutdown to activity {}: {:?}",
-                            activity_id, e
-                        )
-                    });
+                    .unwrap_or_else(|e| error!("Failed to send Shutdown to activity {}: {:?}", activity_id, e));
             }
 
             // 3. Wait for confirmation from the activities that were told to shut down.
             // A worker sends a `Ready` signal after completing its shutdown.
             let mut pending_shutdown_ack = started_activities;
-            info!(
-                "Waiting for shutdown confirmation from: {:?}",
-                pending_shutdown_ack
-            );
+            info!("Waiting for shutdown confirmation from: {:?}", pending_shutdown_ack);
 
             let shutdown_timeout = self.receive_timeout * (pending_shutdown_ack.len() as u32 + 2);
             let start = Instant::now();
@@ -320,17 +309,14 @@ impl Scheduler {
                         if pending_shutdown_ack.remove(&id) {
                             info!("Received shutdown confirmation from activity {:?}", id);
                         }
-                    }
+                    },
                     Ok(Some(Signal::ActivityFailed((id, err)))) => {
                         // This handles "Activity shutdown error".
-                        error!(
-                            "Activity {} failed during shutdown: {:?}. Continuing.",
-                            id, err
-                        );
+                        error!("Activity {} failed during shutdown: {:?}. Continuing.", id, err);
                         // Remove it from the pending list so we don't wait forever.
                         pending_shutdown_ack.remove(&id);
-                    }
-                    Ok(_) => {} // Ignore other signals or timeouts
+                    },
+                    Ok(_) => {}, // Ignore other signals or timeouts
                     Err(e) => error!("Error receiving shutdown confirmation: {:?}", e),
                 }
             }
@@ -345,10 +331,7 @@ impl Scheduler {
     fn terminate_all_agents(&mut self) {
         // Broadcast Terminate signal to all agents.
         info!("Broadcasting Terminate signal to all agents.");
-        if let Err(e) = self
-            .connector
-            .broadcast_terminate(&Signal::Terminate(timestamp()))
-        {
+        if let Err(e) = self.connector.broadcast_terminate(&Signal::Terminate(timestamp())) {
             error!("Failed to broadcast Terminate signal: {:?}", e);
         }
 
@@ -365,10 +348,7 @@ impl Scheduler {
             return;
         }
 
-        info!(
-            "Waiting for TerminateAck from agents: {:?}",
-            pending_agent_acks
-        );
+        info!("Waiting for TerminateAck from agents: {:?}", pending_agent_acks);
         let agent_ack_timeout = self.receive_timeout * (pending_agent_acks.len() as u32 + 4);
         let start = Instant::now();
 
@@ -380,8 +360,7 @@ impl Scheduler {
                 );
                 break;
             }
-            if let Ok(Some(Signal::TerminateAck(agent_id))) =
-                self.connector.receive(self.receive_timeout)
+            if let Ok(Some(Signal::TerminateAck(agent_id))) = self.connector.receive(self.receive_timeout)
                 && pending_agent_acks.remove(&agent_id)
             {
                 info!("Received TerminateAck from agent {}", agent_id);
@@ -411,34 +390,28 @@ impl Scheduler {
         let activity_id = loop {
             match self.connector.receive(self.receive_timeout)? {
                 None => {
-                    return Err(Error::Timeout(
-                        self.receive_timeout,
-                        "waiting for ready signal",
-                    ));
-                }
+                    return Err(Error::Timeout(self.receive_timeout, "waiting for ready signal"));
+                },
                 Some(signal @ Signal::Ready((id, _))) => {
                     for recorder_id in self.recorder_ids.iter() {
                         self.connector.send_to_recorder(*recorder_id, &signal)?;
                     }
                     break id;
-                }
+                },
                 Some(Signal::ActivityFailed((id, err))) => {
                     error!(
                         "Received failure signal {:?} from activity {}. Initiating graceful shutdown.",
                         err, id
                     );
                     return Err(Error::ActivityFailed(id, err));
-                }
+                },
                 Some(Signal::TerminateAck(agent_id)) => {
-                    trace!(
-                        "Ignoring TerminateAck from agent {} during normal operation",
-                        agent_id
-                    );
+                    trace!("Ignoring TerminateAck from agent {} during normal operation", agent_id);
                     continue;
-                }
+                },
                 Some(other) => {
                     error!("Received unexpected signal {other:?} while waiting for ready signal");
-                }
+                },
             }
         };
 
@@ -494,12 +467,10 @@ impl Scheduler {
                     } else {
                         error!("Received unexpected id {id} in recorder ready signal");
                     }
-                }
+                },
                 Some(other) => {
-                    error!(
-                        "Received unexpected signal {other} while waiting for recorder ready signal"
-                    );
-                }
+                    error!("Received unexpected signal {other} while waiting for recorder ready signal");
+                },
             }
         }
 
@@ -531,8 +502,7 @@ mod loop_duration_meter {
 
     impl<const NUM_STEPS: usize> LoopDurationMeter<NUM_STEPS> {
         pub fn track(&mut self, duration: &feo_time::Duration) {
-            self.duration_micros +=
-                duration.subsec_micros() as usize + 1000000 * duration.as_secs() as usize;
+            self.duration_micros += duration.subsec_micros() as usize + 1000000 * duration.as_secs() as usize;
             self.num_steps += 1;
 
             if self.num_steps == NUM_STEPS {

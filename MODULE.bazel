@@ -76,6 +76,9 @@ RUST_EDITION = "2024"
 
 RUST_VERSION = "1.93.0"
 
+# Shared Rust policies (Clippy config, etc.), overridden locally during development.
+bazel_dep(name = "score_rust_policies", version = "0.0.4", dev_dependency = True)
+
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
     edition = RUST_EDITION,

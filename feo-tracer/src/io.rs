@@ -38,10 +38,7 @@ pub async fn listen(path: &Path, sink: mpsc::Sender<data::TraceRecord>) -> Resul
     // Listen
     info!("Listening on {path:?}");
     loop {
-        let (socket, _) = listener
-            .accept()
-            .await
-            .context("failed to accept connection")?;
+        let (socket, _) = listener.accept().await.context("failed to accept connection")?;
 
         debug!("Accepted connection");
         task::spawn(connection(socket, sink.clone()));
@@ -89,15 +86,15 @@ async fn connection(socket: UnixStream, sink: mpsc::Sender<data::TraceRecord>) {
             Ok(0) => {
                 info!("Connection from {pid} closed");
                 break;
-            }
+            },
             Ok(len) => len,
             Err(ref e) if e.kind() == ErrorKind::WouldBlock => {
                 continue;
-            }
+            },
             Err(e) => {
                 warn!("Failed to receive data from {pid}: {e:?}. Closing connection");
                 break;
-            }
+            },
         };
 
         let buffer = &read_buffer[..len];
@@ -109,26 +106,21 @@ async fn connection(socket: UnixStream, sink: mpsc::Sender<data::TraceRecord>) {
                 FeedResult::OverFull(_) => {
                     warn!("Deserialization buffer overflow in {pid}. Closing connection");
                     break 'deser;
-                }
+                },
                 FeedResult::DeserError(remaining) => remaining,
                 FeedResult::Success { data, remaining } => {
                     // Data successfully decoded, add thread and process info
                     // and transmit to sink
-                    let packet = match data::decode_packet(
-                        pid,
-                        data,
-                        &mut thread_name_cache,
-                        process_name.clone(),
-                    ) {
+                    let packet = match data::decode_packet(pid, data, &mut thread_name_cache, process_name.clone()) {
                         Ok(packet) => packet,
                         Err(e) => {
                             warn!("Failed to decode packet from {pid}: {e:?}. Closing connection",);
                             break 'deser;
-                        }
+                        },
                     };
                     sink.send(packet).await.expect("channel error");
                     remaining
-                }
+                },
             };
         }
     }
@@ -136,10 +128,7 @@ async fn connection(socket: UnixStream, sink: mpsc::Sender<data::TraceRecord>) {
     // Send a process exit event
     sink.send(data::TraceRecord {
         timestamp: SystemTime::now(),
-        process: data::Process {
-            id: pid,
-            name: None,
-        },
+        process: data::Process { id: pid, name: None },
         thread: None,
         data: data::RecordData::Exit,
     })

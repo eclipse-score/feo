@@ -1,15 +1,15 @@
-/********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
- *
- * See the NOTICE file(s) distributed with this work for additional
- * information regarding copyright ownership.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Apache License Version 2.0 which is available at
- * https://www.apache.org/licenses/LICENSE-2.0
- *
- * SPDX-License-Identifier: Apache-2.0
- ********************************************************************************/
+// *******************************************************************************
+// Copyright (c) 2025 Contributors to the Eclipse Foundation
+//
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// <https://www.apache.org/licenses/LICENSE-2.0>
+//
+// SPDX-License-Identifier: Apache-2.0
+// *******************************************************************************
 
 use clap::Parser;
 use ipc_channel::ipc::{IpcOneShotServer, IpcReceiver, IpcSender};
@@ -50,13 +50,8 @@ enum MonitorConnection {
 }
 
 enum ChildHandle {
-    Primary {
-        child: Child,
-        monitor: MonitorConnection,
-    },
-    Secondary {
-        child: Child,
-    },
+    Primary { child: Child, monitor: MonitorConnection },
+    Secondary { child: Child },
 }
 
 /// FEO agent starting and controlling handle
@@ -74,11 +69,7 @@ struct FeoRunner {
 
 impl FeoRunner {
     /// Configure for a single agent setup
-    pub fn single_agent(
-        cli: Cli,
-        signalling: impl Into<String>,
-        scenario: impl Into<String>,
-    ) -> Self {
+    pub fn single_agent(cli: Cli, signalling: impl Into<String>, scenario: impl Into<String>) -> Self {
         Self {
             cli,
             agents: 1,
@@ -89,12 +80,7 @@ impl FeoRunner {
     }
 
     /// Configure for multiple agent setup
-    pub fn multiple_agents(
-        cli: Cli,
-        agents: u32,
-        signalling: impl Into<String>,
-        scenario: impl Into<String>,
-    ) -> Self {
+    pub fn multiple_agents(cli: Cli, agents: u32, signalling: impl Into<String>, scenario: impl Into<String>) -> Self {
         Self {
             cli,
             agents,
@@ -144,17 +130,15 @@ impl FeoRunner {
         trace!("Connecting monitor");
         let primary = &mut self.children[0];
         if let ChildHandle::Primary { monitor, .. } = primary {
-            let (_, (request_tx, notification_rx)): (
-                _,
-                (IpcSender<MonitorRequest>, IpcReceiver<MonitorNotification>),
-            ) = if let MonitorConnection::Unconnected(server) = mem::replace(
-                monitor,
-                MonitorConnection::Unconnected(IpcOneShotServer::new().unwrap().0),
-            ) {
-                server.accept().unwrap()
-            } else {
-                panic!("shouldn't happen")
-            };
+            let (_, (request_tx, notification_rx)): (_, (IpcSender<MonitorRequest>, IpcReceiver<MonitorNotification>)) =
+                if let MonitorConnection::Unconnected(server) = mem::replace(
+                    monitor,
+                    MonitorConnection::Unconnected(IpcOneShotServer::new().unwrap().0),
+                ) {
+                    server.accept().unwrap()
+                } else {
+                    panic!("shouldn't happen")
+                };
             *monitor = MonitorConnection::Connected {
                 _sender: request_tx,
                 receiver: notification_rx,
@@ -173,7 +157,7 @@ impl FeoRunner {
             } = child
             {
                 match receiver.recv().unwrap() {
-                    MonitorNotification::Startup => {}
+                    MonitorNotification::Startup => {},
                     v => panic!("unexpected {v:?}"),
                 }
             }
@@ -189,7 +173,7 @@ impl FeoRunner {
             } = child
             {
                 match receiver.recv().unwrap() {
-                    MonitorNotification::Step => {}
+                    MonitorNotification::Step => {},
                     v => panic!("unexpected {v:?}"),
                 }
             }
@@ -205,7 +189,7 @@ impl FeoRunner {
             } = child
             {
                 match receiver.recv().unwrap() {
-                    MonitorNotification::Shutdown => {}
+                    MonitorNotification::Shutdown => {},
                     v => panic!("unexpected {v:?}"),
                 }
             }
@@ -228,7 +212,7 @@ impl FeoRunner {
                 ChildHandle::Primary { mut child, .. } | ChildHandle::Secondary { mut child } => {
                     let status = child.wait().unwrap();
                     assert!(status.success(), "FEO agent failed");
-                }
+                },
             }
         }
     }

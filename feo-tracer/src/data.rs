@@ -55,12 +55,7 @@ pub struct TraceRecord {
 
 impl TraceRecord {
     /// Create a new trace packet
-    pub fn new(
-        timestamp: SystemTime,
-        process: Process,
-        thread: Option<Thread>,
-        data: RecordData,
-    ) -> Self {
+    pub fn new(timestamp: SystemTime, process: Process, thread: Option<Thread>, data: RecordData) -> Self {
         Self {
             timestamp,
             process,
@@ -113,7 +108,7 @@ impl From<protocol::TraceData> for RecordData {
                     name: String::from_utf8_lossy(&name[0..name_len]).to_string(),
                     info: record_info,
                 }
-            }
+            },
             protocol::TraceData::Record { span } => RecordData::Record { span },
             protocol::TraceData::Event {
                 parent_span,
@@ -127,7 +122,7 @@ impl From<protocol::TraceData> for RecordData {
                     name: String::from_utf8_lossy(&name[0..name_len]).to_string(),
                     info: record_info,
                 }
-            }
+            },
             protocol::TraceData::Enter { span } => RecordData::EnterSpan { id: span },
             protocol::TraceData::Exit { span } => RecordData::ExitSpan { id: span },
         }

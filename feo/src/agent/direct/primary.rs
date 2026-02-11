@@ -88,31 +88,27 @@ impl Primary {
                 let agent_id = config.id;
                 thread::spawn(move || match endpoint {
                     NodeAddress::Tcp(addr) => {
-                        let mut connector =
-                            TcpWorkerConnector::new(addr, activities.iter().map(|(id, _)| *id));
+                        let mut connector = TcpWorkerConnector::new(addr, activities.iter().map(|(id, _)| *id));
                         connector.connect_remote().expect("failed to connect");
 
                         let activity_builders = activities;
-                        let worker =
-                            Worker::new(id, agent_id, activity_builders, connector, timeout);
+                        let worker = Worker::new(id, agent_id, activity_builders, connector, timeout);
 
                         if let Err(e) = worker.run() {
                             feo_log::error!("Worker {} in primary agent failed: {:?}", id, e);
                         }
-                    }
+                    },
                     NodeAddress::UnixSocket(path) => {
-                        let mut connector =
-                            UnixWorkerConnector::new(path, activities.iter().map(|(id, _)| *id));
+                        let mut connector = UnixWorkerConnector::new(path, activities.iter().map(|(id, _)| *id));
                         connector.connect_remote().expect("failed to connect");
 
                         let activity_builders = activities;
-                        let worker =
-                            Worker::new(id, agent_id, activity_builders, connector, timeout);
+                        let worker = Worker::new(id, agent_id, activity_builders, connector, timeout);
 
                         if let Err(e) = worker.run() {
                             feo_log::error!("Worker {} in primary agent failed: {:?}", id, e);
                         }
-                    }
+                    },
                 })
             })
             .collect();
@@ -176,10 +172,7 @@ impl Primary {
         // We can now safely join our local worker threads.
         for th in self.worker_threads.drain(..) {
             if let Err(e) = th.join() {
-                feo_log::error!(
-                    "A local worker thread in the primary agent panicked: {:?}",
-                    e
-                );
+                feo_log::error!("A local worker thread in the primary agent panicked: {:?}", e);
             }
         }
 

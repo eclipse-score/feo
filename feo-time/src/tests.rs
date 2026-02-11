@@ -84,10 +84,7 @@ fn instant_math() {
 
     let second = Duration::from_secs(1);
     assert_almost_eq!(a - second + second, a);
-    assert_almost_eq!(
-        a.checked_sub(second).unwrap().checked_add(second).unwrap(),
-        a
-    );
+    assert_almost_eq!(a.checked_sub(second).unwrap().checked_add(second).unwrap(), a);
 
     // checked_add_duration will not panic on overflow
     let mut maybe_t = Some(Instant::now());
@@ -123,10 +120,7 @@ fn instant_math_is_associative() {
 #[test]
 fn instant_duration_since_saturates() {
     let a = Instant::now();
-    assert_eq!(
-        (a - Duration::from_secs(1)).duration_since(a),
-        Duration::ZERO
-    );
+    assert_eq!((a - Duration::from_secs(1)).duration_since(a), Duration::ZERO);
 }
 
 #[test]
@@ -135,10 +129,7 @@ fn instant_checked_duration_since_nopanic() {
     let earlier = now - Duration::from_secs(1);
     let later = now + Duration::from_secs(1);
     assert_eq!(earlier.checked_duration_since(now), None);
-    assert_eq!(
-        later.checked_duration_since(now),
-        Some(Duration::from_secs(1))
-    );
+    assert_eq!(later.checked_duration_since(now), Some(Duration::from_secs(1)));
     assert_eq!(now.checked_duration_since(now), Some(Duration::ZERO));
 }
 
@@ -157,18 +148,18 @@ fn system_time_math() {
     match b.duration_since(a) {
         Ok(Duration::ZERO) => {
             assert_almost_eq!(a, b);
-        }
+        },
         Ok(dur) => {
             assert!(b > a);
             assert_almost_eq!(b - dur, a);
             assert_almost_eq!(a + dur, b);
-        }
+        },
         Err(dur) => {
             let dur = dur.duration();
             assert!(a > b);
             assert_almost_eq!(b + dur, a);
             assert_almost_eq!(a - dur, b);
-        }
+        },
     }
 
     let second = Duration::from_secs(1);
@@ -176,14 +167,10 @@ fn system_time_math() {
     assert_almost_eq!(a.duration_since(a + second).unwrap_err().duration(), second);
 
     assert_almost_eq!(a - second + second, a);
-    assert_almost_eq!(
-        a.checked_sub(second).unwrap().checked_add(second).unwrap(),
-        a
-    );
+    assert_almost_eq!(a.checked_sub(second).unwrap().checked_add(second).unwrap(), a);
 
     let one_second_from_epoch = UNIX_EPOCH + Duration::from_secs(1);
-    let one_second_from_epoch2 =
-        UNIX_EPOCH + Duration::from_millis(500) + Duration::from_millis(500);
+    let one_second_from_epoch2 = UNIX_EPOCH + Duration::from_millis(500) + Duration::from_millis(500);
     assert_eq!(one_second_from_epoch, one_second_from_epoch2);
 
     // checked_add_duration will not panic on overflow
@@ -209,9 +196,7 @@ fn system_time_elapsed() {
 #[test]
 fn since_epoch() {
     let ts = SystemTime::now();
-    let a = ts
-        .duration_since(UNIX_EPOCH + Duration::from_secs(1))
-        .unwrap();
+    let a = ts.duration_since(UNIX_EPOCH + Duration::from_secs(1)).unwrap();
     let b = ts.duration_since(UNIX_EPOCH).unwrap();
     assert!(b > a);
     assert_eq!(b - a, Duration::from_secs(1));
@@ -240,8 +225,7 @@ fn big_math() {
     // adding/subtracting them all at once.
     #[track_caller]
     fn check<T: Eq + Copy + Debug>(start: Option<T>, op: impl Fn(&T, Duration) -> Option<T>) {
-        const DURATIONS: [Duration; 2] =
-            [Duration::from_secs(i64::MAX as _), Duration::from_secs(50)];
+        const DURATIONS: [Duration; 2] = [Duration::from_secs(i64::MAX as _), Duration::from_secs(50)];
         if let Some(start) = start {
             assert_eq!(
                 op(&start, DURATIONS.into_iter().sum()),
@@ -260,18 +244,12 @@ fn big_math() {
     );
 
     let instant = Instant::now();
-    check(
-        instant.checked_sub(Duration::from_secs(100)),
-        Instant::checked_add,
-    );
+    check(instant.checked_sub(Duration::from_secs(100)), Instant::checked_add);
     check(
         instant.checked_sub(Duration::from_secs(i64::MAX as _)),
         Instant::checked_add,
     );
-    check(
-        instant.checked_add(Duration::from_secs(100)),
-        Instant::checked_sub,
-    );
+    check(instant.checked_add(Duration::from_secs(100)), Instant::checked_sub);
     check(
         instant.checked_add(Duration::from_secs(i64::MAX as _)),
         Instant::checked_sub,

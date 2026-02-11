@@ -194,12 +194,7 @@ pub struct NeuralNet {
 }
 
 impl NeuralNet {
-    pub fn build(
-        activity_id: ActivityId,
-        image_topic: &str,
-        scan_topic: &str,
-        scene_topic: &str,
-    ) -> Box<dyn Activity> {
+    pub fn build(activity_id: ActivityId, image_topic: &str, scan_topic: &str, scene_topic: &str) -> Box<dyn Activity> {
         Box::new(Self {
             activity_id,
             input_image: activity_input(image_topic),
@@ -289,11 +284,7 @@ pub struct EmergencyBraking {
 }
 
 impl EmergencyBraking {
-    pub fn build(
-        activity_id: ActivityId,
-        scene_topic: &str,
-        brake_instruction_topic: &str,
-    ) -> Box<dyn Activity> {
+    pub fn build(activity_id: ActivityId, scene_topic: &str, brake_instruction_topic: &str) -> Box<dyn Activity> {
         Box::new(Self {
             activity_id,
             input_scene: activity_input(scene_topic),
@@ -328,14 +319,10 @@ impl Activity for EmergencyBraking {
                 // Map distances ENGAGE_DISTANCE..MAX_BRAKE_DISTANCE to intensities 0.0..1.0
                 let level = f64::min(
                     1.0,
-                    (ENGAGE_DISTANCE - scene.distance_obstacle)
-                        / (ENGAGE_DISTANCE - MAX_BRAKE_DISTANCE),
+                    (ENGAGE_DISTANCE - scene.distance_obstacle) / (ENGAGE_DISTANCE - MAX_BRAKE_DISTANCE),
                 );
 
-                let brake_instruction = brake_instruction.write_payload(BrakeInstruction {
-                    active: true,
-                    level,
-                });
+                let brake_instruction = brake_instruction.write_payload(BrakeInstruction { active: true, level });
                 brake_instruction.send().unwrap();
             } else {
                 let brake_instruction = brake_instruction.write_payload(BrakeInstruction {
@@ -350,10 +337,7 @@ impl Activity for EmergencyBraking {
 
     #[instrument(name = "EmergencyBraking shutdown")]
     fn shutdown(&mut self) -> Result<(), ActivityError> {
-        debug!(
-            "Shutting down EmergencyBraking activity {}",
-            self.activity_id
-        );
+        debug!("Shutting down EmergencyBraking activity {}", self.activity_id);
         Ok(())
     }
 }
@@ -409,10 +393,7 @@ impl Activity for BrakeController {
 
     #[instrument(name = "BrakeController shutdown")]
     fn shutdown(&mut self) -> Result<(), ActivityError> {
-        debug!(
-            "Shutting down BrakeController activity {}",
-            self.activity_id
-        );
+        debug!("Shutting down BrakeController activity {}", self.activity_id);
         Ok(())
     }
 }
@@ -462,10 +443,7 @@ impl Activity for EnvironmentRenderer {
 
     #[instrument(name = "EnvironmentRenderer shutdown")]
     fn shutdown(&mut self) -> Result<(), ActivityError> {
-        debug!(
-            "Shutting down EnvironmentRenderer activity {}",
-            self.activity_id
-        );
+        debug!("Shutting down EnvironmentRenderer activity {}", self.activity_id);
         Ok(())
     }
 }
@@ -509,20 +487,14 @@ impl Activity for SteeringController {
         sleep_random();
 
         if let Ok(steering) = self.input_steering.read() {
-            debug!(
-                "SteeringController adjusting angle to {:.3}",
-                steering.angle
-            )
+            debug!("SteeringController adjusting angle to {:.3}", steering.angle)
         }
         Ok(())
     }
 
     #[instrument(name = "SteeringController shutdown")]
     fn shutdown(&mut self) -> Result<(), ActivityError> {
-        debug!(
-            "Shutting down SteeringController activity {}",
-            self.activity_id
-        );
+        debug!("Shutting down SteeringController activity {}", self.activity_id);
         Ok(())
     }
 }
@@ -586,7 +558,5 @@ fn random_walk_integer(previous: usize, change_prop: f64, max_delta: usize) -> u
 
 /// Sleep for a random amount of time
 fn sleep_random() {
-    thread::sleep(Duration::from_millis(
-        gen_random_in_range(SLEEP_RANGE) as u64
-    ));
+    thread::sleep(Duration::from_millis(gen_random_in_range(SLEEP_RANGE) as u64));
 }

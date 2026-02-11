@@ -14,8 +14,8 @@
 //! iceoryx2 com backend
 
 use crate::interface::{
-    ActivityInput, ActivityOutput, ActivityOutputDefault, Error, InputGuard, OutputGuard,
-    OutputUninitGuard, Topic, TopicHandle,
+    ActivityInput, ActivityOutput, ActivityOutputDefault, Error, InputGuard, OutputGuard, OutputUninitGuard, Topic,
+    TopicHandle,
 };
 use alloc::boxed::Box;
 use alloc::format;
@@ -35,18 +35,10 @@ use iceoryx2::service::ipc;
 use std::process;
 
 /// Initialize topic with the given number of writers (publishers) and readers (subscribers).
-pub fn init_topic<T: core::fmt::Debug + 'static>(
-    topic: Topic,
-    writers: usize,
-    readers: usize,
-) -> TopicHandle {
+pub fn init_topic<T: core::fmt::Debug + 'static>(topic: Topic, writers: usize, readers: usize) -> TopicHandle {
     info!("Initializing topic {topic} (Iceoryx2, {writers} writers and {readers} readers)");
     let port_factory = ipc_node()
-        .service_builder(
-            &(*topic)
-                .try_into()
-                .unwrap_or_else(|_| panic!("invalid topic {topic}")),
-        )
+        .service_builder(&(*topic).try_into().unwrap_or_else(|_| panic!("invalid topic {topic}")))
         .publish_subscribe::<T>()
         .max_publishers(writers)
         .max_subscribers(readers)
@@ -73,11 +65,7 @@ where
     // Create a new instance for the given `topic`
     pub fn new(topic: &str) -> Self {
         let subscriber = ipc_node()
-            .service_builder(
-                &topic
-                    .try_into()
-                    .unwrap_or_else(|_| panic!("invalid topic {topic}")),
-            )
+            .service_builder(&topic.try_into().unwrap_or_else(|_| panic!("invalid topic {topic}")))
             .publish_subscribe::<T>()
             .open()
             .unwrap_or_else(|e| panic!("failed to open subscriber for topic {topic}: {e}"))
@@ -116,11 +104,7 @@ where
     // Create a new instance for the given `topic`
     pub fn new(topic: &str) -> Self {
         let publisher = ipc_node()
-            .service_builder(
-                &topic
-                    .try_into()
-                    .unwrap_or_else(|_| panic!("invalid topic {topic}")),
-            )
+            .service_builder(&topic.try_into().unwrap_or_else(|_| panic!("invalid topic {topic}")))
             .publish_subscribe::<T>()
             .open()
             .unwrap_or_else(|e| panic!("failed to open subscriber for topic {topic}: {e}"))
@@ -181,10 +165,7 @@ where
 {
     /// Send this buffer, making it receivable as input and consuming the buffer
     pub(crate) fn send(self) -> Result<(), Error> {
-        self.sample
-            .send()
-            .map(|_| {})
-            .map_err(|_| Error::SendFailed)
+        self.sample.send().map(|_| {}).map_err(|_| Error::SendFailed)
     }
 }
 
@@ -275,8 +256,7 @@ fn ipc_node() -> &'static Node<ipc::Service> {
         })
         .expect("failed to clean iceoryx2 state");
 
-        let name =
-            NodeName::new(&format!("feo_node_{}", process::id())).expect("invalid node name");
+        let name = NodeName::new(&format!("feo_node_{}", process::id())).expect("invalid node name");
 
         NodeBuilder::new()
             .name(&name)

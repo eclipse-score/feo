@@ -14,12 +14,12 @@
 use crate::error::Error;
 use crate::ids::{ActivityId, AgentId, ChannelId, WorkerId};
 use crate::signalling::common::interface::ConnectScheduler;
-use crate::signalling::common::mpsc::WorkerConnectorBuilder;
 use crate::signalling::common::mpsc::endpoint::{
     ProtocolMultiReceiver, ProtocolMultiSender, ProtocolReceiver, ProtocolSender, ProtocolSignal,
 };
 use crate::signalling::common::mpsc::primitives::{Receiver, Sender};
 use crate::signalling::common::mpsc::worker::WorkerConnector;
+use crate::signalling::common::mpsc::WorkerConnectorBuilder;
 use crate::signalling::common::signals::Signal;
 use alloc::boxed::Box;
 use core::time::Duration;
@@ -41,10 +41,7 @@ impl SchedulerConnector {
     pub(crate) fn create(
         activity_worker_map: HashMap<ActivityId, WorkerId>,
     ) -> (Self, ChannelToSenderMap, ChannelToReceiverMap) {
-        let channel_ids: HashSet<ChannelId> = activity_worker_map
-            .values()
-            .map(|id| ChannelId::Worker(*id))
-            .collect();
+        let channel_ids: HashSet<ChannelId> = activity_worker_map.values().map(|id| ChannelId::Worker(*id)).collect();
         let (multi_sender, receivers) = ProtocolMultiSender::create(&channel_ids);
         let (multi_receiver, senders) = ProtocolMultiReceiver::create(&channel_ids);
 
@@ -178,8 +175,7 @@ impl ConnectScheduler for SchedulerConnector {
 
     fn broadcast_terminate(&mut self, _signal: &Signal) -> Result<(), Error> {
         // In direct MPSC mode, all workers are local threads. Broadcast to them.
-        let protocol_signal =
-            ProtocolSignal::Core(Signal::Terminate(crate::timestamp::timestamp()));
+        let protocol_signal = ProtocolSignal::Core(Signal::Terminate(crate::timestamp::timestamp()));
         self.sender.broadcast(protocol_signal)
     }
 }

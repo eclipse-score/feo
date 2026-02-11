@@ -19,9 +19,11 @@ use std::io::Write;
 use tokio::{task, time};
 
 /// Progress bar template for connected clients
-const MAIN_TEMPLATE: &str = "{spinner:.bold.dim} {prefix:.bold}: {decimal_bytes} at {decimal_bytes_per_sec} duration: {elapsed_precise}";
+const MAIN_TEMPLATE: &str =
+    "{spinner:.bold.dim} {prefix:.bold}: {decimal_bytes} at {decimal_bytes_per_sec} duration: {elapsed_precise}";
 /// Progress bar template for connected clients
-const CLIENT_TEMPLATE: &str = "{spinner:.bold.dim} {prefix:.bold}: {human_pos} samples at {per_sec} duration: {elapsed_precise}";
+const CLIENT_TEMPLATE: &str =
+    "{spinner:.bold.dim} {prefix:.bold}: {human_pos} samples at {per_sec} duration: {elapsed_precise}";
 /// Connected tick chars
 const TICK_CHARS: &str = "⠁⠉⠙⠚⠒⠂⠂⠒⠲⠴⠤⠄⠄⠤⠴⠲⠒⠂⠂⠒⠚⠙⠉⠁";
 /// Progress bar template for disconnected clients
@@ -98,7 +100,7 @@ impl Progress {
                 self.connections.insert(id, pb.clone());
                 // Register the progress bar at the multi progress bar
                 self.bar.add(pb);
-            }
+            },
             data::RecordData::Exit => {
                 let Some(pb) = self.connections.get_mut(&id) else {
                     return;
@@ -114,12 +116,12 @@ impl Progress {
                     pb.finish();
                     bar.remove(&pb);
                 });
-            }
+            },
             _ => {
                 if let Some(pb) = self.connections.get(&id) {
                     pb.inc(1);
                 }
-            }
+            },
         }
     }
 }

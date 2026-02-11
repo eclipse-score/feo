@@ -14,7 +14,7 @@
 use core::hash::{BuildHasher, Hasher};
 use core::ops::Range;
 use core::time::Duration;
-use feo_tracing::{Level, instrument, span};
+use feo_tracing::{instrument, span, Level};
 use std::collections::hash_map::RandomState;
 use std::thread;
 use tracing::level_filters::LevelFilter;
@@ -27,11 +27,9 @@ fn main() {
 
     // Spawn some threads that will generate traces
     (0..4).for_each(|n| {
-        drop(thread::spawn(move || {
-            loop {
-                iteration(n);
-                sleep_rand_millis(20..50);
-            }
+        drop(thread::spawn(move || loop {
+            iteration(n);
+            sleep_rand_millis(20..50);
         }))
     });
 
@@ -87,7 +85,5 @@ fn rand() -> u64 {
 
 #[instrument(level = "trace")]
 fn sleep_rand_millis(range: Range<u64>) {
-    thread::sleep(Duration::from_millis(
-        rand() % (range.end - range.start) + range.start,
-    ));
+    thread::sleep(Duration::from_millis(rand() % (range.end - range.start) + range.start));
 }

@@ -21,6 +21,11 @@ test --test_output=errors
 common --registry=https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/
 common --registry=https://bcr.bazel.build
 
+# Clippy linting (enabled by default)
+build --aspects=@score_rust_policies//clippy:linters.bzl%clippy_strict
+build --output_groups=+rules_lint_human
+build:lint --@aspect_rules_lint//lint:fail_on_violation=true
+
 build:lint-rust --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
 build:lint-rust --output_groups=+clippy_checks
 build:lint-rust --@rules_rust//:clippy.toml=//:clippy.toml

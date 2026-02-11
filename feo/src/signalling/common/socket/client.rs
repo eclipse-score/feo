@@ -44,14 +44,10 @@ where
 
 impl SocketClient<TcpStream> {
     /// Connect to the scheduler on `address`, announcing ourselves with `connect_signals`
-    pub(crate) fn connect(
-        connect_signals: impl IntoIterator<Item = ProtocolSignal>,
-        address: SocketAddr,
-    ) -> Self {
+    pub(crate) fn connect(connect_signals: impl IntoIterator<Item = ProtocolSignal>, address: SocketAddr) -> Self {
         let stream = loop {
             if let Ok(stream) = std::net::TcpStream::connect(address) {
-                <std::net::TcpStream as FdExt>::set_nonblocking(&stream)
-                    .expect("failed to set stream non-blocking");
+                <std::net::TcpStream as FdExt>::set_nonblocking(&stream).expect("failed to set stream non-blocking");
                 break TcpStream::from_std(stream);
             }
 
@@ -77,10 +73,7 @@ impl SocketClient<TcpStream> {
 
 impl SocketClient<UnixStream> {
     /// Connect to the scheduler on `path`, announcing ourselves with `connect_signals`
-    pub(crate) fn connect(
-        connect_signals: impl IntoIterator<Item = ProtocolSignal>,
-        path: &Path,
-    ) -> Self {
+    pub(crate) fn connect(connect_signals: impl IntoIterator<Item = ProtocolSignal>, path: &Path) -> Self {
         let stream = loop {
             if let Ok(stream) = UnixStream::connect(path) {
                 break stream;
@@ -113,15 +106,11 @@ where
     ///
     /// Note: The method may return early (i.e., before the timeout has expired) without
     ///       having received any data.
-    pub(crate) fn receive(
-        &mut self,
-        events: &mut Events,
-        timeout: Duration,
-    ) -> Result<Option<ProtocolSignal>, Error> {
+    pub(crate) fn receive(&mut self, events: &mut Events, timeout: Duration) -> Result<Option<ProtocolSignal>, Error> {
         if self.connection.is_readable() {
             match self.connection.read() {
                 Ok(Some(msg)) => return Ok(Some(msg)),
-                Ok(None) => {} // Not enough data yet, proceed to poll
+                Ok(None) => {}, // Not enough data yet, proceed to poll
                 Err(e) => return Err(e.into()),
             }
         }
@@ -137,7 +126,7 @@ where
         if self.connection.is_readable() {
             match self.connection.read() {
                 Ok(Some(msg)) => return Ok(Some(msg)),
-                Ok(None) => {} // Not enough data yet
+                Ok(None) => {}, // Not enough data yet
                 Err(e) => return Err(e.into()),
             }
         }

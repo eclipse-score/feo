@@ -165,62 +165,62 @@ impl EncodeDecode for ProtocolSignal {
             // Sync
             ProtocolSignal::Core(Signal::StartupSync(sync_info)) => {
                 encode_data!(w; SignalTag::CoreStartupSync; sync_info => u128);
-            }
+            },
 
             // Recorder-related
             ProtocolSignal::Core(Signal::TaskChainStart(timestamp)) => {
                 encode_data!(w; SignalTag::CoreTaskChainStart; timestamp => u128);
-            }
+            },
             ProtocolSignal::Core(Signal::TaskChainEnd(timestamp)) => {
                 encode_data!(w; SignalTag::CoreTaskChainEnd; timestamp => u128);
-            }
+            },
             ProtocolSignal::Core(Signal::RecorderReady((agent_id, timestamp))) => {
                 encode_data!(w; SignalTag::CoreRecorderReady; agent_id => u64, timestamp => u128);
-            }
+            },
 
             // Activity-related
             ProtocolSignal::Core(Signal::Startup((activity_id, timestamp))) => {
                 encode_data!(w; SignalTag::CoreStartup; activity_id => u64, timestamp => u128);
-            }
+            },
             ProtocolSignal::Core(Signal::Step((activity_id, timestamp))) => {
                 encode_data!(w; SignalTag::CoreStep; activity_id => u64, timestamp => u128);
-            }
+            },
             ProtocolSignal::Core(Signal::Shutdown((activity_id, timestamp))) => {
                 encode_data!(w; SignalTag::CoreShutdown; activity_id => u64, timestamp => u128);
-            }
+            },
             ProtocolSignal::Core(Signal::Ready((activity_id, timestamp))) => {
                 encode_data!(w; SignalTag::CoreReady; activity_id => u64, timestamp => u128);
-            }
+            },
             ProtocolSignal::Core(Signal::ActivityFailed((activity_id, error))) => {
                 encode_data!(w; SignalTag::CoreActivityFailed; *activity_id => u64, *error => u8);
-            }
+            },
             ProtocolSignal::Core(Signal::Terminate(timestamp)) => {
                 encode_data!(w; SignalTag::CoreTerminate; timestamp => u128);
-            }
+            },
             ProtocolSignal::Core(Signal::TerminateAck(agent_id)) => {
                 encode_data!(w; SignalTag::CoreTerminateAck; agent_id => u64);
-            }
+            },
 
             // Signalling-layer signals
             ProtocolSignal::ActivityHello(worker_id) => {
                 encode_data!(w; SignalTag::ConnectorActivityHello; worker_id => u64);
-            }
+            },
             ProtocolSignal::RecorderHello(agent_id) => {
                 encode_data!(w; SignalTag::ConnectorRecorderHello; agent_id => u64);
-            }
+            },
             ProtocolSignal::ChannelHello(channel_id) => match channel_id {
                 ChannelId::Activity(id) => {
                     encode_data!(w; SignalTag::ConnectorChannelActivityHello; id => u64)
-                }
+                },
                 ChannelId::Worker(id) => {
                     encode_data!(w; SignalTag::ConnectorChannelWorkerHello; id => u64)
-                }
+                },
                 ChannelId::Agent(id) => {
                     encode_data!(w; SignalTag::ConnectorChannelAgentHello; id => u64)
-                }
+                },
                 ChannelId::Relay(id) => {
                     encode_data!(w; SignalTag::ConnectorChannelRelayHello; id => u64)
-                }
+                },
             },
         }
 
@@ -256,61 +256,61 @@ impl EncodeDecode for ProtocolSignal {
             // Sync
             CoreStartupSync => {
                 decode_data!(src; Signal::StartupSync, ProtocolSignal::Core; u128 => SyncInfo)
-            }
+            },
 
             // Recorder-related
             CoreTaskChainStart => {
                 decode_data!(src; Signal::TaskChainStart, ProtocolSignal::Core; u128 => Timestamp)
-            }
+            },
             CoreTaskChainEnd => {
                 decode_data!(src; Signal::TaskChainEnd, ProtocolSignal::Core; u128 => Timestamp)
-            }
+            },
             CoreRecorderReady => {
                 decode_data!(src; Signal::RecorderReady, ProtocolSignal::Core; u64 => AgentId; u128 => Timestamp)
-            }
+            },
 
             // Activity-related
             CoreStartup => {
                 decode_data!(src; Signal::Startup, ProtocolSignal::Core; u64 => ActivityId; u128 => Timestamp)
-            }
+            },
             CoreStep => {
                 decode_data!(src; Signal::Step, ProtocolSignal::Core; u64 => ActivityId; u128 => Timestamp)
-            }
+            },
             CoreShutdown => {
                 decode_data!(src; Signal::Shutdown, ProtocolSignal::Core; u64 => ActivityId; u128 => Timestamp)
-            }
+            },
             CoreReady => {
                 decode_data!(src; Signal::Ready, ProtocolSignal::Core; u64 => ActivityId; u128 => Timestamp)
-            }
+            },
             CoreActivityFailed => {
                 decode_data!(src; Signal::ActivityFailed, ProtocolSignal::Core; u64 => ActivityId; u8 => ActivityError)
-            }
+            },
             CoreTerminate => {
                 decode_data!(src; Signal::Terminate, ProtocolSignal::Core; u128 => Timestamp)
-            }
+            },
             CoreTerminateAck => {
                 decode_data!(src; Signal::TerminateAck, ProtocolSignal::Core; u64 => AgentId)
-            }
+            },
 
             // Signalling-layer signals
             ConnectorActivityHello => {
                 decode_data!(src; ProtocolSignal::ActivityHello; u64 => ActivityId)
-            }
+            },
             ConnectorRecorderHello => {
                 decode_data!(src; ProtocolSignal::RecorderHello; u64 => AgentId)
-            }
+            },
             ConnectorChannelActivityHello => {
                 decode_data!(src; ChannelId::Activity, ProtocolSignal::ChannelHello; u64 => ActivityId)
-            }
+            },
             ConnectorChannelWorkerHello => {
                 decode_data!(src; ChannelId::Worker, ProtocolSignal::ChannelHello; u64 => WorkerId)
-            }
+            },
             ConnectorChannelAgentHello => {
                 decode_data!(src; ChannelId::Agent, ProtocolSignal::ChannelHello; u64 => AgentId)
-            }
+            },
             ConnectorChannelRelayHello => {
                 decode_data!(src; ChannelId::Relay, ProtocolSignal::ChannelHello; u64 => RelayId)
-            }
+            },
         }
     }
 }

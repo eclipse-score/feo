@@ -17,7 +17,7 @@ use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
 use core::ptr;
-use core::sync::atomic::{AtomicBool, AtomicPtr, AtomicU16, Ordering, fence};
+use core::sync::atomic::{fence, AtomicBool, AtomicPtr, AtomicU16, Ordering};
 
 // Mode of shared memory mapping
 #[derive(Debug, Clone, Copy)]
@@ -67,10 +67,7 @@ impl ReadWriteAccessControlPtr {
     pub(crate) fn new_unmapped<T: 'static>(mapping_mode: MappingMode) -> Self {
         const {
             assert!(size_of::<T>() != 0, "zero-sized type is not allowed");
-            assert!(
-                size_of::<T>() <= isize::MAX as usize,
-                "type size is too big"
-            );
+            assert!(size_of::<T>() <= isize::MAX as usize, "type size is too big");
         }
         Self {
             type_id: TypeId::of::<T>(),
@@ -89,17 +86,10 @@ impl ReadWriteAccessControlPtr {
         let mut state = self.lock_state.load(Ordering::Relaxed);
         loop {
             assert_ne!(state, u16::MAX - 1, "too many readers");
-            assert_ne!(
-                state,
-                u16::MAX,
-                "multiple exclusive access attempts detected"
-            );
-            let new_state = self.lock_state.compare_exchange(
-                state,
-                state + 1,
-                Ordering::Acquire,
-                Ordering::Relaxed,
-            );
+            assert_ne!(state, u16::MAX, "multiple exclusive access attempts detected");
+            let new_state = self
+                .lock_state
+                .compare_exchange(state, state + 1, Ordering::Acquire, Ordering::Relaxed);
             match new_state {
                 // Success
                 Ok(_) => break,
@@ -111,18 +101,11 @@ impl ReadWriteAccessControlPtr {
     fn unlock_read(&self) {
         let mut state = self.lock_state.load(Ordering::Relaxed);
         loop {
-            assert_ne!(
-                state,
-                u16::MAX,
-                "multiple exclusive access attempts detected"
-            );
+            assert_ne!(state, u16::MAX, "multiple exclusive access attempts detected");
             assert_ne!(state, 0, "invalid state");
-            let new_state = self.lock_state.compare_exchange(
-                state,
-                state - 1,
-                Ordering::Release,
-                Ordering::Relaxed,
-            );
+            let new_state = self
+                .lock_state
+                .compare_exchange(state, state - 1, Ordering::Release, Ordering::Relaxed);
             match new_state {
                 // Success
                 Ok(_) => break,

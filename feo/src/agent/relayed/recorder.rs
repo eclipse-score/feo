@@ -59,34 +59,25 @@ impl<'s> Recorder<'s> {
             registry,
         } = config;
 
-        let mut connector = match (bind_address_receivers, bind_address_senders) {
-            (NodeAddress::Tcp(bind_receivers), NodeAddress::Tcp(bind_senders)) => Box::new(
-                RecorderConnectorTcp::new(id, bind_senders, bind_receivers, receive_timeout),
-            )
-                as Box<dyn ConnectRecorder>,
-            (NodeAddress::UnixSocket(bind_receivers), NodeAddress::UnixSocket(bind_senders)) => {
-                Box::new(RecorderConnectorUnix::new(
-                    id,
-                    bind_senders,
-                    bind_receivers,
-                    receive_timeout,
-                )) as Box<dyn ConnectRecorder>
-            }
-
-            _ => {
-                panic!(
-                    "bind addresses must either be both TCP socket addresses or both Unix socket paths"
+        let mut connector =
+            match (bind_address_receivers, bind_address_senders) {
+                (NodeAddress::Tcp(bind_receivers), NodeAddress::Tcp(bind_senders)) => Box::new(
+                    RecorderConnectorTcp::new(id, bind_senders, bind_receivers, receive_timeout),
                 )
-            }
-        };
+                    as Box<dyn ConnectRecorder>,
+                (NodeAddress::UnixSocket(bind_receivers), NodeAddress::UnixSocket(bind_senders)) => Box::new(
+                    RecorderConnectorUnix::new(id, bind_senders, bind_receivers, receive_timeout),
+                )
+                    as Box<dyn ConnectRecorder>,
 
-        connector
-            .connect_remote()
-            .expect("failed to connect to scheduler");
+                _ => {
+                    panic!("bind addresses must either be both TCP socket addresses or both Unix socket paths")
+                },
+            };
 
-        let recorder =
-            FileRecorder::new(id, connector, receive_timeout, record_file, rules, registry)
-                .unwrap();
+        connector.connect_remote().expect("failed to connect to scheduler");
+
+        let recorder = FileRecorder::new(id, connector, receive_timeout, record_file, rules, registry).unwrap();
 
         Self { recorder }
     }

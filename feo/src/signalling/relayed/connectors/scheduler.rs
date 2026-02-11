@@ -18,9 +18,7 @@ use crate::signalling::common::interface::ConnectScheduler;
 use crate::signalling::common::mpsc::{WorkerConnector, WorkerConnectorBuilder};
 use crate::signalling::common::signals::Signal;
 use crate::signalling::relayed::connectors::relays::{PrimaryReceiveRelay, PrimarySendRelay};
-use crate::signalling::relayed::interface::{
-    Builder, IsChannel, ProtocolMultiRecv, ProtocolMultiSend,
-};
+use crate::signalling::relayed::interface::{Builder, IsChannel, ProtocolMultiRecv, ProtocolMultiSend};
 use alloc::{collections::BTreeSet, vec::Vec};
 use core::time::Duration;
 use feo_log::debug;
@@ -67,11 +65,7 @@ impl<Inter: IsChannel, Intra: IsChannel> SchedulerConnector<Inter, Intra> {
         }
     }
 
-    pub fn send_to_agent(
-        &mut self,
-        agent_id: AgentId,
-        signal: Inter::ProtocolSignal,
-    ) -> Result<(), Error> {
+    pub fn send_to_agent(&mut self, agent_id: AgentId, signal: Inter::ProtocolSignal) -> Result<(), Error> {
         if let Some(relay) = self.ipc_send_relay.as_mut() {
             relay.send_to_agent(agent_id, signal)
         } else {
@@ -83,8 +77,7 @@ impl<Inter: IsChannel, Intra: IsChannel> SchedulerConnector<Inter, Intra> {
     pub fn send_to_worker(&mut self, worker_id: WorkerId, signal: Signal) -> Result<(), Error> {
         // Forward signal to local worker or to remote agent
         if self.local_workers.contains(&worker_id) {
-            self.worker_sender
-                .send(ChannelId::Worker(worker_id), signal.into())
+            self.worker_sender.send(ChannelId::Worker(worker_id), signal.into())
         } else {
             let Some(agent_id) = self.worker_agent_map.get(&worker_id) else {
                 return Err(Error::WorkerNotFound(worker_id));
@@ -93,11 +86,7 @@ impl<Inter: IsChannel, Intra: IsChannel> SchedulerConnector<Inter, Intra> {
         }
     }
 
-    pub fn send_to_activity(
-        &mut self,
-        activity_id: ActivityId,
-        signal: Signal,
-    ) -> Result<(), Error> {
+    pub fn send_to_activity(&mut self, activity_id: ActivityId, signal: Signal) -> Result<(), Error> {
         if let Some(worker_id) = self.activity_worker_map.get(&activity_id) {
             self.send_to_worker(*worker_id, signal)
         } else {
@@ -156,7 +145,7 @@ impl<Inter: IsChannel, Intra: IsChannel> ConnectScheduler for SchedulerConnector
             Ok(None) => None,
             Err(e) => {
                 return Err(e);
-            }
+            },
         };
         Ok(signal)
     }

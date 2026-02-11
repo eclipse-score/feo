@@ -1,15 +1,15 @@
-/********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
- *
- * See the NOTICE file(s) distributed with this work for additional
- * information regarding copyright ownership.
- *
- * This program and the accompanying materials are made available under the
- * terms of the Apache License Version 2.0 which is available at
- * https://www.apache.org/licenses/LICENSE-2.0
- *
- * SPDX-License-Identifier: Apache-2.0
- ********************************************************************************/
+// *******************************************************************************
+// Copyright (c) 2025 Contributors to the Eclipse Foundation
+//
+// See the NOTICE file(s) distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Apache License Version 2.0 which is available at
+// <https://www.apache.org/licenses/LICENSE-2.0>
+//
+// SPDX-License-Identifier: Apache-2.0
+// *******************************************************************************
 
 use crate::config::COM_BACKEND;
 use crate::config::MAX_ADDITIONAL_SUBSCRIBERS;
@@ -59,10 +59,10 @@ impl PrimaryLauncher for Signalling {
                 };
 
                 Primary::new(config).unwrap().run().unwrap();
-            }
+            },
             Signalling::DirectTcp => {
-                use feo::agent::NodeAddress;
                 use feo::agent::direct::primary::{Primary, PrimaryConfig};
+                use feo::agent::NodeAddress;
 
                 let config = PrimaryConfig {
                     cycle_time: DEFAULT_FEO_CYCLE_TIME,
@@ -81,10 +81,10 @@ impl PrimaryLauncher for Signalling {
                 };
 
                 Primary::new(config).unwrap().run().unwrap();
-            }
+            },
             Signalling::DirectUnix => {
-                use feo::agent::NodeAddress;
                 use feo::agent::direct::primary::{Primary, PrimaryConfig};
+                use feo::agent::NodeAddress;
 
                 let config = PrimaryConfig {
                     cycle_time: DEFAULT_FEO_CYCLE_TIME,
@@ -103,7 +103,7 @@ impl PrimaryLauncher for Signalling {
                 };
 
                 Primary::new(config).unwrap().run().unwrap();
-            }
+            },
             Signalling::RelayedTcp => {
                 use feo::agent::NodeAddress;
 
@@ -128,7 +128,7 @@ impl PrimaryLauncher for Signalling {
                 };
 
                 Primary::new(config).unwrap().run().unwrap();
-            }
+            },
             Signalling::RelayedUnix => {
                 use feo::agent::NodeAddress;
 
@@ -153,7 +153,7 @@ impl PrimaryLauncher for Signalling {
                 };
 
                 Primary::new(config).unwrap().run().unwrap();
-            }
+            },
         }
         Ok(())
     }

@@ -38,17 +38,13 @@ use std::path::PathBuf;
 // The types to be used by client code
 #[cfg(feature = "recording")]
 pub(crate) type RecorderConnectorTcp = recorder::RecorderConnector<InterChannelTcp>;
-pub(crate) type SchedulerConnectorTcp =
-    scheduler::SchedulerConnector<InterChannelTcp, IntraChannel>;
-pub(crate) type SecondaryConnectorTcp =
-    secondary::SecondaryConnector<InterChannelTcp, IntraChannel>;
+pub(crate) type SchedulerConnectorTcp = scheduler::SchedulerConnector<InterChannelTcp, IntraChannel>;
+pub(crate) type SecondaryConnectorTcp = secondary::SecondaryConnector<InterChannelTcp, IntraChannel>;
 pub(crate) type WorkerConnector = crate::signalling::common::mpsc::WorkerConnector;
 #[cfg(feature = "recording")]
 pub(crate) type RecorderConnectorUnix = recorder::RecorderConnector<InterChannelUnix>;
-pub(crate) type SchedulerConnectorUnix =
-    scheduler::SchedulerConnector<InterChannelUnix, IntraChannel>;
-pub(crate) type SecondaryConnectorUnix =
-    secondary::SecondaryConnector<InterChannelUnix, IntraChannel>;
+pub(crate) type SchedulerConnectorUnix = scheduler::SchedulerConnector<InterChannelUnix, IntraChannel>;
+pub(crate) type SecondaryConnectorUnix = secondary::SecondaryConnector<InterChannelUnix, IntraChannel>;
 
 /// Mpsc-based intra-process signalling channel implementation
 pub(crate) struct IntraChannel;
@@ -148,8 +144,7 @@ impl<Inter: SocketChannel> recorder::RecorderConnector<Inter> {
         timeout: Duration,
     ) -> Self {
         let inter_sender = Inter::new_sender(bind_address_senders, ChannelId::Agent(agent_id));
-        let inter_receiver =
-            Inter::new_receiver(bind_address_receivers, ChannelId::Agent(agent_id));
+        let inter_receiver = Inter::new_receiver(bind_address_receivers, ChannelId::Agent(agent_id));
 
         Self::create(inter_sender, inter_receiver, timeout)
     }
@@ -196,10 +191,7 @@ impl<Inter: SocketChannel> scheduler::SchedulerConnector<Inter, IntraChannel> {
         // Determine channels to local workers plus one to relay
         let relay_channel = ChannelId::Relay(RelayId::new(0));
         let relay_channels = [relay_channel];
-        let local_worker_channels: Vec<ChannelId> = local_workers
-            .iter()
-            .map(|id| ChannelId::Worker(*id))
-            .collect();
+        let local_worker_channels: Vec<ChannelId> = local_workers.iter().map(|id| ChannelId::Worker(*id)).collect();
         let local_channels: Vec<ChannelId> = local_worker_channels
             .iter()
             .chain(relay_channels.iter())
@@ -217,19 +209,13 @@ impl<Inter: SocketChannel> scheduler::SchedulerConnector<Inter, IntraChannel> {
             intra_builders::multi_sender_builder(&local_worker_channels);
         let worker_sender = worker_sender_builder();
 
-        let channel_ids: Vec<ChannelId> = remote_agents
-            .iter()
-            .copied()
-            .map(ChannelId::Agent)
-            .collect();
+        let channel_ids: Vec<ChannelId> = remote_agents.iter().copied().map(ChannelId::Agent).collect();
 
         // Create IPC relays only if there are remote agents to communicate with.
         let (ipc_receive_relay, ipc_send_relay) = if !remote_agents.is_empty() {
             let relay_sender_builder = local_sender_builders.remove(&relay_channel).unwrap();
-            let relay_receiver_builder =
-                Inter::multi_receiver_builder(channel_ids.clone(), bind_address_senders);
-            let receive_relay =
-                PrimaryReceiveRelay::new(relay_sender_builder, relay_receiver_builder, timeout);
+            let relay_receiver_builder = Inter::multi_receiver_builder(channel_ids.clone(), bind_address_senders);
+            let receive_relay = PrimaryReceiveRelay::new(relay_sender_builder, relay_receiver_builder, timeout);
 
             let ipc_sender = Inter::new_multi_sender(&channel_ids, bind_address_receivers);
             let send_relay = PrimarySendRelay::new(remote_agents, ipc_sender, timeout);
@@ -240,25 +226,22 @@ impl<Inter: SocketChannel> scheduler::SchedulerConnector<Inter, IntraChannel> {
         };
 
         // Create worker connector builders for local workers
-        let worker_connector_builders: HashMap<WorkerId, Builder<WorkerConnector>> =
-            local_worker_channels
-                .iter()
-                .map(|id| {
-                    let worker_id = match *id {
-                        ChannelId::Worker(wid) => wid,
-                        other => {
-                            panic!("unexpected channel id {other:?}");
-                        }
-                    };
-                    let worker_sender_builder = local_sender_builders.remove(id).unwrap();
-                    let worker_receiver_builder = worker_receiver_builders.remove(id).unwrap();
-                    let connector_builder = intra_builders::worker_connector_builder(
-                        worker_sender_builder,
-                        worker_receiver_builder,
-                    );
-                    (worker_id, connector_builder)
-                })
-                .collect();
+        let worker_connector_builders: HashMap<WorkerId, Builder<WorkerConnector>> = local_worker_channels
+            .iter()
+            .map(|id| {
+                let worker_id = match *id {
+                    ChannelId::Worker(wid) => wid,
+                    other => {
+                        panic!("unexpected channel id {other:?}");
+                    },
+                };
+                let worker_sender_builder = local_sender_builders.remove(id).unwrap();
+                let worker_receiver_builder = worker_receiver_builders.remove(id).unwrap();
+                let connector_builder =
+                    intra_builders::worker_connector_builder(worker_sender_builder, worker_receiver_builder);
+                (worker_id, connector_builder)
+            })
+            .collect();
 
         Self::with_fields(
             local_workers,
@@ -275,8 +258,7 @@ impl<Inter: SocketChannel> scheduler::SchedulerConnector<Inter, IntraChannel> {
 }
 
 type ChannelToSenderBuilderMap<Intra> = HashMap<ChannelId, Builder<<Intra as IsChannel>::Sender>>;
-type ChannelToReceiverBuilderMap<Intra> =
-    HashMap<ChannelId, Builder<<Intra as IsChannel>::Receiver>>;
+type ChannelToReceiverBuilderMap<Intra> = HashMap<ChannelId, Builder<<Intra as IsChannel>::Receiver>>;
 
 /// Implementation of specialized methods of SecondaryConnector for
 /// mpsc-based intra-process communication and socket-based inter-process communication
@@ -310,8 +292,7 @@ impl<Inter: SocketChannel> secondary::SecondaryConnector<Inter, IntraChannel> {
                 let receiver_builder = receiver_builders
                     .remove(&ChannelId::Worker(*wid))
                     .unwrap_or_else(|| panic!("missing worker id {wid}"));
-                let connector_builder =
-                    intra_builders::worker_connector_builder(sender_builder, receiver_builder);
+                let connector_builder = intra_builders::worker_connector_builder(sender_builder, receiver_builder);
                 (*wid, connector_builder)
             })
             .collect();
@@ -329,22 +310,16 @@ impl<Inter: SocketChannel> secondary::SecondaryConnector<Inter, IntraChannel> {
         ChannelToSenderBuilderMap<IntraChannel>,
         ChannelToReceiverBuilderMap<IntraChannel>,
     ) {
-        let channel_ids: HashSet<ChannelId> = activity_worker_map
-            .values()
-            .map(|id| ChannelId::Worker(*id))
-            .collect();
+        let channel_ids: HashSet<ChannelId> = activity_worker_map.values().map(|id| ChannelId::Worker(*id)).collect();
 
-        let (intra_receiver_builder, worker_sender_builders) =
-            intra_builders::multi_receiver_builder(&channel_ids);
+        let (intra_receiver_builder, worker_sender_builders) = intra_builders::multi_receiver_builder(&channel_ids);
         let intra_receiver = intra_receiver_builder();
         let inter_sender = Inter::new_sender(bind_address_senders, ChannelId::Agent(agent_id));
 
         let local_to_ipc_relay = SecondarySendRelay::new(inter_sender, intra_receiver, timeout);
 
-        let (intra_sender_builder, worker_receiver_builders) =
-            intra_builders::multi_sender_builder(&channel_ids);
-        let inter_receiver_builder =
-            Inter::receiver_builder(ChannelId::Agent(agent_id), bind_address_receivers);
+        let (intra_sender_builder, worker_receiver_builders) = intra_builders::multi_sender_builder(&channel_ids);
+        let inter_receiver_builder = Inter::receiver_builder(ChannelId::Agent(agent_id), bind_address_receivers);
 
         let ipc_to_local_relay = SecondaryReceiveRelay::new(
             activity_worker_map,
@@ -375,10 +350,7 @@ pub(crate) trait SocketChannel: IsChannel + HasAddress {
         &'s T: IntoIterator<Item = &'s ChannelId>;
 
     /// Returns a builder of a ProtocolMultiReceiver
-    fn multi_receiver_builder<T>(
-        channel_ids: T,
-        address: Self::Address,
-    ) -> Builder<Self::MultiReceiver>
+    fn multi_receiver_builder<T>(channel_ids: T, address: Self::Address) -> Builder<Self::MultiReceiver>
     where
         T: IntoIterator<Item = ChannelId> + Send,
     {
@@ -408,19 +380,17 @@ mod intra_builders {
         // As mpsc senders and receivers do implement the Send trait, we can simply create
         // the target objects here and move them into the builder objects
         let (receiver, senders) = <IntraChannel as IsChannel>::MultiReceiver::create(channel_ids);
-        let receiver_builder =
-            Box::new(move || receiver) as Builder<<IntraChannel as IsChannel>::MultiReceiver>;
-        let sender_builders: HashMap<ChannelId, Builder<<IntraChannel as IsChannel>::Sender>> =
-            senders
-                .into_iter()
-                .map(|(id, sender)| (id, <IntraChannel as IsChannel>::Sender::new(id, sender)))
-                .map(|(id, sender)| {
-                    (
-                        id,
-                        Box::new(move || sender) as Builder<<IntraChannel as IsChannel>::Sender>,
-                    )
-                })
-                .collect();
+        let receiver_builder = Box::new(move || receiver) as Builder<<IntraChannel as IsChannel>::MultiReceiver>;
+        let sender_builders: HashMap<ChannelId, Builder<<IntraChannel as IsChannel>::Sender>> = senders
+            .into_iter()
+            .map(|(id, sender)| (id, <IntraChannel as IsChannel>::Sender::new(id, sender)))
+            .map(|(id, sender)| {
+                (
+                    id,
+                    Box::new(move || sender) as Builder<<IntraChannel as IsChannel>::Sender>,
+                )
+            })
+            .collect();
 
         (receiver_builder, sender_builders)
     }
@@ -438,20 +408,17 @@ mod intra_builders {
         // As mpsc senders and receivers *do* implement the Send trait, we can simply create
         // the target objects here and move them into the builder objects
         let (sender, receivers) = <IntraChannel as IsChannel>::MultiSender::create(channel_ids);
-        let sender_builder =
-            Box::new(move || sender) as Builder<<IntraChannel as IsChannel>::MultiSender>;
-        let receiver_builders: HashMap<ChannelId, Builder<<IntraChannel as IsChannel>::Receiver>> =
-            receivers
-                .into_iter()
-                .map(|(id, receiver)| (id, <IntraChannel as IsChannel>::Receiver::new(receiver)))
-                .map(|(id, receiver)| {
-                    (
-                        id,
-                        Box::new(move || receiver)
-                            as Builder<<IntraChannel as IsChannel>::Receiver>,
-                    )
-                })
-                .collect();
+        let sender_builder = Box::new(move || sender) as Builder<<IntraChannel as IsChannel>::MultiSender>;
+        let receiver_builders: HashMap<ChannelId, Builder<<IntraChannel as IsChannel>::Receiver>> = receivers
+            .into_iter()
+            .map(|(id, receiver)| (id, <IntraChannel as IsChannel>::Receiver::new(receiver)))
+            .map(|(id, receiver)| {
+                (
+                    id,
+                    Box::new(move || receiver) as Builder<<IntraChannel as IsChannel>::Receiver>,
+                )
+            })
+            .collect();
 
         (sender_builder, receiver_builders)
     }

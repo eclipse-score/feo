@@ -17,8 +17,8 @@ use crate::activity::ActivityIdAndBuilder;
 use crate::agent::NodeAddress;
 use crate::ids::{ActivityId, AgentId, WorkerId};
 use crate::signalling::common::interface::ConnectWorker;
-use crate::signalling::relayed::ConnectSecondary;
 use crate::signalling::relayed::sockets_mpsc::{SecondaryConnectorTcp, SecondaryConnectorUnix};
+use crate::signalling::relayed::ConnectSecondary;
 use crate::worker::Worker;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
@@ -68,43 +68,26 @@ impl Secondary {
             .collect();
 
         // Create SecondaryConnector and builders of WorkerConnectors
-        let (connector, mut connector_builders) = match (
-            bind_address_receivers,
-            bind_address_senders,
-        ) {
+        let (connector, mut connector_builders) = match (bind_address_receivers, bind_address_senders) {
             (NodeAddress::Tcp(bind_receivers), NodeAddress::Tcp(bind_senders)) => {
-                let (connector, builders) = SecondaryConnectorTcp::create(
-                    id,
-                    activity_worker_map,
-                    bind_senders,
-                    bind_receivers,
-                    timeout,
-                );
+                let (connector, builders) =
+                    SecondaryConnectorTcp::create(id, activity_worker_map, bind_senders, bind_receivers, timeout);
                 (Box::new(connector) as Box<dyn ConnectSecondary>, builders)
-            }
+            },
             (NodeAddress::UnixSocket(bind_receivers), NodeAddress::UnixSocket(bind_senders)) => {
-                let (connector, builders) = SecondaryConnectorUnix::create(
-                    id,
-                    activity_worker_map,
-                    bind_senders,
-                    bind_receivers,
-                    timeout,
-                );
+                let (connector, builders) =
+                    SecondaryConnectorUnix::create(id, activity_worker_map, bind_senders, bind_receivers, timeout);
                 (Box::new(connector) as Box<dyn ConnectSecondary>, builders)
-            }
+            },
             _ => {
-                panic!(
-                    "bind addresses must either be both TCP socket addresses or both Unix socket paths"
-                )
-            }
+                panic!("bind addresses must either be both TCP socket addresses or both Unix socket paths")
+            },
         };
 
         let worker_threads = worker_assignments
             .into_iter()
             .map(|(id, activities)| {
-                let connector_builder = connector_builders
-                    .remove(&id)
-                    .expect("missing connector builder");
+                let connector_builder = connector_builders.remove(&id).expect("missing connector builder");
                 thread::spawn(move || {
                     let mut connector = connector_builder();
                     connector.connect_remote().expect("failed to connect");
