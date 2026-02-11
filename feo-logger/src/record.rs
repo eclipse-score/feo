@@ -61,9 +61,7 @@ impl Record<'_> {
         len += size_of::<u64>() + size_of::<u32>(); // Timestamp
         len += size_of::<u8>(); // Level
         len += size_of::<u32>() + self.target.len(); // Target
-        len += self
-            .file
-            .map_or(size_of::<u32>(), |f| size_of::<u32>() + f.len()); // File
+        len += self.file.map_or(size_of::<u32>(), |f| size_of::<u32>() + f.len()); // File
         len += size_of::<u32>(); // Line
         len += size_of::<u32>(); // Tgid
         len += size_of::<u32>(); // Tid
@@ -74,10 +72,7 @@ impl Record<'_> {
     pub fn encode<W: io::Write>(&self, mut w: W) -> io::Result<usize> {
         let mut len = 0;
         // Timestamp
-        let timestamp = self
-            .timestamp
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap();
+        let timestamp = self.timestamp.duration_since(SystemTime::UNIX_EPOCH).unwrap();
         w.write_all(&timestamp.as_secs().to_be_bytes())?;
         w.write_all(&timestamp.subsec_nanos().to_be_bytes())?;
         len += size_of::<u64>() + size_of::<u32>();
@@ -168,8 +163,7 @@ impl OwnedRecord {
             let target_len = read_u32_be(&mut r)? as usize;
             let mut buf = vec![0u8; target_len];
             r.read_exact(&mut buf)?;
-            String::from_utf8(buf)
-                .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid target"))?
+            String::from_utf8(buf).map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid target"))?
         };
 
         // File
@@ -178,10 +172,7 @@ impl OwnedRecord {
             if file_len > 0 {
                 let mut buf = vec![0u8; file_len];
                 r.read_exact(&mut buf)?;
-                Some(
-                    String::from_utf8(buf)
-                        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid file"))?,
-                )
+                Some(String::from_utf8(buf).map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid file"))?)
             } else {
                 None
             }
@@ -201,8 +192,7 @@ impl OwnedRecord {
             let args_len = read_u32_be(&mut r)? as usize;
             let mut buf = vec![0u8; args_len];
             r.read_exact(&mut buf)?;
-            String::from_utf8(buf)
-                .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid args"))?
+            String::from_utf8(buf).map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid args"))?
         };
 
         Ok(OwnedRecord {
@@ -238,7 +228,7 @@ fn read_u64_be<R: io::Read>(mut r: R) -> io::Result<u64> {
 
 #[cfg(test)]
 mod test {
-    use super::{Record, read_u32_be, read_u64_be};
+    use super::{read_u32_be, read_u64_be, Record};
     use crate::record::OwnedRecord;
     use std::io;
 
@@ -257,10 +247,7 @@ mod test {
     #[test]
     fn read_u64_be_good() {
         let buf = &mut [0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0];
-        assert_eq!(
-            read_u64_be(io::Cursor::new(&buf)).unwrap(),
-            0x123456789abcdef0
-        );
+        assert_eq!(read_u64_be(io::Cursor::new(&buf)).unwrap(), 0x123456789abcdef0);
     }
 
     #[test]

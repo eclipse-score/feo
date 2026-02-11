@@ -149,8 +149,7 @@ impl ApplicationConfig {
 
         // Loop over configured agents
         for (agent, workers) in &self.agent_assignments {
-            let mut assigned_workers: Vec<(WorkerId, Vec<ActivityIdAndBuilder>)> =
-                Default::default();
+            let mut assigned_workers: Vec<(WorkerId, Vec<ActivityIdAndBuilder>)> = Default::default();
 
             // Loop over workers configured for this agent
             for wid in workers {
@@ -222,13 +221,7 @@ impl ApplicationConfig {
                         .collect();
                     (*id, adapted_deps)
                 })
-                .map(|(id, deps)| {
-                    if &id == last_id {
-                        (*first_id, deps)
-                    } else {
-                        (id, deps)
-                    }
-                })
+                .map(|(id, deps)| if &id == last_id { (*first_id, deps) } else { (id, deps) })
                 .collect();
 
             // Filter and replace IDs in the worker assignments
@@ -261,13 +254,12 @@ fn application_config() -> ApplicationConfig {
         .unwrap();
     info!("Reading configuration from {}", config_file.display());
 
-    let file =
-        File::open(config_file).unwrap_or_else(|e| panic!("failed to open config file: {e}"));
+    let file = File::open(config_file).unwrap_or_else(|e| panic!("failed to open config file: {e}"));
     let reader = BufReader::new(file);
 
     // Read the JSON file to an instance of `RawConfig`.
-    let config: RawConfig = serde_json::from_reader(reader)
-        .unwrap_or_else(|e| panic!("failed to parse config file: {e}"));
+    let config: RawConfig =
+        serde_json::from_reader(reader).unwrap_or_else(|e| panic!("failed to parse config file: {e}"));
 
     // Convert raw config to application config
     let agent_assignments: AgentAssignments = config
@@ -283,8 +275,7 @@ fn application_config() -> ApplicationConfig {
         .worker_assignments
         .iter()
         .map(|(worker, activities)| {
-            let acts: HashSet<ActivityId> =
-                activities.iter().map(|id| ActivityId::new(*id)).collect();
+            let acts: HashSet<ActivityId> = activities.iter().map(|id| ActivityId::new(*id)).collect();
             (WorkerId::new(*worker), acts)
         })
         .collect();
@@ -349,11 +340,8 @@ fn check_consistency(
         .flatten()
         .map(|id| WorkerId::from(*id))
         .collect();
-    let all_workers_workers: HashSet<WorkerId> = config
-        .worker_assignments
-        .keys()
-        .map(|id| WorkerId::new(*id))
-        .collect();
+    let all_workers_workers: HashSet<WorkerId> =
+        config.worker_assignments.keys().map(|id| WorkerId::new(*id)).collect();
 
     assert_eq!(
         all_workers_agents, all_workers_workers,
@@ -367,10 +355,8 @@ fn check_consistency(
         .flat_map(|activity_id| activity_id.iter().map(|id| ActivityId::new(*id)))
         .collect();
     let depending_activities: HashSet<ActivityId> = activity_deps.keys().copied().collect();
-    let dependency_activities: HashSet<ActivityId> = activity_deps
-        .values()
-        .flat_map(|deps| deps.iter().copied())
-        .collect();
+    let dependency_activities: HashSet<ActivityId> =
+        activity_deps.values().flat_map(|deps| deps.iter().copied()).collect();
     let all_activities_dependencies: HashSet<ActivityId> = depending_activities
         .iter()
         .chain(dependency_activities.iter())

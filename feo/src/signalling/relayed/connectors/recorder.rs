@@ -48,9 +48,7 @@ impl<C: IsChannel> RecorderConnector<C> {
         };
 
         // Forward signal to the primary agent
-        let core_signal = signal
-            .try_into()
-            .map_err(|_| Error::UnexpectedProtocolSignal)?;
+        let core_signal = signal.try_into().map_err(|_| Error::UnexpectedProtocolSignal)?;
         Ok(Some(core_signal))
     }
 

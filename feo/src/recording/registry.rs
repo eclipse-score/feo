@@ -37,10 +37,7 @@ impl TypeRegistry {
     fn add_helper(&mut self, type_info: TypeInfo) -> &mut Self {
         let type_name = type_info.type_name;
         let previous_info = self.map.insert(type_name, type_info);
-        assert!(
-            previous_info.is_none(),
-            "type '{type_name}' already registered"
-        );
+        assert!(previous_info.is_none(), "type '{type_name}' already registered");
         self
     }
 
@@ -54,9 +51,7 @@ impl TypeRegistry {
     /// This method will panic if
     /// - a type with identical type id (i.e. the same type) has already been registered
     /// - the explicitly or implicitly provided type name is not unique
-    pub fn add<
-        T: Serialize + postcard::experimental::max_size::MaxSize + core::fmt::Debug + 'static,
-    >(
+    pub fn add<T: Serialize + postcard::experimental::max_size::MaxSize + core::fmt::Debug + 'static>(
         &mut self,
         type_name: Option<&'static str>,
         input_builder: impl Fn(&str) -> Box<dyn ActivityInput<T>> + Clone + Send + 'static,

@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 use crate::data::{RecordData, RecordEventInfo, Thread, TraceRecord};
-use anyhow::{Error, bail};
+use anyhow::{bail, Error};
 use feo_log::info;
 use perfetto_model as idl;
 use perfetto_model;
@@ -43,13 +43,7 @@ struct Span {
 
 impl Span {
     /// Create a new span.
-    fn new(
-        pid: u32,
-        thread: Thread,
-        trace: idl::Trace,
-        name: String,
-        info: RecordEventInfo,
-    ) -> Self {
+    fn new(pid: u32, thread: Thread, trace: idl::Trace, name: String, info: RecordEventInfo) -> Self {
         Self {
             pid,
             thread,
@@ -113,7 +107,7 @@ impl<W: io::Write> Perfetto<W> {
             RecordData::Exit => {
                 // Remove all spans that belong to the process
                 self.spans.retain(|_, span| span.pid != pid);
-            }
+            },
             RecordData::NewSpan { id, name, info } => {
                 let key = (pid, id);
                 assert!(!self.spans.contains_key(&key));
@@ -128,9 +122,8 @@ impl<W: io::Write> Perfetto<W> {
                     idl::Trace { packet }
                 };
 
-                self.spans
-                    .insert(key, Span::new(pid, thread, trace, name, info));
-            }
+                self.spans.insert(key, Span::new(pid, thread, trace, name, info));
+            },
             RecordData::EnterSpan { id } => {
                 let sequence_id = self.sequence_id();
                 let Some(span) = self.spans.get_mut(&(pid, id)) else {
@@ -155,7 +148,7 @@ impl<W: io::Write> Perfetto<W> {
                 };
 
                 span.trace.packet.push(packet);
-            }
+            },
             RecordData::ExitSpan { id } => {
                 let key = (pid, id);
                 let Some(mut span) = self.spans.remove(&key) else {
@@ -183,7 +176,7 @@ impl<W: io::Write> Perfetto<W> {
 
                 // Flush
                 self.append(&span.trace)?;
-            }
+            },
 
             RecordData::Record { .. } => unreachable!(),
             RecordData::Event {
@@ -229,7 +222,7 @@ impl<W: io::Write> Perfetto<W> {
                     };
                     self.append(&trace)?;
                 }
-            }
+            },
         }
 
         Ok(())
@@ -260,9 +253,7 @@ impl<W: io::Write> Perfetto<W> {
     }
 
     fn sequence_id(&self) -> idl::trace_packet::OptionalTrustedPacketSequenceId {
-        idl::trace_packet::OptionalTrustedPacketSequenceId::TrustedPacketSequenceId(
-            self.sequence_id,
-        )
+        idl::trace_packet::OptionalTrustedPacketSequenceId::TrustedPacketSequenceId(self.sequence_id)
     }
 }
 

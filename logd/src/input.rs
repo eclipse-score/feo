@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use crate::{MAX_RECORD_SIZE, RecordSender, UNIX_PACKET_PATH, UNIX_STREAM_PATH};
+use crate::{RecordSender, MAX_RECORD_SIZE, UNIX_PACKET_PATH, UNIX_STREAM_PATH};
 use anyhow::{Context, Error};
 use async_stream::stream;
 use bytes::BytesMut;
@@ -39,10 +39,7 @@ pub async fn packet(record_sender: RecordSender) -> Result<(), Error> {
     // Listen
     info!("Listening on {path:?}");
     loop {
-        let socket = listener
-            .accept()
-            .await
-            .context("failed to accept packet connection")?;
+        let socket = listener.accept().await.context("failed to accept packet connection")?;
         info!("Accepted seqpacket connection");
         let stream = stream! {
             let mut buffer = [0u8; MAX_RECORD_SIZE];
@@ -76,16 +73,12 @@ pub async fn stream(record_sender: RecordSender) -> Result<(), Error> {
 
     // Bind
     info!("Binding to {path:?}");
-    let listener =
-        net::UnixListener::bind(path).with_context(|| format!("failed to bind to {path}"))?;
+    let listener = net::UnixListener::bind(path).with_context(|| format!("failed to bind to {path}"))?;
 
     // Listen
     info!("Listening on {:?}", path);
     loop {
-        let (stream, addr) = listener
-            .accept()
-            .await
-            .context("failed to accept unix connection")?;
+        let (stream, addr) = listener.accept().await.context("failed to accept unix connection")?;
         info!("Accepted connection from {addr:?}");
         let framed = FramedRead::with_capacity(stream, LogStreamCodec::default(), MAX_RECORD_SIZE);
 
@@ -95,10 +88,7 @@ pub async fn stream(record_sender: RecordSender) -> Result<(), Error> {
 }
 
 /// Handle a connection.
-async fn connection<S: Stream<Item = io::Result<OwnedRecord>>>(
-    stream: S,
-    record_sender: RecordSender,
-) {
+async fn connection<S: Stream<Item = io::Result<OwnedRecord>>>(stream: S, record_sender: RecordSender) {
     pin!(stream);
 
     loop {
@@ -106,15 +96,15 @@ async fn connection<S: Stream<Item = io::Result<OwnedRecord>>>(
             Some(Ok(record)) => {
                 trace!("Received record: {:?}", record);
                 record
-            }
+            },
             Some(Err(e)) => {
                 info!("Failed to read socket: {:?}. Closing connection", e);
                 break;
-            }
+            },
             None => {
                 info!("Connection closed");
                 break;
-            }
+            },
         };
 
         record_sender.send(record).await.expect("channel closed");

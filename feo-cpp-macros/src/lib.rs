@@ -25,12 +25,7 @@ pub fn make_fn(item: TokenStream) -> TokenStream {
     assert!(!ident.is_empty(), "missing function identifier");
     assert!(params.is_some(), "missing parameters group");
     assert!(ret_type.is_some(), "missing return-type group");
-    let def_string = format!(
-        "pub fn {} {} -> {};",
-        ident,
-        params.unwrap(),
-        ret_type.unwrap()
-    );
+    let def_string = format!("pub fn {} {} -> {};", ident, params.unwrap(), ret_type.unwrap());
     def_string.parse().unwrap()
 }
 
@@ -85,7 +80,7 @@ fn parse(item: TokenStream) -> (String, Option<String>, Option<String>) {
                 );
                 ident.push_str(&part.to_string());
                 expect_separator = true;
-            }
+            },
 
             // If the token is a group and we do not yet have two groups stored,
             // store it as one of the groups. Then expect a separator and indicate
@@ -100,10 +95,10 @@ fn parse(item: TokenStream) -> (String, Option<String>, Option<String>) {
                 }
                 expect_ident = false;
                 expect_separator = true;
-            }
+            },
             other => {
                 panic!("did not expect {}", other);
-            }
+            },
         }
     }
     (ident, group1, group2)

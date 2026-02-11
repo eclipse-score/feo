@@ -15,7 +15,7 @@
 
 use crate::error::Error;
 use crate::ids::ChannelId;
-use crate::signalling::common::mpsc::primitives::{Receiver, Sender, channel};
+use crate::signalling::common::mpsc::primitives::{channel, Receiver, Sender};
 use crate::signalling::common::signals::Signal;
 use core::time::Duration;
 use feo_log::{debug, error, trace};
@@ -33,18 +33,13 @@ impl ProtocolSender {
     }
 
     pub fn send(&mut self, t: ProtocolSignal) -> Result<(), Error> {
-        self.sender
-            .send(t)
-            .map_err(|_| Error::Channel("channel closed"))
+        self.sender.send(t).map_err(|_| Error::Channel("channel closed"))
     }
 
     pub fn connect_receiver(&mut self, _timeout: Duration) -> Result<(), Error> {
         let protocol_signal = ProtocolSignal::Connect(self.channel_id);
         self.sender.send(protocol_signal)?;
-        debug!(
-            "Sent connect request signal from channel {:?}",
-            self.channel_id
-        );
+        debug!("Sent connect request signal from channel {:?}", self.channel_id);
         Ok(())
     }
 }
@@ -78,7 +73,7 @@ impl ProtocolReceiver {
                 Some(other) => {
                     error!("Received unexpected protocol signal {other:?}");
                     continue;
-                }
+                },
                 None => return Err(Error::Timeout(timeout, "connecting sender")),
             };
             trace!("Receiver channel connected: {:?}", self.channel_id);
@@ -100,10 +95,7 @@ impl ProtocolMultiReceiver {
         &'s T: IntoIterator<Item = &'s ChannelId>,
     {
         let (sender, receiver) = channel::<ProtocolSignal>();
-        let senders: HashMap<_, _> = channel_ids
-            .into_iter()
-            .map(|id| (*id, sender.clone()))
-            .collect();
+        let senders: HashMap<_, _> = channel_ids.into_iter().map(|id| (*id, sender.clone())).collect();
         let channel_ids: HashSet<_> = channel_ids.into_iter().copied().collect();
         (
             Self {
@@ -133,7 +125,7 @@ impl ProtocolMultiReceiver {
                 Some(other) => {
                     error!("Received unexpected protocol signal {other:?}");
                     continue;
-                }
+                },
                 None => return Err(Error::Timeout(timeout, "connecting senders")),
             };
             if !self.channel_ids.contains(&channel_id) {
@@ -177,10 +169,7 @@ impl ProtocolMultiSender {
             .senders
             .get(&channel_id)
             .ok_or(Error::ChannelNotFound(channel_id))?;
-        sender
-            .sender
-            .send(signal)
-            .map_err(|_| Error::Channel("channel closed"))
+        sender.sender.send(signal).map_err(|_| Error::Channel("channel closed"))
     }
     pub fn broadcast(&mut self, signal: ProtocolSignal) -> Result<(), Error> {
         for sender in self.senders.values() {

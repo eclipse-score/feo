@@ -108,8 +108,7 @@ pub struct SystemTime(time::SystemTime);
 /// Initialization synchronization. Ensures that `speed` can be set only once.
 static INIT: Once = Once::new();
 /// Time scaling start timestamps
-static START: LazyLock<(SystemTime, Instant)> =
-    LazyLock::new(|| (SystemTime::now(), Instant::now()));
+static START: LazyLock<(SystemTime, Instant)> = LazyLock::new(|| (SystemTime::now(), Instant::now()));
 /// Factor on systemtime and instant if set via `speed`
 static FACTOR: AtomicI32 = AtomicI32::new(0);
 

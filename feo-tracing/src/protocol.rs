@@ -131,10 +131,7 @@ pub fn truncate(slice: &str, buffer: &mut [u8]) -> usize {
 
 /// Now epoch in nanoseconds
 fn timestamp() -> u64 {
-    time::SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos() as u64
+    time::SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos() as u64
 }
 
 /// Return the byte length of the given utf-8 encoded string slice

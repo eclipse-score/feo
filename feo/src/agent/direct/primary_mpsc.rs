@@ -85,9 +85,7 @@ impl Primary {
             .worker_assignments
             .into_iter()
             .map(|(id, activities)| {
-                let connector_builder = connector_builders
-                    .remove(&id)
-                    .expect("missing connector builder");
+                let connector_builder = connector_builders.remove(&id).expect("missing connector builder");
                 let agent_id = config.id;
                 thread::spawn(move || {
                     let mut connector = connector_builder();
@@ -141,10 +139,7 @@ impl Primary {
 
         for th in self.worker_threads.drain(..) {
             if let Err(e) = th.join() {
-                feo_log::error!(
-                    "A local worker thread in the primary agent panicked: {:?}",
-                    e
-                );
+                feo_log::error!("A local worker thread in the primary agent panicked: {:?}", e);
             }
         }
         debug!("Primary agent finished");

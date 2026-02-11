@@ -54,10 +54,7 @@ impl<T: ConnectWorker> Worker<T> {
         timeout: Duration,
     ) -> Self {
         // Build activities
-        let activities: HashMap<ActivityId, _> = activity_builders
-            .into_iter()
-            .map(|(id, b)| (id, b(id)))
-            .collect();
+        let activities: HashMap<ActivityId, _> = activity_builders.into_iter().map(|(id, b)| (id, b(id))).collect();
 
         Self {
             id,
@@ -78,34 +75,31 @@ impl<T: ConnectWorker> Worker<T> {
                 Ok(None) => {
                     // TODO: Manage timeout
                     continue;
-                }
+                },
                 Err(Error::ChannelClosed) => {
                     debug!(
                         "Worker {} detected closed channel from scheduler/relay. Exiting.",
                         self.id
                     );
                     return Ok(()); // Graceful exit
-                }
+                },
                 Err(e) => return Err(e), // Propagate other errors
             };
 
             match signal {
                 Signal::Startup((id, _)) | Signal::Step((id, _)) | Signal::Shutdown((id, _)) => {
                     self.handle_activity_signal(&id, &signal)?;
-                }
+                },
                 Signal::StartupSync(sync_info) => {
                     timestamp::initialize_from(sync_info);
-                }
+                },
                 Signal::Terminate(_) => {
                     debug!(
                         "Worker {} received Terminate signal. Acknowledging and exiting.",
                         self.id
                     );
                     //connection reset may happen if primary terminated and closed its sockets
-                    if let Err(e) = self
-                        .connector
-                        .send_to_scheduler(&Signal::TerminateAck(self.agent_id))
-                    {
+                    if let Err(e) = self.connector.send_to_scheduler(&Signal::TerminateAck(self.agent_id)) {
                         debug!(
                             "Worker {} failed to send TerminateAck (this is often expected during shutdown): {:?}",
                             self.id, e
@@ -116,17 +110,14 @@ impl<T: ConnectWorker> Worker<T> {
                     // over the network before the thread exits and closes the socket.
                     thread::sleep(Duration::from_millis(100));
                     return Ok(()); // Graceful exit
-                }
+                },
                 other => return Err(Error::UnexpectedSignal(other)),
             }
         }
     }
 
     fn handle_activity_signal(&mut self, id: &ActivityId, signal: &Signal) -> Result<(), Error> {
-        let activity = self
-            .activities
-            .get_mut(id)
-            .ok_or(Error::ActivityNotFound(*id))?;
+        let activity = self.activities.get_mut(id).ok_or(Error::ActivityNotFound(*id))?;
         let start = Instant::now();
 
         match signal {
@@ -136,36 +127,36 @@ impl<T: ConnectWorker> Worker<T> {
                     Err(e) => {
                         error!("Activity {} failed during startup: {:?}", id, e);
                         Signal::ActivityFailed((*id, e))
-                    }
+                    },
                 };
                 let elapsed = start.elapsed();
                 debug!("Ran startup of activity {id:?} in {elapsed:?}");
                 self.connector.send_to_scheduler(&response_signal)
-            }
+            },
             Signal::Step((activity_id, _ts)) => {
                 let response_signal = match activity.step() {
                     Ok(()) => Signal::Ready((*activity_id, timestamp::timestamp())),
                     Err(e) => {
                         error!("Activity {} failed during step: {:?}", id, e);
                         Signal::ActivityFailed((*id, e))
-                    }
+                    },
                 };
                 let elapsed = start.elapsed();
                 debug!("Stepped activity {id:?} in {elapsed:?}");
                 self.connector.send_to_scheduler(&response_signal)
-            }
+            },
             Signal::Shutdown((activity_id, _ts)) => {
                 let response_signal = match activity.shutdown() {
                     Ok(()) => Signal::Ready((*activity_id, timestamp::timestamp())),
                     Err(e) => {
                         error!("Activity {} failed during shutdown: {:?}", id, e);
                         Signal::ActivityFailed((*id, e))
-                    }
+                    },
                 };
                 let elapsed = start.elapsed();
                 debug!("Ran shutdown of activity {id:?} in {elapsed:?}");
                 self.connector.send_to_scheduler(&response_signal)
-            }
+            },
             other => Err(Error::UnexpectedSignal(*other)),
         }
     }
