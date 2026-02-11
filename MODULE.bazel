@@ -12,7 +12,8 @@
 # *******************************************************************************
 module(
     name = "score_feo",
-    version = "0.1",
+    version = "0.0.0",
+    compatibility_level = 1,
 )
 
 # SCORE bazel module dependencies
