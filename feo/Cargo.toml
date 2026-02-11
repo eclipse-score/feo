@@ -1,7 +1,7 @@
 [package]
 name = "feo"
 version = "0.0.1"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 feo-com = { workspace = true }
@@ -14,6 +14,7 @@ postcard = { workspace = true, features = [
     "experimental-derive",
 ], optional = true }
 serde = { workspace = true, optional = true }
+ctrlc = { workspace = true, features = ["termination"] }
 
 [dev-dependencies]
 feo-logger = { workspace = true }

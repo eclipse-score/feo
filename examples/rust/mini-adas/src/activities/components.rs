@@ -18,6 +18,7 @@ use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut, Range};
 use core::time::Duration;
 use feo::activity::Activity;
+use feo::error::ActivityError;
 use feo::ids::ActivityId;
 use feo_com::interface::{ActivityInput, ActivityOutput};
 #[cfg(feature = "com_iox2")]
@@ -28,7 +29,6 @@ use feo_log::debug;
 use feo_tracing::instrument;
 use std::hash::RandomState;
 use std::thread;
-
 const SLEEP_RANGE: Range<i64> = 10..45;
 
 /// Camera activity
@@ -82,10 +82,12 @@ impl Activity for Camera {
     }
 
     #[instrument(name = "Camera startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "Camera")]
-    fn step(&mut self) {
+    fn step(&mut self) -> Result<(), ActivityError> {
         debug!("Stepping Camera");
         sleep_random();
 
@@ -95,10 +97,14 @@ impl Activity for Camera {
             let camera = camera.write_payload(image);
             camera.send().unwrap();
         }
+        Ok(())
     }
 
     #[instrument(name = "Camera shutdown")]
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) -> Result<(), ActivityError> {
+        debug!("Shutting down Camera activity {}", self.activity_id);
+        Ok(())
+    }
 }
 
 /// Radar activity
@@ -145,10 +151,12 @@ impl Activity for Radar {
     }
 
     #[instrument(name = "Radar startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "Radar")]
-    fn step(&mut self) {
+    fn step(&mut self) -> Result<(), ActivityError> {
         debug!("Stepping Radar");
         sleep_random();
 
@@ -158,10 +166,14 @@ impl Activity for Radar {
             let radar = radar.write_payload(scan);
             radar.send().unwrap();
         }
+        Ok(())
     }
 
     #[instrument(name = "Radar shutdown")]
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) -> Result<(), ActivityError> {
+        debug!("Shutting down Radar activity {}", self.activity_id);
+        Ok(())
+    }
 }
 
 /// Neural network activity
@@ -228,10 +240,12 @@ impl Activity for NeuralNet {
     }
 
     #[instrument(name = "NeuralNet startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "NeuralNet")]
-    fn step(&mut self) {
+    fn step(&mut self) -> Result<(), ActivityError> {
         debug!("Stepping NeuralNet");
         sleep_random();
 
@@ -248,10 +262,14 @@ impl Activity for NeuralNet {
             debug!("Sending Scene {:?}", scene.deref());
             scene.send().unwrap();
         }
+        Ok(())
     }
 
     #[instrument(name = "NeuralNet shutdown")]
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) -> Result<(), ActivityError> {
+        debug!("Shutting down NeuralNet activity {}", self.activity_id);
+        Ok(())
+    }
 }
 
 /// Emergency braking activity
@@ -290,10 +308,12 @@ impl Activity for EmergencyBraking {
     }
 
     #[instrument(name = "EmergencyBraking startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "EmergencyBraking")]
-    fn step(&mut self) {
+    fn step(&mut self) -> Result<(), ActivityError> {
         debug!("Stepping EmergencyBraking");
         sleep_random();
 
@@ -325,10 +345,17 @@ impl Activity for EmergencyBraking {
                 brake_instruction.send().unwrap();
             }
         }
+        Ok(())
     }
 
     #[instrument(name = "EmergencyBraking shutdown")]
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) -> Result<(), ActivityError> {
+        debug!(
+            "Shutting down EmergencyBraking activity {}",
+            self.activity_id
+        );
+        Ok(())
+    }
 }
 
 /// Brake controller activity
@@ -360,25 +387,34 @@ impl Activity for BrakeController {
     }
 
     #[instrument(name = "BrakeController startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "BrakeController")]
-    fn step(&mut self) {
+    fn step(&mut self) -> Result<(), ActivityError> {
         debug!("Stepping BrakeController");
         sleep_random();
 
-        if let Ok(brake_instruction) = self.input_brake_instruction.read() {
-            if brake_instruction.active {
-                debug!(
-                    "BrakeController activating brakes with level {:.3}",
-                    brake_instruction.level
-                )
-            }
+        if let Ok(brake_instruction) = self.input_brake_instruction.read()
+            && brake_instruction.active
+        {
+            debug!(
+                "BrakeController activating brakes with level {:.3}",
+                brake_instruction.level
+            )
         }
+        Ok(())
     }
 
     #[instrument(name = "BrakeController shutdown")]
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) -> Result<(), ActivityError> {
+        debug!(
+            "Shutting down BrakeController activity {}",
+            self.activity_id
+        );
+        Ok(())
+    }
 }
 
 /// Environment renderer activity
@@ -409,20 +445,29 @@ impl Activity for EnvironmentRenderer {
     }
 
     #[instrument(name = "EnvironmentRenderer startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "EnvironmentRenderer")]
-    fn step(&mut self) {
+    fn step(&mut self) -> Result<(), ActivityError> {
         debug!("Stepping EnvironmentRenderer");
         sleep_random();
 
         if let Ok(_scene) = self.input_scene.read() {
             debug!("Rendering scene");
         }
+        Ok(())
     }
 
     #[instrument(name = "EnvironmentRenderer shutdown")]
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) -> Result<(), ActivityError> {
+        debug!(
+            "Shutting down EnvironmentRenderer activity {}",
+            self.activity_id
+        );
+        Ok(())
+    }
 }
 
 /// Steering controller activity
@@ -454,10 +499,12 @@ impl Activity for SteeringController {
     }
 
     #[instrument(name = "SteeringController startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "SteeringController")]
-    fn step(&mut self) {
+    fn step(&mut self) -> Result<(), ActivityError> {
         debug!("Stepping SteeringController");
         sleep_random();
 
@@ -467,10 +514,17 @@ impl Activity for SteeringController {
                 steering.angle
             )
         }
+        Ok(())
     }
 
     #[instrument(name = "SteeringController shutdown")]
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) -> Result<(), ActivityError> {
+        debug!(
+            "Shutting down SteeringController activity {}",
+            self.activity_id
+        );
+        Ok(())
+    }
 }
 
 /// Create an activity input.

@@ -18,7 +18,7 @@ use core::net::SocketAddr;
 use core::time::Duration;
 use feo_log::{debug, info, warn};
 use mio::net::{TcpListener, TcpStream, UnixListener, UnixStream};
-use mio::{event, Events, Interest, Poll, Token};
+use mio::{Events, Interest, Poll, Token, event};
 use std::collections::HashMap;
 use std::fs;
 use std::io;
@@ -61,13 +61,21 @@ where
         &mut self,
         events: &mut Events,
         timeout: Duration,
-    ) -> Option<(Token, ProtocolSignal)> {
-        if let Some((token, msg)) = self.receive_on_readable_connections() {
-            return Some((token, msg));
+    ) -> Result<Option<(Token, ProtocolSignal)>, crate::error::Error> {
+        if let Some(result) = self.receive_on_readable_connections()? {
+            return Ok(Some(result));
         }
 
         // There was no readable connection -> poll
-        self.poll.poll(events, Some(timeout)).unwrap();
+        loop {
+            match self.poll.poll(events, Some(timeout)) {
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {
+                    // ignore system interrupts
+                }
+                Ok(_) => break,
+                e => panic!("{e:?}"),
+            }
+        }
         for event in events.iter() {
             match event.token() {
                 LISTENER_TOKEN => self.accept_connections(),
@@ -84,11 +92,11 @@ where
         }
 
         // Check once again for any readable connection
-        if let Some((token, msg)) = self.receive_on_readable_connections() {
-            return Some((token, msg));
+        if let Some(result) = self.receive_on_readable_connections()? {
+            return Ok(Some(result));
         }
 
-        None
+        Ok(None)
     }
 
     /// Send the message to the connection identified by `token`
@@ -124,25 +132,22 @@ where
     }
 
     /// Try to receive a message
-    fn receive_on_readable_connections(&mut self) -> Option<(Token, ProtocolSignal)> {
+    fn receive_on_readable_connections(
+        &mut self,
+    ) -> Result<Option<(Token, ProtocolSignal)>, crate::error::Error> {
         for (token, connection) in self
             .accepted_connections
             .iter_mut()
             .filter(|(_, c)| c.is_readable())
         {
             match connection.read() {
-                Ok(Some(msg)) => {
-                    // Bubble up token with message
-                    return Some((*token, msg));
-                }
+                Ok(Some(msg)) => return Ok(Some((*token, msg))),
                 Ok(None) => {}
-                Err(e) => {
-                    panic!("failed to read from connection with token {token:?}: {e}");
-                }
+                Err(e) => return Err(e.into()),
             }
         }
 
-        None
+        Ok(None)
     }
 }
 

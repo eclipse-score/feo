@@ -15,7 +15,7 @@
 
 use crate::error::Error;
 use crate::ids::ChannelId;
-use crate::signalling::common::mpsc::primitives::{channel, Receiver, Sender};
+use crate::signalling::common::mpsc::primitives::{Receiver, Sender, channel};
 use crate::signalling::common::signals::Signal;
 use core::time::Duration;
 use feo_log::{debug, error, trace};
@@ -181,6 +181,15 @@ impl ProtocolMultiSender {
             .sender
             .send(signal)
             .map_err(|_| Error::Channel("channel closed"))
+    }
+    pub fn broadcast(&mut self, signal: ProtocolSignal) -> Result<(), Error> {
+        for sender in self.senders.values() {
+            sender
+                .sender
+                .send(signal)
+                .map_err(|_| Error::Channel("broadcast failed: a channel was closed"))?;
+        }
+        Ok(())
     }
 
     pub fn connect_receivers(&mut self, _timeout: Duration) -> Result<(), Error> {

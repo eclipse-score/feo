@@ -13,10 +13,10 @@
 
 use feo::agent::com_init::initialize_com_primary;
 use feo::ids::AgentId;
-use feo_log::{info, LevelFilter};
+use feo_log::{LevelFilter, info};
 use feo_time::Duration;
 use mini_adas::config::{
-    agent_assignments_ids, topic_dependencies, COM_BACKEND, MAX_ADDITIONAL_SUBSCRIBERS,
+    COM_BACKEND, MAX_ADDITIONAL_SUBSCRIBERS, agent_assignments_ids, topic_dependencies,
 };
 use std::collections::HashSet;
 
@@ -42,11 +42,14 @@ fn main() {
         MAX_ADDITIONAL_SUBSCRIBERS,
     );
 
-    // Setup primary
-    let mut primary = cfg::Primary::new(config);
-
-    // Run primary
-    primary.run().unwrap()
+    // Setup and run primary
+    cfg::Primary::new(config)
+        .unwrap_or_else(|err| {
+            feo_log::error!("Failed to initialize primary agent: {err:?}");
+            std::process::exit(1);
+        })
+        .run()
+        .unwrap();
 }
 
 /// Parameters of the primary
@@ -89,30 +92,36 @@ impl Params {
 
 #[cfg(feature = "signalling_direct_mpsc")]
 mod cfg {
-    use super::{Duration, Params, AGENT_ID};
+    use super::{AGENT_ID, Duration, Params};
     use mini_adas::config::{activity_dependencies, agent_assignments};
 
     pub(super) use feo::agent::direct::primary_mpsc::{Primary, PrimaryConfig};
 
     pub(super) fn make_config(params: Params) -> PrimaryConfig {
         PrimaryConfig {
+            id: AGENT_ID,
             cycle_time: params.feo_cycle_time,
             activity_dependencies: activity_dependencies(),
             // With only one agent, we cannot attach a recorder
             recorder_ids: vec![],
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
         }
     }
 }
 
 #[cfg(feature = "signalling_direct_tcp")]
 mod cfg {
-    use super::{check_ids, Duration, Params, AGENT_ID};
-    use feo::agent::NodeAddress;
-    use feo::ids::AgentId;
-    use mini_adas::config::{activity_dependencies, agent_assignments, BIND_ADDR};
-    use std::collections::HashSet;
+    use super::{AGENT_ID, Duration, Params, check_ids};
+    use feo::{
+        agent::NodeAddress,
+        ids::{ActivityId, AgentId, WorkerId},
+    };
+    use mini_adas::config::{
+        BIND_ADDR, activity_dependencies, agent_assignments, worker_agent_map,
+    };
+    use std::collections::{HashMap, HashSet};
 
     pub(super) use feo::agent::direct::primary::{Primary, PrimaryConfig};
 
@@ -120,24 +129,46 @@ mod cfg {
         let agent_ids: HashSet<AgentId> = agent_assignments().keys().copied().collect();
         check_ids(&params.recorder_ids, &agent_ids);
 
+        let activity_worker_map: HashMap<ActivityId, WorkerId> = agent_assignments()
+            .values()
+            .flat_map(|vec| {
+                vec.iter()
+                    .flat_map(move |(wid, aid_b)| aid_b.iter().map(|v| (v.0, *wid)))
+            })
+            .collect();
+
         PrimaryConfig {
+            id: AGENT_ID,
             cycle_time: params.feo_cycle_time,
             activity_dependencies: activity_dependencies(),
             recorder_ids: params.recorder_ids,
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
+            connection_timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
             endpoint: NodeAddress::Tcp(BIND_ADDR),
+            activity_agent_map: activity_worker_map
+                .iter()
+                .map(|(activity_id, worker_id)| {
+                    let agent_id = worker_agent_map().get(worker_id).copied().unwrap();
+                    (*activity_id, agent_id)
+                })
+                .collect(),
         }
     }
 }
 
 #[cfg(feature = "signalling_direct_unix")]
 mod cfg {
-    use super::{check_ids, Duration, Params, AGENT_ID};
-    use feo::agent::NodeAddress;
-    use feo::ids::AgentId;
-    use mini_adas::config::{activity_dependencies, agent_assignments, socket_paths};
-    use std::collections::HashSet;
+    use super::{AGENT_ID, Duration, Params, check_ids};
+    use feo::{
+        agent::NodeAddress,
+        ids::{ActivityId, AgentId, WorkerId},
+    };
+    use mini_adas::config::{
+        activity_dependencies, agent_assignments, socket_paths, worker_agent_map,
+    };
+    use std::collections::{HashMap, HashSet};
 
     pub(super) use feo::agent::direct::primary::{Primary, PrimaryConfig};
 
@@ -145,24 +176,42 @@ mod cfg {
         let agent_ids: HashSet<AgentId> = agent_assignments().keys().copied().collect();
         check_ids(&params.recorder_ids, &agent_ids);
 
+        let activity_worker_map: HashMap<ActivityId, WorkerId> = agent_assignments()
+            .values()
+            .flat_map(|vec| {
+                vec.iter()
+                    .flat_map(move |(wid, aid_b)| aid_b.iter().map(|v| (v.0, *wid)))
+            })
+            .collect();
+
         PrimaryConfig {
+            id: AGENT_ID,
             cycle_time: params.feo_cycle_time,
             activity_dependencies: activity_dependencies(),
             recorder_ids: params.recorder_ids,
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
+            connection_timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
             endpoint: NodeAddress::UnixSocket(socket_paths().0),
+            activity_agent_map: activity_worker_map
+                .iter()
+                .map(|(activity_id, worker_id)| {
+                    let agent_id = worker_agent_map().get(worker_id).copied().unwrap();
+                    (*activity_id, agent_id)
+                })
+                .collect(),
         }
     }
 }
 
 #[cfg(feature = "signalling_relayed_tcp")]
 mod cfg {
-    use super::{check_ids, Duration, Params, AGENT_ID};
+    use super::{AGENT_ID, Duration, Params, check_ids};
     use feo::agent::NodeAddress;
     use feo::ids::{ActivityId, AgentId, WorkerId};
     use mini_adas::config::{
-        activity_dependencies, agent_assignments, worker_agent_map, BIND_ADDR, BIND_ADDR2,
+        BIND_ADDR, BIND_ADDR2, activity_dependencies, agent_assignments, worker_agent_map,
     };
     use std::collections::{HashMap, HashSet};
 
@@ -186,6 +235,8 @@ mod cfg {
             recorder_ids: params.recorder_ids,
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
+            connection_timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
             bind_address_senders: NodeAddress::Tcp(BIND_ADDR),
             bind_address_receivers: NodeAddress::Tcp(BIND_ADDR2),
             id: AGENT_ID,
@@ -197,7 +248,7 @@ mod cfg {
 
 #[cfg(feature = "signalling_relayed_unix")]
 mod cfg {
-    use super::{check_ids, Duration, Params, AGENT_ID};
+    use super::{AGENT_ID, Duration, Params, check_ids};
     use feo::agent::NodeAddress;
     use feo::ids::{ActivityId, AgentId, WorkerId};
     use mini_adas::config::{
@@ -225,6 +276,8 @@ mod cfg {
             recorder_ids: params.recorder_ids,
             worker_assignments: agent_assignments().remove(&AGENT_ID).unwrap(),
             timeout: Duration::from_secs(10),
+            connection_timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
             bind_address_senders: NodeAddress::UnixSocket(socket_paths().0),
             bind_address_receivers: NodeAddress::UnixSocket(socket_paths().1),
             id: AGENT_ID,

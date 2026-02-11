@@ -12,6 +12,7 @@
  ********************************************************************************/
 
 use feo::activity::Activity;
+use feo::error::ActivityError;
 use feo::ids::ActivityId;
 use feo_tracing::{instrument, tracing};
 
@@ -39,13 +40,18 @@ impl Activity for DummyActivity {
     }
 
     #[instrument(name = "Activity startup")]
-    fn startup(&mut self) {}
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 
     #[instrument(name = "Activity step")]
-    fn step(&mut self) {
+    fn step(&mut self) -> Result<(), ActivityError> {
         tracing::event!(tracing::Level::TRACE, id = self._id_str);
+        Ok(())
     }
 
     #[instrument(name = "Activity shutdown")]
-    fn shutdown(&mut self) {}
+    fn shutdown(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 }

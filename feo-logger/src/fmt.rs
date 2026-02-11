@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 use crate::record::{OwnedRecord, Record};
-use console::{style, Color, StyledObject};
+use console::{Color, StyledObject, style};
 use core::str;
 use core::sync::atomic::{self, AtomicUsize, Ordering};
 use feo_log::Level;

@@ -238,7 +238,7 @@ fn read_u64_be<R: io::Read>(mut r: R) -> io::Result<u64> {
 
 #[cfg(test)]
 mod test {
-    use super::{read_u32_be, read_u64_be, Record};
+    use super::{Record, read_u32_be, read_u64_be};
     use crate::record::OwnedRecord;
     use std::io;
 

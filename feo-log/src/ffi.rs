@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 use log::{Level, LevelFilter, Record};
-use std::ffi::{c_char, c_int, CStr};
+use std::ffi::{CStr, c_char, c_int};
 
 #[allow(non_camel_case_types)]
 type feo_log_Level = ::std::os::raw::c_int;
@@ -33,7 +33,7 @@ const LEVEL_FILTER_INFO: feo_log_Level = 3;
 const LEVEL_FILTER_DEBUG: feo_log_Level = 4;
 const LEVEL_FILTER_TRACE: feo_log_Level = 5;
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn __log(
     file: *const c_char,
     line: c_int,
@@ -85,7 +85,7 @@ extern "C" fn __log(
 }
 
 /// Set the maximum log level
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn __set_max_level(level_filter: feo_log_Level_Filter) {
     let level_filter = match level_filter {
         LEVEL_FILTER_OFF => LevelFilter::Off,
@@ -99,7 +99,7 @@ extern "C" fn __set_max_level(level_filter: feo_log_Level_Filter) {
     log::set_max_level(level_filter);
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn __max_level() -> feo_log_Level_Filter {
     match log::max_level() {
         LevelFilter::Off => LEVEL_FILTER_OFF,

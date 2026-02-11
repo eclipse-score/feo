@@ -13,7 +13,7 @@
 
 //! Provides a convenience macro creating ffi definitions and Rust glue code for C++ components
 
-/// Create ffi definitions and Rust glue code for a C++ component  
+/// Create ffi definitions and Rust glue code for a C++ component
 ///
 /// Call: `cpp_activity!(name, library)`
 ///
@@ -34,6 +34,7 @@ macro_rules! cpp_activity {
     ( $name:ident, $library:literal ) => {
         pub mod $name {
             use feo::activity::Activity;
+            use feo::error::ActivityError;
             use feo::ids::ActivityId;
             use feo_cpp_macros::{make_fn, make_fn_call};
             use feo_tracing::{instrument, tracing};
@@ -85,21 +86,24 @@ macro_rules! cpp_activity {
                 }
 
                 #[instrument(name = "startup")]
-                fn startup(&mut self) {
+                fn startup(&mut self) -> Result<(), ActivityError> {
                     // Safety: Call of external C functions belonging to C++ activitiy, to be reviewed
                     unsafe { make_fn_call!($name, _startup, (self.cpp_activity)) };
+                    Ok(())
                 }
 
                 #[instrument(name = "step")]
-                fn step(&mut self) {
+                fn step(&mut self) -> Result<(), ActivityError> {
                     // Safety: Call of external C functions belonging to C++ activitiy, to be reviewed
                     unsafe { make_fn_call!($name, _step, (self.cpp_activity)) };
+                    Ok(())
                 }
 
                 #[instrument(name = "shutdown")]
-                fn shutdown(&mut self) {
+                fn shutdown(&mut self) -> Result<(), ActivityError> {
                     // Safety: Call of external C functions belonging to C++ activitiy, to be reviewed
                     unsafe { make_fn_call!($name, _shutdown, (self.cpp_activity)) };
+                    Ok(())
                 }
             }
         }

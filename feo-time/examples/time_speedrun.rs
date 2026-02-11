@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 use core::time::Duration;
-use feo_log::{debug, info, LevelFilter};
+use feo_log::{LevelFilter, debug, info};
 use feo_time::Scaled;
 use std::thread;
 

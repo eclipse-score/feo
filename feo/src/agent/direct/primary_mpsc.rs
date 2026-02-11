@@ -22,13 +22,18 @@ use crate::signalling::direct::mpsc::scheduler::SchedulerConnector;
 use crate::timestamp;
 use crate::worker::Worker;
 use alloc::boxed::Box;
+use alloc::sync::Arc;
 use alloc::vec::Vec;
+use core::sync::atomic::AtomicBool;
 use core::time::Duration;
+use feo_log::{debug, info};
 use std::collections::HashMap;
 use std::thread::{self, JoinHandle};
 
 /// Configuration of the primary agent
 pub struct PrimaryConfig {
+    /// Id of the primary agent
+    pub id: AgentId,
     /// Cycle time of the step loop
     pub cycle_time: Duration,
     /// Dependencies per activity
@@ -39,6 +44,8 @@ pub struct PrimaryConfig {
     pub worker_assignments: Vec<(WorkerId, Vec<ActivityIdAndBuilder>)>,
     /// Receive timeout of the scheduler's connector
     pub timeout: Duration,
+    /// Timeout for waiting on activities to become ready during startup.
+    pub startup_timeout: Duration,
 }
 
 /// Primary agent
@@ -46,21 +53,23 @@ pub struct Primary {
     /// Scheduler
     scheduler: Scheduler,
     /// Handles to the worker threads
-    _worker_threads: Vec<JoinHandle<()>>,
+    worker_threads: Vec<JoinHandle<()>>,
 }
 
 impl Primary {
     /// Create a new instance
-    pub fn new(config: PrimaryConfig) -> Self {
+    pub fn new(config: PrimaryConfig) -> Result<Self, Error> {
         let PrimaryConfig {
             cycle_time,
             activity_dependencies,
             recorder_ids,
-            worker_assignments,
             timeout,
+            startup_timeout,
+            ..
         } = config;
 
-        let activity_worker_map: HashMap<ActivityId, WorkerId> = worker_assignments
+        let activity_worker_map: HashMap<ActivityId, WorkerId> = config
+            .worker_assignments
             .iter()
             .flat_map(|(wid, aid_bld)| aid_bld.iter().map(move |id_b| (id_b.0, *wid)))
             .collect();
@@ -72,18 +81,20 @@ impl Primary {
         let mut connector_builders = connector.worker_connector_builders();
 
         // Create worker threads first so that the connector of the scheduler can connect
-        let _worker_threads = worker_assignments
+        let worker_threads = config
+            .worker_assignments
             .into_iter()
             .map(|(id, activities)| {
                 let connector_builder = connector_builders
                     .remove(&id)
                     .expect("missing connector builder");
+                let agent_id = config.id;
                 thread::spawn(move || {
                     let mut connector = connector_builder();
                     connector.connect_remote().expect("failed to connect");
 
                     let activity_builders = activities;
-                    let worker = Worker::new(id, activity_builders, connector, timeout);
+                    let worker = Worker::new(id, agent_id, activity_builders, connector, timeout);
                     worker.run().expect("failed to run worker");
                 })
             })
@@ -91,18 +102,30 @@ impl Primary {
 
         connector.connect_remotes().expect("failed to connect");
 
+        // Create a shared flag to signal shutdown from an OS signal (e.g., Ctrl-C).
+        let shutdown_requested = Arc::new(AtomicBool::new(false));
+        let shutdown_clone = shutdown_requested.clone();
+        ctrlc::set_handler(move || {
+            info!("Ctrl-C detected. Requesting graceful shutdown...");
+            shutdown_clone.store(true, core::sync::atomic::Ordering::Relaxed);
+        })
+        .expect("Error setting Ctrl-C handler");
+
         let scheduler = Scheduler::new(
+            config.id,
             cycle_time,
             timeout,
+            startup_timeout,
             activity_dependencies,
             connector,
             recorder_ids,
+            shutdown_requested,
         );
 
-        Self {
+        Ok(Self {
             scheduler,
-            _worker_threads,
-        }
+            worker_threads,
+        })
     }
 
     /// Run the agent
@@ -116,6 +139,15 @@ impl Primary {
         // TODO: Bubble up errors
         self.scheduler.run();
 
+        for th in self.worker_threads.drain(..) {
+            if let Err(e) = th.join() {
+                feo_log::error!(
+                    "A local worker thread in the primary agent panicked: {:?}",
+                    e
+                );
+            }
+        }
+        debug!("Primary agent finished");
         Ok(())
     }
 }

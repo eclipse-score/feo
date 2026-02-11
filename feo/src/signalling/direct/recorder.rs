@@ -15,13 +15,13 @@ use crate::error::Error;
 use crate::ids::AgentId;
 use crate::signalling::common::interface::ConnectRecorder;
 use crate::signalling::common::signals::Signal;
-use crate::signalling::common::socket::client::{SocketClient, TcpClient, UnixClient};
 use crate::signalling::common::socket::ProtocolSignal;
+use crate::signalling::common::socket::client::{SocketClient, TcpClient, UnixClient};
 use core::net::SocketAddr;
 use core::time::Duration;
 use feo_log::warn;
-use mio::net::{TcpStream, UnixStream};
 use mio::Events;
+use mio::net::{TcpStream, UnixStream};
 use std::io;
 use std::path::PathBuf;
 
@@ -57,12 +57,13 @@ where
             .expect("socket client not connected")
             .receive(&mut self.events, timeout)
         {
-            Some(ProtocolSignal::Core(signal)) => Ok(Some(signal)),
-            Some(signal) => {
+            Ok(Some(ProtocolSignal::Core(signal))) => Ok(Some(signal)),
+            Ok(Some(signal)) => {
                 warn!("Received unexpected signal {signal:?}");
                 Ok(None)
             }
-            None => Ok(None),
+            Ok(None) => Ok(None),
+            Err(e) => Err(e),
         }
     }
 

@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 use crate::data::{RecordData, RecordEventInfo, Thread, TraceRecord};
-use anyhow::{bail, Error};
+use anyhow::{Error, bail};
 use feo_log::info;
 use perfetto_model as idl;
 use perfetto_model;

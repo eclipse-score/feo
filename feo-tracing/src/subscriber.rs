@@ -12,7 +12,7 @@
  ********************************************************************************/
 
 use crate::protocol::{
-    truncate, EventInfo, TraceData, TracePacket, MAX_INFO_SIZE, MAX_PACKET_SIZE,
+    EventInfo, MAX_INFO_SIZE, MAX_PACKET_SIZE, TraceData, TracePacket, truncate,
 };
 use core::sync::atomic;
 use core::sync::atomic::AtomicBool;
@@ -20,7 +20,7 @@ use core::time::Duration;
 use feo_log::error;
 use std::io::Write;
 use std::os::unix::net::UnixStream;
-use std::sync::{mpsc, Arc};
+use std::sync::{Arc, mpsc};
 use std::thread::JoinHandle;
 use std::{io, thread};
 use tracing::level_filters::LevelFilter;

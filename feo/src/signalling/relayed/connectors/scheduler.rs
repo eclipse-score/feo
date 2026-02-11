@@ -21,20 +21,23 @@ use crate::signalling::relayed::connectors::relays::{PrimaryReceiveRelay, Primar
 use crate::signalling::relayed::interface::{
     Builder, IsChannel, ProtocolMultiRecv, ProtocolMultiSend,
 };
+use alloc::{collections::BTreeSet, vec::Vec};
 use core::time::Duration;
 use feo_log::debug;
 use std::collections::{HashMap, HashSet};
+use std::thread::JoinHandle;
 
 pub(crate) struct SchedulerConnector<Inter: IsChannel, Intra: IsChannel> {
     local_workers: HashSet<WorkerId>,
     intra_receiver: Intra::MultiReceiver,
-    ipc_receive_relay: PrimaryReceiveRelay<Inter, Intra>,
-    ipc_send_relay: PrimarySendRelay<Inter>,
+    ipc_receive_relay: Option<PrimaryReceiveRelay<Inter, Intra>>,
+    ipc_send_relay: Option<PrimarySendRelay<Inter>>,
     worker_sender: Intra::MultiSender,
     timeout: Duration,
     worker_connector_builders: Option<HashMap<WorkerId, Builder<WorkerConnector>>>,
     activity_worker_map: HashMap<ActivityId, WorkerId>,
     worker_agent_map: HashMap<WorkerId, AgentId>,
+    relay_threads: Vec<JoinHandle<()>>,
 }
 
 impl<Inter: IsChannel, Intra: IsChannel> SchedulerConnector<Inter, Intra> {
@@ -42,8 +45,8 @@ impl<Inter: IsChannel, Intra: IsChannel> SchedulerConnector<Inter, Intra> {
     pub fn with_fields(
         local_workers: HashSet<WorkerId>,
         intra_receiver: Intra::MultiReceiver,
-        ipc_receive_relay: PrimaryReceiveRelay<Inter, Intra>,
-        ipc_send_relay: PrimarySendRelay<Inter>,
+        ipc_receive_relay: Option<PrimaryReceiveRelay<Inter, Intra>>,
+        ipc_send_relay: Option<PrimarySendRelay<Inter>>,
         worker_sender: Intra::MultiSender,
         timeout: Duration,
         worker_connector_builders: Option<HashMap<WorkerId, Builder<WorkerConnector>>>,
@@ -60,6 +63,7 @@ impl<Inter: IsChannel, Intra: IsChannel> SchedulerConnector<Inter, Intra> {
             worker_connector_builders,
             activity_worker_map,
             worker_agent_map,
+            relay_threads: Vec::new(),
         }
     }
 
@@ -68,7 +72,11 @@ impl<Inter: IsChannel, Intra: IsChannel> SchedulerConnector<Inter, Intra> {
         agent_id: AgentId,
         signal: Inter::ProtocolSignal,
     ) -> Result<(), Error> {
-        self.ipc_send_relay.send_to_agent(agent_id, signal)
+        if let Some(relay) = self.ipc_send_relay.as_mut() {
+            relay.send_to_agent(agent_id, signal)
+        } else {
+            Err(Error::ChannelNotFound(ChannelId::Agent(agent_id)))
+        }
     }
 
     // Relay signal onto inter-process connector
@@ -99,8 +107,13 @@ impl<Inter: IsChannel, Intra: IsChannel> SchedulerConnector<Inter, Intra> {
 
     pub fn run_and_connect(&mut self) -> Result<(), Error> {
         debug!("Starting MixedSchedulerConnector");
-        self.ipc_receive_relay.run_and_connect();
-        self.ipc_send_relay.connect()?;
+        if let Some(relay) = self.ipc_receive_relay.as_mut() {
+            let receive_relay_handle = relay.run_and_connect();
+            self.relay_threads.push(receive_relay_handle);
+        }
+        if let Some(relay) = self.ipc_send_relay.as_mut() {
+            relay.connect()?;
+        }
         self.intra_receiver.connect_senders(self.timeout)?;
         self.worker_sender.connect_receivers(self.timeout)
     }
@@ -110,7 +123,11 @@ impl<Inter: IsChannel, Intra: IsChannel> SchedulerConnector<Inter, Intra> {
     }
 
     fn sync_time(&mut self) -> Result<(), Error> {
-        self.ipc_send_relay.sync_time()
+        if let Some(relay) = self.ipc_send_relay.as_mut() {
+            relay.sync_time()
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -121,6 +138,15 @@ impl<Inter: IsChannel, Intra: IsChannel> ConnectScheduler for SchedulerConnector
 
     fn sync_time(&mut self) -> Result<(), Error> {
         self.sync_time()
+    }
+
+    fn get_connected_agent_ids(&self) -> Vec<AgentId> {
+        let mut agent_ids: BTreeSet<_> = self.worker_agent_map.values().copied().collect();
+        // In relayed mode, recorders are also agents we talk to.
+        if let Some(relay) = self.ipc_send_relay.as_ref() {
+            agent_ids.extend(relay.get_remote_agents());
+        }
+        agent_ids.into_iter().collect()
     }
 
     fn receive(&mut self, timeout: Duration) -> Result<Option<Signal>, Error> {
@@ -141,5 +167,19 @@ impl<Inter: IsChannel, Intra: IsChannel> ConnectScheduler for SchedulerConnector
 
     fn send_to_recorder(&mut self, recorder_id: AgentId, signal: &Signal) -> Result<(), Error> {
         self.send_to_agent(recorder_id, (*signal).into())
+    }
+
+    fn broadcast_terminate(&mut self, signal: &Signal) -> Result<(), Error> {
+        // Broadcast to remote agents via the IPC relay.
+        if let Some(relay) = self.ipc_send_relay.as_mut() {
+            relay.broadcast((*signal).into())?;
+        }
+
+        // Also broadcast to local workers via the MPSC sender.
+        self.worker_sender.broadcast((*signal).into())
+    }
+
+    fn take_relay_threads(&mut self) -> Vec<JoinHandle<()>> {
+        core::mem::take(&mut self.relay_threads)
     }
 }

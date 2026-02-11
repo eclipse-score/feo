@@ -17,7 +17,7 @@ use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::ops::{Deref, DerefMut};
 use core::ptr;
-use core::sync::atomic::{fence, AtomicBool, AtomicPtr, AtomicU16, Ordering};
+use core::sync::atomic::{AtomicBool, AtomicPtr, AtomicU16, Ordering, fence};
 
 // Mode of shared memory mapping
 #[derive(Debug, Clone, Copy)]

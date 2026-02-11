@@ -13,6 +13,7 @@
 
 //! Socket signalling building blocks
 
+use crate::error::ActivityError;
 use crate::ids::{ActivityId, AgentId, ChannelId, RelayId, WorkerId};
 use crate::signalling::common::signals::Signal;
 use crate::timestamp::{SyncInfo, Timestamp};
@@ -190,6 +191,15 @@ impl EncodeDecode for ProtocolSignal {
             ProtocolSignal::Core(Signal::Ready((activity_id, timestamp))) => {
                 encode_data!(w; SignalTag::CoreReady; activity_id => u64, timestamp => u128);
             }
+            ProtocolSignal::Core(Signal::ActivityFailed((activity_id, error))) => {
+                encode_data!(w; SignalTag::CoreActivityFailed; *activity_id => u64, *error => u8);
+            }
+            ProtocolSignal::Core(Signal::Terminate(timestamp)) => {
+                encode_data!(w; SignalTag::CoreTerminate; timestamp => u128);
+            }
+            ProtocolSignal::Core(Signal::TerminateAck(agent_id)) => {
+                encode_data!(w; SignalTag::CoreTerminateAck; agent_id => u64);
+            }
 
             // Signalling-layer signals
             ProtocolSignal::ActivityHello(worker_id) => {
@@ -272,6 +282,15 @@ impl EncodeDecode for ProtocolSignal {
             CoreReady => {
                 decode_data!(src; Signal::Ready, ProtocolSignal::Core; u64 => ActivityId; u128 => Timestamp)
             }
+            CoreActivityFailed => {
+                decode_data!(src; Signal::ActivityFailed, ProtocolSignal::Core; u64 => ActivityId; u8 => ActivityError)
+            }
+            CoreTerminate => {
+                decode_data!(src; Signal::Terminate, ProtocolSignal::Core; u128 => Timestamp)
+            }
+            CoreTerminateAck => {
+                decode_data!(src; Signal::TerminateAck, ProtocolSignal::Core; u64 => AgentId)
+            }
 
             // Signalling-layer signals
             ConnectorActivityHello => {
@@ -296,6 +315,27 @@ impl EncodeDecode for ProtocolSignal {
     }
 }
 
+impl From<u8> for ActivityError {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => ActivityError::Startup,
+            1 => ActivityError::Step,
+            2 => ActivityError::Shutdown,
+            _ => panic!("Invalid u8 value for ActivityError"),
+        }
+    }
+}
+
+impl From<ActivityError> for u8 {
+    fn from(value: ActivityError) -> Self {
+        match value {
+            ActivityError::Startup => 0,
+            ActivityError::Step => 1,
+            ActivityError::Shutdown => 2,
+        }
+    }
+}
+
 /// Tags for every signal to be used in encoding/decoding
 #[repr(u8)]
 pub(crate) enum SignalTag {
@@ -307,6 +347,9 @@ pub(crate) enum SignalTag {
     CoreStep = 22,
     CoreShutdown = 23,
     CoreReady = 24,
+    CoreActivityFailed = 27,
+    CoreTerminate = 25,
+    CoreTerminateAck = 26,
     ConnectorActivityHello = 31,
     ConnectorRecorderHello = 32,
     ConnectorChannelActivityHello = 33,
@@ -330,6 +373,9 @@ impl TryFrom<u8> for SignalTag {
             v if v == CoreStep as u8 => Ok(CoreStep),
             v if v == CoreShutdown as u8 => Ok(CoreShutdown),
             v if v == CoreReady as u8 => Ok(CoreReady),
+            v if v == CoreActivityFailed as u8 => Ok(CoreActivityFailed),
+            v if v == CoreTerminate as u8 => Ok(CoreTerminate),
+            v if v == CoreTerminateAck as u8 => Ok(CoreTerminateAck),
             v if v == ConnectorActivityHello as u8 => Ok(ConnectorActivityHello),
             v if v == ConnectorRecorderHello as u8 => Ok(ConnectorRecorderHello),
             v if v == ConnectorChannelActivityHello as u8 => Ok(ConnectorChannelActivityHello),
@@ -354,7 +400,10 @@ fn connector_signal_roundtrips() {
         (ProtocolSignal::Core(Signal::Step((ActivityId::from(123), timestamp))), 26),
         (ProtocolSignal::Core(Signal::Shutdown((ActivityId::from(123), timestamp))), 26),
         (ProtocolSignal::Core(Signal::Ready((ActivityId::from(123), timestamp))), 26),
+        (ProtocolSignal::Core(Signal::ActivityFailed((ActivityId::from(123), ActivityError::Step))), 11),
         (ProtocolSignal::ActivityHello(ActivityId::from(123)), 10),
+        (ProtocolSignal::Core(Signal::Terminate(timestamp)), 18),
+        (ProtocolSignal::Core(Signal::TerminateAck(AgentId::from(123))), 10),
         (ProtocolSignal::RecorderHello(AgentId::from(123)), 10),
     ];
 

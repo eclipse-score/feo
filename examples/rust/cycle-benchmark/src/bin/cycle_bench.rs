@@ -51,15 +51,24 @@ fn run_as_primary(params: Params, app_config: ApplicationConfig) {
     match signalling {
         SignallingType::DirectMpsc => {
             let config = direct_mpsc::make_primary_config(params, app_config);
-            direct_mpsc::Primary::new(config).run().unwrap();
+            direct_mpsc::Primary::new(config)
+                .expect("failed to create mpsc primary")
+                .run()
+                .unwrap();
         }
         signalling @ SignallingType::DirectTcp | signalling @ SignallingType::DirectUnix => {
             let config = direct_sockets::make_primary_config(params, app_config, signalling);
-            direct_sockets::Primary::new(config).run().unwrap();
+            direct_sockets::Primary::new(config)
+                .expect("failed to create direct socket primary")
+                .run()
+                .unwrap();
         }
         signalling @ SignallingType::RelayedTcp | signalling @ SignallingType::RelayedUnix => {
             let config = relayed_sockets::make_primary_config(params, app_config, signalling);
-            relayed_sockets::Primary::new(config).run().unwrap();
+            relayed_sockets::Primary::new(config)
+                .expect("failed to create relayed socket primary")
+                .run()
+                .unwrap();
         }
     }
 }
@@ -179,12 +188,14 @@ mod direct_mpsc {
 
         let agent_id = params.agent_id;
         PrimaryConfig {
+            id: agent_id,
             cycle_time: params.feo_cycle_time,
             activity_dependencies: app_config.activity_dependencies(),
             // With only one agent, we cannot attach a recorder
             recorder_ids: vec![],
             worker_assignments: app_config.worker_assignments().remove(&agent_id).unwrap(),
             timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
         }
     }
 
@@ -197,7 +208,7 @@ mod direct_mpsc {
         _: ApplicationConfig,
         _: &TypeRegistry,
         _: RecordingRules,
-    ) -> RecorderConfig {
+    ) -> RecorderConfig<'_> {
         panic!("direct mpsc signalling does not support recorders");
     }
 }
@@ -228,12 +239,25 @@ mod direct_sockets {
     ) -> PrimaryConfig {
         let agent_id = params.agent_id;
         PrimaryConfig {
+            id: agent_id,
             cycle_time: params.feo_cycle_time,
             activity_dependencies: app_config.activity_dependencies(),
             recorder_ids: app_config.recorders(),
             worker_assignments: app_config.worker_assignments().remove(&agent_id).unwrap(),
             timeout: Duration::from_secs(10),
+            connection_timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
             endpoint: endpoint(&app_config, signalling),
+            activity_agent_map: app_config
+                .activity_worker_map()
+                .iter()
+                .map(|(act_id, w_id)| {
+                    (
+                        *act_id,
+                        app_config.worker_agent_map().get(w_id).copied().unwrap(),
+                    )
+                })
+                .collect(),
         }
     }
 
@@ -259,7 +283,7 @@ mod direct_sockets {
         type_registry: &TypeRegistry,
         recording_rules: RecordingRules,
         signalling: SignallingType,
-    ) -> RecorderConfig {
+    ) -> RecorderConfig<'_> {
         let agent_id = params.agent_id;
         RecorderConfig {
             id: agent_id,
@@ -314,6 +338,8 @@ mod relayed_sockets {
             recorder_ids: app_config.recorders(),
             worker_assignments: app_config.worker_assignments().remove(&agent_id).unwrap(),
             timeout: Duration::from_secs(10),
+            connection_timeout: Duration::from_secs(10),
+            startup_timeout: Duration::from_secs(10),
             bind_address_senders: endpoints.0,
             bind_address_receivers: endpoints.1,
             id: agent_id,
@@ -345,7 +371,7 @@ mod relayed_sockets {
         type_registry: &TypeRegistry,
         recording_rules: RecordingRules,
         signalling: SignallingType,
-    ) -> RecorderConfig {
+    ) -> RecorderConfig<'_> {
         let agent_id = params.agent_id;
         let endpoints = endpoints(&app_config, signalling);
         RecorderConfig {
