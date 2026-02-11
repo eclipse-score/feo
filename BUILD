@@ -33,8 +33,32 @@ copyright_checker(
     visibility = ["//visibility:public"],
 )
 
+# Needed for Dash tool to check python dependency licenses.
+# This is a workaround to filter out local packages from the Cargo.lock file.
+# The tool is intended for third-party content.
+genrule(
+    name = "filtered_cargo_lock",
+    srcs = ["Cargo.lock"],
+    outs = ["Cargo.lock.filtered"],
+    cmd = """
+    awk '
+    BEGIN { skip = 0; data = "" }
+    /^\\[\\[package\\]\\]/ {
+        if (data != "" && !skip) print data;
+        skip = 1;
+        data = $$0;
+        next;
+    }
+    data != "" { data = data "\\n" $$0 }
+    # any package that has a "source = " line will not be skipped.
+    /^source = / { skip = 0 }
+    END { if (data != "" && !skip) print data }
+    ' $(location Cargo.lock) > $@
+    """,
+)
+
 dash_license_checker(
-    src = "//examples:cargo_lock",
+    src = ":filtered_cargo_lock",
     file_type = "",  # let it auto-detect based on project_config
     project_config = PROJECT_CONFIG,
     visibility = ["//visibility:public"],
