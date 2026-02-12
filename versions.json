@@ -2,21 +2,5 @@
   {
     "version": "main",
     "url": "https://eclipse-score.github.io/feo/main/"
-  },
-  {
-    "version": "pr-3",
-    "url": "https://eclipse-score.github.io/feo/pr-3/"
-  },
-  {
-    "version": "pr-34",
-    "url": "https://eclipse-score.github.io/feo/pr-34/"
-  },
-  {
-    "version": "pr-40",
-    "url": "https://eclipse-score.github.io/feo/pr-40/"
-  },
-  {
-    "version": "pr-41",
-    "url": "https://eclipse-score.github.io/feo/pr-41/"
   }
 ]
