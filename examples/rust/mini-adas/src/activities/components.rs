@@ -380,13 +380,13 @@ impl Activity for BrakeController {
         debug!("Stepping BrakeController");
         sleep_random();
 
-        if let Ok(brake_instruction) = self.input_brake_instruction.read()
-            && brake_instruction.active
-        {
-            debug!(
-                "BrakeController activating brakes with level {:.3}",
-                brake_instruction.level
-            )
+        if let Ok(brake_instruction) = self.input_brake_instruction.read() {
+            if brake_instruction.active {
+                debug!(
+                    "BrakeController activating brakes with level {:.3}",
+                    brake_instruction.level
+                )
+            }
         }
         Ok(())
     }

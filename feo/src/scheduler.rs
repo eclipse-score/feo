@@ -360,10 +360,10 @@ impl Scheduler {
                 );
                 break;
             }
-            if let Ok(Some(Signal::TerminateAck(agent_id))) = self.connector.receive(self.receive_timeout)
-                && pending_agent_acks.remove(&agent_id)
-            {
-                info!("Received TerminateAck from agent {}", agent_id);
+            if let Ok(Some(Signal::TerminateAck(agent_id))) = self.connector.receive(self.receive_timeout) {
+                if pending_agent_acks.remove(&agent_id) {
+                    info!("Received TerminateAck from agent {}", agent_id);
+                }
             }
         }
 

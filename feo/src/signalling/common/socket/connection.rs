@@ -83,20 +83,20 @@ where
 {
     /// Try to read from this connection
     pub(crate) fn read(&mut self) -> io::Result<Option<M>> {
-        if self.buffer_readable
-            && let Some(msg) = self.parse_from_buffer()
-        {
-            return Ok(Some(msg));
+        if self.buffer_readable {
+            if let Some(msg) = self.parse_from_buffer() {
+                return Ok(Some(msg));
+            }
         }
 
         if self.stream_readable {
             self.read_from_stream()?;
         }
 
-        if self.buffer_readable
-            && let Some(msg) = self.parse_from_buffer()
-        {
-            return Ok(Some(msg));
+        if self.buffer_readable {
+            if let Some(msg) = self.parse_from_buffer() {
+                return Ok(Some(msg));
+            }
         }
 
         Ok(None)

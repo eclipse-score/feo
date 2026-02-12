@@ -16,6 +16,9 @@ module(
     compatibility_level = 1,
 )
 
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "score_bazel_platforms", version = "0.0.4")
+
 # SCORE bazel module dependencies
 bazel_dep(name = "score_tooling", version = "1.1.0")
 bazel_dep(name = "score_crates", version = "0.0.6")
@@ -23,9 +26,6 @@ bazel_dep(name = "score_crates", version = "0.0.6")
 # Rust rules for Bazel
 bazel_dep(name = "rules_rust", version = "0.67.0")
 bazel_dep(name = "rules_rust_prost", version = "0.67.0")
-
-# C/C++ rules for Bazel
-bazel_dep(name = "rules_cc", version = "0.2.8")
 
 # Protobuf
 # Repo_name override is needed here for compatibility with WORKSPACE (e.g.for rules_rust_prost)
@@ -42,50 +42,35 @@ bazel_dep(name = "googletest", version = "1.17.0")
 bazel_dep(name = "score_docs_as_code", version = "3.0.0")
 
 # Toolchains
-# GCC toolchain
-bazel_dep(name = "score_toolchains_gcc", version = "0.5", dev_dependency = True)
+bazel_dep(name = "rules_cc", version = "0.2.16")
 
-gcc = use_extension("@score_toolchains_gcc//extentions:gcc.bzl", "gcc", dev_dependency = True)
+bazel_dep(name = "score_bazel_cpp_toolchains", version = "0.2.2", dev_dependency = True)
+
+# Extensions
+gcc = use_extension("@score_bazel_cpp_toolchains//extensions:gcc.bzl", "gcc", dev_dependency = True)
 gcc.toolchain(
-    sha256 = "457f5f20f57528033cb840d708b507050d711ae93e009388847e113b11bf3600",
-    strip_prefix = "x86_64-unknown-linux-gnu",
-    url = "https://github.com/eclipse-score/toolchains_gcc_packages/releases/download/0.0.1/x86_64-unknown-linux-gnu_gcc12.tar.gz",
+    name = "score_gcc_x86_64_toolchain",
+    target_cpu = "x86_64",
+    target_os = "linux",
+    use_default_package = True,
+    version = "12.2.0",
 )
-
-# TODO to be moved to toolchain. https://github.com/eclipse-score/toolchains_gcc/issues/11
-gcc.extra_features(
-    features = [
-        "minimal_warnings",
-        "treat_warnings_as_errors",
-    ],
+gcc.toolchain(
+    name = "score_gcc_aarch64_toolchain",
+    target_cpu = "aarch64",
+    target_os = "linux",
+    use_default_package = True,
+    version = "12.2.0",
 )
-gcc.warning_flags(
-    minimal_warnings = [
-        "-Wall",
-        "-Wno-error=deprecated-declarations",
-    ],
-    strict_warnings = [
-        "-Wextra",
-        "-Wpedantic",
-    ],
-    treat_warnings_as_errors = ["-Werror"],
+use_repo(
+    gcc,
+    "score_gcc_aarch64_toolchain",
+    "score_gcc_x86_64_toolchain",
 )
-use_repo(gcc, "gcc_toolchain", "gcc_toolchain_gcc")
 
 # Rust toolchain
-RUST_EDITION = "2024"
-
-RUST_VERSION = "1.93.0"
-
-# Shared Rust policies (Clippy config, etc.), overridden locally during development.
-bazel_dep(name = "score_rust_policies", version = "0.0.4", dev_dependency = True)
-
-rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
-rust.toolchain(
-    edition = RUST_EDITION,
-    versions = [RUST_VERSION],
-)
-use_repo(rust, "rust_toolchains")
+bazel_dep(name = "score_toolchains_rust", version = "0.4.0", dev_dependency = True)
+bazel_dep(name = "score_rust_policies", version = "0.0.5", dev_dependency = True)
 
 # Prost toolchain
 register_toolchains("//toolchain/prost:prost_toolchain")
