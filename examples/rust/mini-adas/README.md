@@ -85,12 +85,12 @@ any secondaries or recorders, because mpsc does not support inter-process signal
 In order to start tracing use:
 
 ```sh
-bazel run //feo-tracer:feo_tracer -- -o out.dat
+bazel run //src/feo-tracer:feo_tracer -- -o out.dat
 ```
 where `out.dat` is the tracing data output.
 
 You can specify the tracing duration in seconds and log level using:
 
 ```sh
-bazel run //feo-tracer:feo_tracer -- -d 10 -l INFO -o out.dat
+bazel run //src/feo-tracer:feo_tracer -- -d 10 -l INFO -o out.dat
 ```

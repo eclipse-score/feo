@@ -80,9 +80,9 @@ exports_files([
 test_suite(
     name = "unit_tests",
     tests = [
-        "//feo-logger:libfeo_logger_rust_test",
-        "//feo-time:libfeo_time_cc_test",
-        "//feo-time:libfeo_time_test",
-        "//logd:liblogd_test",
+        "//src/feo-logger:libfeo_logger_rust_test",
+        "//src/feo-time:libfeo_time_cc_test",
+        "//src/feo-time:libfeo_time_test",
+        "//src/logd:liblogd_test",
     ],
 )

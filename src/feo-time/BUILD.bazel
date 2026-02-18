@@ -49,7 +49,7 @@ rust_static_library(
         "src/ffi.rs",
         "src/lib.rs",
     ],
-    deps = ["//feo-time:libfeo_time_rust"],
+    deps = ["//src/feo-time:libfeo_time_rust"],
 )
 
 # Rust library tests
@@ -78,7 +78,7 @@ rust_binary(
     ],
     deps = [
         ":libfeo_time_rust",
-        "//feo-log:libfeo_log_rust",
-        "//feo-logger:libfeo_logger_rust",
+        "//src/feo-log:libfeo_log_rust",
+        "//src/feo-logger:libfeo_logger_rust",
     ],
 )

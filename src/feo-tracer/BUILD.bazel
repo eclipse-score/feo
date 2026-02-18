@@ -23,8 +23,8 @@ rust_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":libfeo_tracer",
-        "//feo-log:libfeo_log_rust",
-        "//feo-logger:libfeo_logger_rust",
+        "//src/feo-log:libfeo_log_rust",
+        "//src/feo-logger:libfeo_logger_rust",
         "@score_crates//:anyhow",
         "@score_crates//:argh",
         "@score_crates//:futures",
@@ -45,9 +45,9 @@ rust_library(
     crate_name = "feo_tracer",
     visibility = ["//visibility:public"],
     deps = [
-        "//feo-log:libfeo_log_rust",
-        "//feo-tracing:libfeo_tracing_rust",
-        "//perfetto-model",
+        "//src/feo-log:libfeo_log_rust",
+        "//src/feo-tracing:libfeo_tracing_rust",
+        "//src/perfetto-model",
         "@score_crates//:anyhow",
         "@score_crates//:human_bytes",
         "@score_crates//:indicatif",

@@ -33,7 +33,7 @@ rust_library(
     crate_name = "feo_com",
     visibility = ["//visibility:public"],
     deps = [
-        "//feo-log:libfeo_log_rust",
+        "//src/feo-log:libfeo_log_rust",
         # all_crate_deps only contains optional dependencies which are default-activated,
         # so we add all optional dependencies here to be independent of cargo default features
         # Disabled due to compilation error of iceoryx2

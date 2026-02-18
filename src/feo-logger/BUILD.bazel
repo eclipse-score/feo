@@ -26,8 +26,8 @@ rust_library(
     crate_name = "feo_logger",
     visibility = ["//visibility:public"],
     deps = [
-        "//feo-log:libfeo_log_rust",
-        "//feo-time:libfeo_time_rust",
+        "//src/feo-log:libfeo_log_rust",
+        "//src/feo-time:libfeo_time_rust",
         "@score_crates//:console",
         "@score_crates//:libc",
         "@score_crates//:time",
@@ -48,7 +48,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":libfeo_logger_ffi_rust",
-        "//feo-log:libfeo_log_cpp",
+        "//src/feo-log:libfeo_log_cpp",
     ],
 )
 
@@ -60,7 +60,7 @@ rust_static_library(
     ],
     deps = [
         ":libfeo_logger_rust",
-        "//feo-log:libfeo_log_rust",
+        "//src/feo-log:libfeo_log_rust",
     ],
 )
 
