@@ -2,5 +2,9 @@
   {
     "version": "main",
     "url": "https://eclipse-score.github.io/feo/main/"
+  },
+  {
+    "version": "pr-44",
+    "url": "https://eclipse-score.github.io/feo/pr-44/"
   }
 ]
