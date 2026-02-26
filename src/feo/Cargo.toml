@@ -5,7 +5,6 @@ edition = "2024"
 
 [dependencies]
 feo-com = { workspace = true }
-feo-log = { workspace = true }
 feo-time = { workspace = true }
 feo-tracing = { workspace = true }
 libc = { workspace = true }
@@ -15,9 +14,6 @@ postcard = { workspace = true, features = [
 ], optional = true }
 serde = { workspace = true, optional = true }
 ctrlc = { workspace = true, features = ["termination"] }
-
-[dev-dependencies]
-feo-logger = { workspace = true }
 
 [features]
 default = []

@@ -23,10 +23,11 @@ use crate::timestamp::{timestamp, Timestamp};
 use alloc::boxed::Box;
 use alloc::vec;
 use alloc::vec::Vec;
-use core::time::Duration;
-use feo_log::{debug, error, trace};
+use feo_time::Duration;
+use feo_tracing::ScoreDebugIoError;
 use io::Write;
 use postcard::experimental::max_size::MaxSize;
+use score_log::{debug, error, trace, ScoreDebug};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::BufWriter;
@@ -96,7 +97,7 @@ impl<'s> FileRecorder<'s> {
                 .unwrap_or_else(|| panic!("type name {type_name} not in registry"));
             let transcoder_builder = &info.comrec_builder;
             let transcoder = transcoder_builder(topic);
-            debug!("Creating transcoder: {topic}, {type_name}");
+            debug!("Creating transcoder: {}, {}", topic, type_name);
             self.transcoders.push(transcoder);
         }
 
@@ -122,7 +123,7 @@ impl<'s> FileRecorder<'s> {
             let Some(signal) = received else {
                 continue;
             };
-            debug!("Received signal {signal}");
+            debug!("Received signal {}", signal);
 
             match signal {
                 Signal::StartupSync(sync_info) => {
@@ -153,7 +154,7 @@ impl<'s> FileRecorder<'s> {
                     debug!("Recorder {} sent termination ack. Exiting.", self.id);
                     // Linger for a moment to ensure TerminateAck has time to be sent
                     // over the network before the thread exits and closes the socket.
-                    thread::sleep(Duration::from_millis(100));
+                    thread::sleep(Duration::from_millis(100).into());
                     return; // Graceful exit from the run loop
                 },
 
@@ -196,7 +197,7 @@ impl<'s> FileRecorder<'s> {
                 let mut buf = [0u8; Record::POSTCARD_MAX_SIZE];
                 let serialized_header = postcard::to_slice(&data_desc_record, &mut buf).expect("serialization failed");
 
-                trace!("Writing data: {description:?}");
+                trace!("Writing data: {:?}", description);
 
                 // Write description record and subsequent data block
                 // In case of failure, log an error message and continue
@@ -206,7 +207,7 @@ impl<'s> FileRecorder<'s> {
                     .write_all(serialized_header)
                     .and_then(|_| self.writer.write_all(serialized_data))
                 {
-                    error!("Failed to write data: {e:?}");
+                    error!("Failed to write data: {:?}", ScoreDebugIoError(e));
                 }
             }
         }
@@ -221,7 +222,7 @@ impl<'s> FileRecorder<'s> {
         let mut buf = [0u8; Record::POSTCARD_MAX_SIZE];
         let serialized = postcard::to_slice(&signal_record, &mut buf).expect("serialization failed");
         if let Err(e) = self.writer.write_all(serialized) {
-            error!("Failed to write signal {signal:?}: {e:?}");
+            error!("Failed to write signal {:?}: {:?}", signal, ScoreDebugIoError(e));
         }
     }
 
@@ -262,7 +263,7 @@ pub struct SignalRecord {
     pub signal: Signal,
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, ScoreDebug)]
 pub struct DataDescriptionRecord<'s> {
     // The monotonic time at the moment of recording as duration since the epoch
     pub timestamp: Timestamp,

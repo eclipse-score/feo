@@ -31,7 +31,7 @@ use crate::signalling::relayed::{mpsc, sockets};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use core::net::SocketAddr;
-use core::time::Duration;
+use feo_time::Duration;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 

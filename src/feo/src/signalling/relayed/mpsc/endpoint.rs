@@ -22,7 +22,7 @@ pub(crate) use crate::signalling::common::mpsc::endpoint::{
 };
 use crate::signalling::common::signals::Signal;
 use crate::signalling::relayed;
-use core::time::Duration;
+use feo_time::Duration;
 
 impl relayed::interface::ProtocolSend for ProtocolSender {
     type ProtocolSignal = ProtocolSignal;

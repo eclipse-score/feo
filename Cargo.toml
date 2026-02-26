@@ -6,12 +6,9 @@ members = [
     "feo-com",
     "feo-cpp-build",
     "feo-cpp-macros",
-    "feo-log",
-    "feo-logger",
     "feo-time",
     "feo-tracer",
     "feo-tracing",
-    "logd",
     "perfetto-model",
     "tests/rust/feo_tests/test_agent",
     "tests/rust/feo_tests",
@@ -35,8 +32,6 @@ feo = { path = "feo", default-features = false }
 feo-com = { path = "feo-com" }
 feo-cpp-build = { path = "feo-cpp-build" }
 feo-cpp-macros = { path = "feo-cpp-macros" }
-feo-log = { path = "feo-log" }
-feo-logger = { path = "feo-logger" }
 feo-time = { path = "feo-time" }
 feo-tracing = { path = "feo-tracing" }
 ctrlc = { version = "3.4.4", features = ["termination"] }

@@ -20,8 +20,8 @@ use crate::signalling::common::signals::Signal;
 use crate::signalling::relayed::connectors::relays::{PrimaryReceiveRelay, PrimarySendRelay};
 use crate::signalling::relayed::interface::{Builder, IsChannel, ProtocolMultiRecv, ProtocolMultiSend};
 use alloc::{collections::BTreeSet, vec::Vec};
-use core::time::Duration;
-use feo_log::debug;
+use feo_time::Duration;
+use score_log::debug;
 use std::collections::{HashMap, HashSet};
 use std::thread::JoinHandle;
 

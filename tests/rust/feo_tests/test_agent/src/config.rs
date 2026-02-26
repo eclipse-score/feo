@@ -14,7 +14,7 @@
 use core::net::{IpAddr, Ipv4Addr, SocketAddr};
 use feo::ids::AgentId;
 use feo_com::interface::ComBackend;
-use std::time::Duration;
+use feo_time::Duration;
 
 pub const PRIMARY_AGENT_ID: AgentId = AgentId::new(100);
 pub const BIND_ADDR: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8081);

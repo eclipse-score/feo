@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-feo-log = { workspace = true }
 iceoryx2 = { workspace = true, optional = true }
 nix = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }

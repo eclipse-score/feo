@@ -21,6 +21,7 @@ use feo_com::interface::{
     init_topic_primary, init_topic_secondary, ComBackendTopicPrimaryInitialization,
     ComBackendTopicSecondaryInitialization, Topic, TopicHandle,
 };
+use score_log::fmt::ScoreDebug;
 
 #[derive(Debug, Default, Clone, Copy, Eq, PartialEq)]
 /// Describes the direction of the data flow for one topic of one component
@@ -45,7 +46,10 @@ pub struct TopicSpecification<'a> {
 }
 
 impl<'a> TopicSpecification<'a> {
-    pub fn new<T: Default + fmt::Debug + 'static>(topic: Topic<'a>, peers: Vec<(ActivityId, Direction)>) -> Self {
+    pub fn new<T: Default + fmt::Debug + ScoreDebug + 'static>(
+        topic: Topic<'a>,
+        peers: Vec<(ActivityId, Direction)>,
+    ) -> Self {
         let init_primary_fn = Box::new(init_topic_primary::<T>);
         let init_secondary_fn = Box::new(init_topic_secondary::<T>);
         Self {

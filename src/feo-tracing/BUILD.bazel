@@ -23,7 +23,7 @@ rust_library(
     crate_name = "feo_tracing",
     visibility = ["//visibility:public"],
     deps = [
-        "//src/feo-log:libfeo_log_rust",
+        "@score_baselibs_rust//src/log/score_log",
         "@score_crates//:libc",
         "@score_crates//:postcard",
         "@score_crates//:serde",
@@ -39,8 +39,6 @@ rust_binary(
     ],
     deps = [
         ":libfeo_tracing_rust",
-        "//src/feo-log:libfeo_log_rust",
-        "//src/feo-logger:libfeo_logger_rust",
         "@score_crates//:tracing",
     ],
 )

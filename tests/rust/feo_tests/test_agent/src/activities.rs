@@ -18,9 +18,10 @@ use feo::activity::Activity;
 use feo::error::ActivityError;
 use feo::ids::ActivityId;
 use feo_com::interface::{ActivityInput, ActivityOutput};
-use feo_log::debug;
 use feo_tracing::instrument;
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
+use score_log::debug;
+use score_log::fmt::ScoreDebug;
 use std::ops::Deref;
 
 /// Sender activity
@@ -118,7 +119,7 @@ impl Activity for Receiver {
         }
         self.counter += 1;
 
-        debug!("Received {:?}", &counter.deref());
+        debug!("Received {:?}", counter.deref());
         Ok(())
     }
 
@@ -193,7 +194,7 @@ impl Activity for Monitor {
 /// Create an activity input.
 fn activity_input<T>(topic: &str) -> Box<dyn ActivityInput<T>>
 where
-    T: core::fmt::Debug + 'static,
+    T: core::fmt::Debug + ScoreDebug + 'static,
 {
     #[cfg(feature = "com_iox2")]
     {
@@ -208,7 +209,7 @@ where
 /// Create an activity output.
 fn activity_output<T>(topic: &str) -> Box<dyn ActivityOutput<T>>
 where
-    T: core::fmt::Debug + 'static,
+    T: core::fmt::Debug + ScoreDebug + 'static,
 {
     #[cfg(feature = "com_iox2")]
     {

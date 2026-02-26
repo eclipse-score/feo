@@ -21,6 +21,9 @@ use feo::{recording::registry::TypeRegistry, register_type, register_types};
 #[cfg(feature = "recording")]
 use postcard::experimental::max_size::MaxSize;
 #[cfg(feature = "recording")]
+use score_log::fmt::ScoreDebug;
+use score_log::ScoreDebug;
+#[cfg(feature = "recording")]
 use serde::{Deserialize, Serialize};
 
 /// Camera image
@@ -30,7 +33,7 @@ use serde::{Deserialize, Serialize};
 /// Given that we do not have a real neural network,
 /// we already include information to be dummy inferred.
 #[cfg_attr(feature = "recording", derive(Serialize, Deserialize, MaxSize))]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, ScoreDebug)]
 #[repr(C)]
 pub struct CameraImage {
     pub num_people: usize,
@@ -44,7 +47,7 @@ pub struct CameraImage {
 /// from a real radar scan. In this example,
 /// the message type already carries the information to be dummy extracted.
 #[cfg_attr(feature = "recording", derive(Serialize, Deserialize, MaxSize))]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, ScoreDebug)]
 #[repr(C)]
 pub struct RadarScan {
     pub distance_obstacle: f64,
@@ -56,7 +59,7 @@ pub struct RadarScan {
 /// The scene is the result of fusing the camera image and the radar scan
 /// with a neural network. In our example, we just extract the information.
 #[cfg_attr(feature = "recording", derive(Serialize, Deserialize, MaxSize))]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, ScoreDebug)]
 #[repr(C)]
 pub struct Scene {
     pub num_people: usize,
@@ -70,7 +73,7 @@ pub struct Scene {
 ///
 /// This is an instruction whether to engage the brakes and at which level.
 #[cfg_attr(feature = "recording", derive(Serialize, Deserialize, MaxSize))]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, ScoreDebug)]
 #[repr(C)]
 pub struct BrakeInstruction {
     pub active: bool,
@@ -81,7 +84,7 @@ pub struct BrakeInstruction {
 ///
 /// This carries the angle of steering.
 #[cfg_attr(feature = "recording", derive(Serialize, Deserialize, MaxSize))]
-#[derive(Debug, Default)]
+#[derive(Debug, Default, ScoreDebug)]
 #[repr(C)]
 pub struct Steering {
     pub angle: f64,
@@ -101,7 +104,7 @@ pub fn type_registry() -> TypeRegistry {
 
     fn activity_input<T>(topic: &str) -> Box<dyn ActivityInput<T>>
     where
-        T: fmt::Debug + 'static,
+        T: fmt::Debug + ScoreDebug + 'static,
     {
         #[cfg(feature = "com_iox2")]
         return Box::new(Iox2Input::new(topic));

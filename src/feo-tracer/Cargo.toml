@@ -6,13 +6,10 @@ edition = "2024"
 [dependencies]
 anyhow = { workspace = true }
 argh = { workspace = true }
-feo-log = { workspace = true }
-feo-logger = { workspace = true }
 feo-tracing = { workspace = true }
 futures = { workspace = true }
 human_bytes = { workspace = true }
 indicatif = { workspace = true }
-indicatif-log-bridge = { workspace = true }
 perfetto-model = { workspace = true }
 postcard = { workspace = true }
 prost = { workspace = true }

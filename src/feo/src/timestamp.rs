@@ -13,9 +13,10 @@
 
 //! Timestamping module
 
-use feo_time::Scaled;
+use feo_time::{Duration, Scaled};
 #[cfg(feature = "recording")]
 use postcard::experimental::max_size::MaxSize;
+use score_log::ScoreDebug;
 #[cfg(feature = "recording")]
 use serde::{Deserialize, Serialize};
 use std::sync::OnceLock;
@@ -63,7 +64,7 @@ pub fn initialize_from(sync_info: SyncInfo) {
     let time_info_now = time_info_now();
 
     // Calculate the startup time of the primary agent
-    let startup_time = std::time::SystemTime::UNIX_EPOCH + sync_info.since_epoch;
+    let startup_time = std::time::SystemTime::UNIX_EPOCH + sync_info.since_epoch.into();
 
     // Calculate the time elapsed since the startup of the primary agent;
     // assumption is that system clocks are synchronized (but monotonic clocks can be unsynchronized).
@@ -115,18 +116,20 @@ pub fn sync_info() -> SyncInfo {
         .systime
         .duration_since(std::time::UNIX_EPOCH)
         .expect("failed to obtain system time for synchronization");
-    SyncInfo { since_epoch }
+    SyncInfo {
+        since_epoch: since_epoch.into(),
+    }
 }
 
 /// A timestamp: Duration since system startup
 #[cfg_attr(feature = "recording", derive(Serialize, Deserialize))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, ScoreDebug)]
 pub struct Timestamp(pub feo_time::Duration);
 
 pub fn timestamp() -> Timestamp {
     // get real time duration since startup and scale it with feo-time speed factor
     let real_duration = std::time::Instant::now().duration_since(startup_instant());
-    let feo_duration: feo_time::Duration = real_duration.scaled();
+    let feo_duration: feo_time::Duration = Duration(real_duration).scaled();
     Timestamp(feo_duration)
 }
 
@@ -141,9 +144,9 @@ impl MaxSize for Timestamp {
 /// the duration since the EPOCH. That means, secondary agents synchronizing later based on
 /// that value might get affected by leap seconds occurring in between.
 #[cfg_attr(feature = "recording", derive(Serialize, Deserialize))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, ScoreDebug)]
 pub struct SyncInfo {
-    since_epoch: core::time::Duration,
+    since_epoch: feo_time::Duration,
 }
 
 /// Return current system time and instant as a TimeInfo object
@@ -195,7 +198,7 @@ impl From<u128> for SyncInfo {
     fn from(nanos: u128) -> SyncInfo {
         assert!(nanos <= u64::MAX.into(), "input value too large");
         SyncInfo {
-            since_epoch: core::time::Duration::from_nanos(nanos as u64),
+            since_epoch: feo_time::Duration::from_nanos(nanos as u64),
         }
     }
 }
@@ -203,7 +206,7 @@ impl From<u128> for SyncInfo {
 impl From<u64> for SyncInfo {
     fn from(nanos: u64) -> SyncInfo {
         SyncInfo {
-            since_epoch: core::time::Duration::from_nanos(nanos),
+            since_epoch: feo_time::Duration::from_nanos(nanos),
         }
     }
 }

@@ -13,10 +13,10 @@
 
 use crate::data::{RecordData, RecordEventInfo, Thread, TraceRecord};
 use anyhow::{bail, Error};
-use feo_log::info;
 use perfetto_model as idl;
 use perfetto_model;
 use prost::Message as ProstMessage;
+use score_log::info;
 use std::collections::HashMap;
 use std::io;
 use std::time::UNIX_EPOCH;
@@ -64,10 +64,8 @@ pub struct Perfetto<W> {
 
 impl<W> Drop for Perfetto<W> {
     fn drop(&mut self) {
-        info!(
-            "Dropping perfetto writer. Wrote {} bytes",
-            human_bytes::human_bytes(self.writer.1 as f64)
-        );
+        let bytes = human_bytes::human_bytes(self.writer.1 as f64);
+        info!("Dropping perfetto writer. Wrote {} bytes", bytes,);
     }
 }
 

@@ -13,21 +13,27 @@
 
 use feo::agent::com_init::initialize_com_primary;
 use feo::ids::AgentId;
-use feo_log::{info, LevelFilter};
 use feo_time::Duration;
 use mini_adas::config::{agent_assignments_ids, topic_dependencies, COM_BACKEND, MAX_ADDITIONAL_SUBSCRIBERS};
+use score_log::{error, info, LevelFilter};
 use std::collections::HashSet;
+use stdout_logger::StdoutLoggerBuilder;
 
 const AGENT_ID: AgentId = AgentId::new(100);
 const DEFAULT_FEO_CYCLE_TIME: Duration = Duration::from_secs(5);
 
 fn main() {
-    feo_logger::init(LevelFilter::Debug, true, true);
-    feo_tracing::init(feo_tracing::LevelFilter::TRACE);
+    StdoutLoggerBuilder::new()
+        .context("adas-primary")
+        .show_module(false)
+        .show_file(false)
+        .show_line(false)
+        .log_level(LevelFilter::Trace)
+        .set_as_default_logger();
 
     let params = Params::from_args();
 
-    info!("Starting primary agent {AGENT_ID}");
+    info!("Starting primary agent {}", AGENT_ID);
 
     let config = cfg::make_config(params);
 
@@ -43,7 +49,7 @@ fn main() {
     // Setup and run primary
     cfg::Primary::new(config)
         .unwrap_or_else(|err| {
-            feo_log::error!("Failed to initialize primary agent: {err:?}");
+            error!("Failed to initialize primary agent: {:?}", err);
             std::process::exit(1);
         })
         .run()

@@ -22,7 +22,7 @@ use crate::signalling::common::mpsc::worker::WorkerConnector;
 use crate::signalling::common::mpsc::WorkerConnectorBuilder;
 use crate::signalling::common::signals::Signal;
 use alloc::boxed::Box;
-use core::time::Duration;
+use feo_time::Duration;
 use std::collections::{HashMap, HashSet};
 
 pub(crate) struct SchedulerConnector {

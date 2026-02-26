@@ -19,12 +19,13 @@ use crate::timestamp::{SyncInfo, Timestamp};
 use core::fmt::Display;
 #[cfg(feature = "recording")]
 use postcard::experimental::max_size::MaxSize;
+use score_log::ScoreDebug;
 #[cfg(feature = "recording")]
 use serde::{Deserialize, Serialize};
 
 /// Signal types sent between threads or processes
 #[cfg_attr(feature = "recording", derive(Serialize, Deserialize, MaxSize))]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, ScoreDebug)]
 pub enum Signal {
     // Signal sent from the primary agent to each secondary agent containing synchronization info
     StartupSync(SyncInfo),

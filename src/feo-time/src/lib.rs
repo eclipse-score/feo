@@ -63,9 +63,130 @@ use core::error::Error;
 use core::fmt;
 use core::ops::{Add, AddAssign, Sub, SubAssign};
 use core::sync::atomic::{AtomicI32, Ordering};
-pub use core::time::Duration;
+use score_log::fmt::ScoreDebug;
+use serde::{Deserialize, Serialize};
 use std::sync::{LazyLock, Once};
 use std::time;
+
+#[derive(Clone, Copy, Default, Debug, PartialEq, PartialOrd, Hash, Ord, Eq, Serialize, Deserialize)]
+pub struct Duration(pub core::time::Duration);
+
+impl Duration {
+    pub const ZERO: Duration = Duration(core::time::Duration::ZERO);
+
+    pub fn as_secs(&self) -> u64 {
+        self.0.as_secs()
+    }
+
+    pub fn subsec_nanos(&self) -> u32 {
+        self.0.subsec_nanos()
+    }
+
+    #[allow(dead_code)]
+    pub const fn from_secs(secs: u64) -> Self {
+        Self(core::time::Duration::from_secs(secs))
+    }
+
+    #[allow(dead_code)]
+    pub const fn from_millis(millis: u64) -> Self {
+        Self(core::time::Duration::from_millis(millis))
+    }
+
+    #[allow(dead_code)]
+    pub const fn from_micros(micros: u64) -> Self {
+        Self(core::time::Duration::from_micros(micros))
+    }
+
+    #[allow(dead_code)]
+    pub const fn from_nanos(nanos: u64) -> Self {
+        Self(core::time::Duration::from_nanos(nanos))
+    }
+
+    #[allow(dead_code)]
+    pub const fn new(secs: u64, nanos: u32) -> Self {
+        Self(core::time::Duration::new(secs, nanos))
+    }
+
+    #[allow(dead_code)]
+    pub const fn as_nanos(&self) -> u128 {
+        self.0.as_nanos()
+    }
+
+    #[allow(dead_code)]
+    pub const fn saturating_sub(&self, rhs: Duration) -> Duration {
+        Duration(self.0.saturating_sub(rhs.0))
+    }
+
+    #[allow(dead_code)]
+    pub const fn is_zero(&self) -> bool {
+        self.0.is_zero()
+    }
+
+    #[allow(dead_code)]
+    pub const fn as_secs_f64(&self) -> f64 {
+        self.0.as_secs_f64()
+    }
+}
+
+impl From<core::time::Duration> for Duration {
+    fn from(value: core::time::Duration) -> Self {
+        Self(value)
+    }
+}
+
+impl From<Duration> for core::time::Duration {
+    fn from(value: Duration) -> Self {
+        value.0
+    }
+}
+
+impl ScoreDebug for Duration {
+    fn fmt(
+        &self,
+        f: &mut dyn score_log::fmt::ScoreWrite,
+        spec: &score_log::fmt::FormatSpec,
+    ) -> Result<(), score_log::fmt::Error> {
+        ScoreDebug::fmt(&self.0.as_secs_f64(), f, spec)
+    }
+}
+
+impl core::ops::Mul<u32> for Duration {
+    type Output = Duration;
+
+    fn mul(self, rhs: u32) -> Self::Output {
+        Self(self.0 * rhs)
+    }
+}
+
+impl core::ops::Add<Duration> for Duration {
+    type Output = Duration;
+
+    fn add(self, rhs: Duration) -> Self::Output {
+        Self(self.0 + rhs.0)
+    }
+}
+
+impl core::ops::Sub<Duration> for Duration {
+    type Output = Duration;
+
+    fn sub(self, rhs: Duration) -> Self::Output {
+        Self(self.0 - rhs.0)
+    }
+}
+
+impl core::iter::Sum<Duration> for Duration {
+    fn sum<I: Iterator<Item = Duration>>(iter: I) -> Self {
+        Self(iter.map(|d| d.0).sum())
+    }
+}
+
+impl core::ops::Div<u32> for Duration {
+    type Output = Duration;
+
+    fn div(self, rhs: u32) -> Self::Output {
+        Self(self.0 / rhs)
+    }
+}
 
 /// An anchor in time which can be used to create new `SystemTime` instances or
 /// learn about where in time a `SystemTime` lies.
@@ -231,7 +352,7 @@ impl Instant {
     /// ```
     #[must_use]
     pub fn checked_duration_since(&self, earlier: Instant) -> Option<Duration> {
-        self.0.checked_duration_since(earlier.0)
+        self.0.checked_duration_since(earlier.0).map(Duration)
     }
 
     /// Returns the amount of time elapsed from another instant to this one,
@@ -284,14 +405,14 @@ impl Instant {
     /// `Instant` (which means it's inside the bounds of the underlying data structure), `None`
     /// otherwise.
     pub fn checked_add(&self, duration: Duration) -> Option<Instant> {
-        self.0.checked_add(duration).map(Instant)
+        self.0.checked_add(duration.into()).map(Instant)
     }
 
     /// Returns `Some(t)` where `t` is the time `self - duration` if `t` can be represented as
     /// `Instant` (which means it's inside the bounds of the underlying data structure), `None`
     /// otherwise.
     pub fn checked_sub(&self, duration: Duration) -> Option<Instant> {
-        self.0.checked_sub(duration).map(Instant)
+        self.0.checked_sub(duration.into()).map(Instant)
     }
 }
 
@@ -414,7 +535,7 @@ impl SystemTime {
     /// println!("{difference:?}");
     /// ```
     pub fn duration_since(&self, earlier: Self) -> Result<Duration, SystemTimeError> {
-        self.0.duration_since(earlier.0).map_err(Into::into)
+        self.0.duration_since(earlier.0).map(Duration).map_err(Into::into)
     }
 
     /// Returns the difference from this system time to the
@@ -450,14 +571,14 @@ impl SystemTime {
     /// `SystemTime` (which means it's inside the bounds of the underlying data structure), `None`
     /// otherwise.
     pub fn checked_add(&self, duration: Duration) -> Option<SystemTime> {
-        self.0.checked_add(duration).map(SystemTime)
+        self.0.checked_add(duration.into()).map(SystemTime)
     }
 
     /// Returns `Some(t)` where `t` is the time `self - duration` if `t` can be represented as
     /// `SystemTime` (which means it's inside the bounds of the underlying data structure), `None`
     /// otherwise.
     pub fn checked_sub(&self, duration: Duration) -> Option<SystemTime> {
-        self.0.checked_sub(duration).map(SystemTime)
+        self.0.checked_sub(duration.into()).map(SystemTime)
     }
 }
 
@@ -469,7 +590,7 @@ impl Add<Duration> for SystemTime {
     /// This function may panic if the resulting point in time cannot be represented by the
     /// underlying data structure. See [`SystemTime::checked_add`] for a version without panic.
     fn add(self, dur: Duration) -> SystemTime {
-        SystemTime(self.0.add(dur))
+        SystemTime(self.0.add(dur.into()))
     }
 }
 
@@ -483,7 +604,7 @@ impl Sub<Duration> for SystemTime {
     type Output = SystemTime;
 
     fn sub(self, dur: Duration) -> SystemTime {
-        SystemTime(self.0.sub(dur))
+        SystemTime(self.0.sub(dur.into()))
     }
 }
 
@@ -523,7 +644,7 @@ impl Error for SystemTimeError {
 
 impl From<time::SystemTimeError> for SystemTimeError {
     fn from(e: time::SystemTimeError) -> Self {
-        SystemTimeError(e.duration())
+        SystemTimeError(Duration(e.duration()))
     }
 }
 

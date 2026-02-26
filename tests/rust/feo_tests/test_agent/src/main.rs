@@ -12,10 +12,11 @@
 // *******************************************************************************
 use clap::{Parser, Subcommand, ValueEnum};
 use feo::error::Error;
-use feo_log::LevelFilter;
+use score_log::LevelFilter;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Once;
+use stdout_logger::StdoutLoggerBuilder;
 
 use crate::primary::PrimaryLauncher as _;
 use crate::secondary::SecondaryLauncher as _;
@@ -64,7 +65,13 @@ enum Scenario {
 fn init(_com_config: Option<&Path>) {
     static ONCE: Once = Once::new();
     ONCE.call_once(|| {
-        feo_logger::init(LevelFilter::Debug, true, true);
+        StdoutLoggerBuilder::new()
+            .context("test")
+            .show_module(true)
+            .show_file(true)
+            .show_line(true)
+            .log_level(LevelFilter::Debug)
+            .set_as_default_logger();
         feo_tracing::init(feo_tracing::LevelFilter::TRACE);
     });
 }

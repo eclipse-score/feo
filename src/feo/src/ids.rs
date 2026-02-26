@@ -18,6 +18,8 @@ use core::hash::Hash;
 use core::marker::PhantomData;
 #[cfg(feature = "recording")]
 use postcard::experimental::max_size::MaxSize;
+use score_log::fmt::ScoreDebug;
+use score_log::ScoreDebug;
 #[cfg(feature = "recording")]
 use serde::{Deserialize, Serialize};
 
@@ -48,7 +50,7 @@ impl GetPrefix for AgentIdMarker {
 }
 
 /// Identifies a communication channel peer
-#[derive(Debug, Clone, PartialEq, Eq, Copy, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy, Hash, ScoreDebug)]
 #[non_exhaustive]
 pub enum ChannelId {
     Activity(ActivityId),
@@ -106,6 +108,16 @@ pub struct GenericId<T: GetPrefix> {
     id: u64,
     // Marker to make distinct ID types not interchangeable
     _discriminator: PhantomData<T>,
+}
+
+impl<T: GetPrefix> ScoreDebug for GenericId<T> {
+    fn fmt(
+        &self,
+        f: &mut dyn score_log::fmt::ScoreWrite,
+        spec: &score_log::fmt::FormatSpec,
+    ) -> Result<(), score_log::fmt::Error> {
+        f.write_u64(&self.id, spec)
+    }
 }
 
 impl<T: GetPrefix> GenericId<T> {

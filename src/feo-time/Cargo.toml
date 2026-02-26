@@ -5,7 +5,4 @@ edition = "2024"
 
 [dependencies]
 time = { workspace = true }
-
-[dev-dependencies]
-feo-log = { workspace = true }
-feo-logger = { workspace = true }
+serde = { workspace = true }

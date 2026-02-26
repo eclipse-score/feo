@@ -20,9 +20,9 @@ use crate::signalling::common::interface::ConnectWorker;
 use crate::signalling::common::signals::Signal;
 use crate::timestamp;
 use alloc::boxed::Box;
-use core::time::Duration;
-use feo_log::{debug, error};
+use feo_time::Duration;
 use feo_time::Instant;
+use score_log::{debug, error};
 use std::collections::HashMap;
 use std::thread;
 
@@ -108,7 +108,7 @@ impl<T: ConnectWorker> Worker<T> {
                     debug!("Worker {} sent termination ack. Exiting.", self.id);
                     // Linger for a moment to ensure  TerminateAck has time to be sent
                     // over the network before the thread exits and closes the socket.
-                    thread::sleep(Duration::from_millis(100));
+                    thread::sleep(Duration::from_millis(100).into());
                     return Ok(()); // Graceful exit
                 },
                 other => return Err(Error::UnexpectedSignal(other)),
@@ -130,7 +130,7 @@ impl<T: ConnectWorker> Worker<T> {
                     },
                 };
                 let elapsed = start.elapsed();
-                debug!("Ran startup of activity {id:?} in {elapsed:?}");
+                debug!("Ran startup of activity {:?} in {:?}", id, elapsed);
                 self.connector.send_to_scheduler(&response_signal)
             },
             Signal::Step((activity_id, _ts)) => {
@@ -142,7 +142,7 @@ impl<T: ConnectWorker> Worker<T> {
                     },
                 };
                 let elapsed = start.elapsed();
-                debug!("Stepped activity {id:?} in {elapsed:?}");
+                debug!("Stepped activity {:?} in {:?}", id, elapsed);
                 self.connector.send_to_scheduler(&response_signal)
             },
             Signal::Shutdown((activity_id, _ts)) => {
@@ -154,7 +154,7 @@ impl<T: ConnectWorker> Worker<T> {
                     },
                 };
                 let elapsed = start.elapsed();
-                debug!("Ran shutdown of activity {id:?} in {elapsed:?}");
+                debug!("Ran shutdown of activity {:?} in {}", id, elapsed);
                 self.connector.send_to_scheduler(&response_signal)
             },
             other => Err(Error::UnexpectedSignal(*other)),

@@ -16,13 +16,13 @@
 use anyhow::{bail, Context, Error};
 use argh::FromArgs;
 use core::future::pending;
-use feo_log::{debug, info, LevelFilter};
 use feo_tracer::io::listen;
 use feo_tracer::perfetto;
 use futures::FutureExt;
-use indicatif_log_bridge::LogWrapper;
+use score_log::{debug, info, LevelFilter};
 use std::path::{Path, PathBuf};
 use std::{fs, io};
+use stdout_logger::StdoutLoggerBuilder;
 use tokio::sync::mpsc;
 use tokio::{runtime, select, signal, task, time};
 
@@ -68,14 +68,18 @@ fn main() -> Result<(), Error> {
     } = argh::from_env();
 
     // Initialize logging
-    let logger = feo_logger::Logger::new(true, false);
+    StdoutLoggerBuilder::new()
+        .context("feo-tracer")
+        .show_module(true)
+        .show_file(true)
+        .show_line(true)
+        .log_level(LevelFilter::Warn)
+        .set_as_default_logger();
 
     // Initialize progress bar
     let mut progress = progress::Progress::new()?;
 
-    // Wrap the logger in the progress bar to avoid interleaving
-    LogWrapper::new(progress.bar(), logger).try_init()?;
-    feo_log::set_max_level(log_level.unwrap_or(LevelFilter::Warn));
+    score_log::set_max_level(log_level.unwrap_or(LevelFilter::Warn));
 
     info!("Starting feo-tracer");
 
@@ -91,7 +95,7 @@ fn main() -> Result<(), Error> {
             let path = Path::new(UNIX_PACKET_PATH);
             // Check if socket is present and remove if necessary
             if path.exists() {
-                debug!("Removing stale socket at {path:?}");
+                debug!("Removing stale socket at {}", format!("{path:?}"));
                 fs::remove_file(path).with_context(|| format!("failed to remove {path:?}"))?;
             }
             listen(path, message_sender).await
@@ -125,9 +129,9 @@ fn main() -> Result<(), Error> {
         // Timeout if configured or wait indefinitely
         let timeout = async move {
             if let Some(duration) = duration.map(time::Duration::from_secs) {
-                info!("Tracing for {duration:?}");
+                info!("Tracing for {}", format!("{duration:?}"));
                 time::sleep(duration).await;
-                info!("Traced for {duration:?}. Shutting down...");
+                info!("Traced for {}. Shutting down...", format!("{duration:?}"));
             } else {
                 pending::<()>().await;
             }

@@ -10,8 +10,6 @@ required-features = []
 
 [dependencies]
 feo = { workspace = true }
-feo-log = { workspace = true }
-feo-logger = { workspace = true }
 feo-time = { workspace = true }
 feo-tracing = { workspace = true }
 tracing = { workspace = true }

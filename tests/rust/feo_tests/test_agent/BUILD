@@ -36,10 +36,10 @@ rust_binary(
     deps = [
         "//src/feo:libfeo_rust",
         "//src/feo-com:libfeo_com_rust",
-        "//src/feo-log:libfeo_log_rust",
-        "//src/feo-logger:libfeo_logger_rust",
         "//src/feo-time:libfeo_time_rust",
         "//src/feo-tracing:libfeo_tracing_rust",
+        "@score_baselibs_rust//src/log/score_log",
+        "@score_baselibs_rust//src/log/stdout_logger",
         "@score_crates//:clap",
         "@score_crates//:ipc_channel",
         "@score_crates//:libc",

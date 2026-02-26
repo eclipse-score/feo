@@ -21,9 +21,9 @@ use crate::signalling::relayed::interface::{
 };
 use crate::timestamp;
 use crate::timestamp::sync_info;
-use core::time::Duration;
-use feo_log::{debug, error, trace};
+use feo_time::Duration;
 use feo_time::Instant;
+use score_log::{debug, error, trace};
 use std::collections::{HashMap, HashSet};
 use std::{io::ErrorKind, thread};
 
@@ -85,7 +85,7 @@ impl<Inter: IsChannel, Intra: IsChannel> PrimaryReceiveRelay<Inter, Intra> {
                     debug!("[PrimaryReceiveRelay]Channel closed. Exiting.");
                     return Ok(());
                 },
-                Err(Error::Io((e, _))) if e.kind() == ErrorKind::ConnectionReset => {
+                Err(Error::Io((e, _))) if e.0.kind() == ErrorKind::ConnectionReset => {
                     // A single client disconnected. This is expected during shutdown.
                     // Log it and continue listening for other clients.
                     debug!("[PrimaryReceiveRelay]A remote agent connection was reset.");
@@ -184,7 +184,7 @@ impl<Inter: IsChannel, Intra: IsChannel> SecondaryReceiveRelay<Inter, Intra> {
                 Ok(None)
             },
             Err(Error::ChannelClosed) => Err(Error::ChannelClosed),
-            Err(Error::Io((e, _))) if e.kind() == ErrorKind::ConnectionReset => {
+            Err(Error::Io((e, _))) if e.0.kind() == ErrorKind::ConnectionReset => {
                 debug!("SecondaryReceiveRelay detected connection to primary reset (expected during shutdown)");
                 Err(Error::Io((e, "connection reset")))
             },
@@ -233,7 +233,7 @@ impl<Inter: IsChannel, Intra: IsChannel> SecondaryReceiveRelay<Inter, Intra> {
             let sync_info = match protocol_signal.try_into() {
                 Ok(Signal::StartupSync(s)) => s,
                 Ok(_) | Err(_) => {
-                    error!("[SecondaryReceiveRelay]Unexpected signal {protocol_signal:?}");
+                    error!("[SecondaryReceiveRelay]Unexpected signal {:?}", protocol_signal);
                     continue;
                 },
             };
@@ -254,7 +254,7 @@ impl<Inter: IsChannel, Intra: IsChannel> SecondaryReceiveRelay<Inter, Intra> {
                     debug!("[SecondaryReceiveRelay]Connection to primary lost. Initiating self-shutdown.");
                     return; // Exit the relay thread. The workers will detect the closed channel.
                 },
-                Err(Error::Io((e, _))) if e.kind() == ErrorKind::ConnectionReset => {
+                Err(Error::Io((e, _))) if e.0.kind() == ErrorKind::ConnectionReset => {
                     debug!(
                         "[SecondaryReceiveRelay]Connection to primary was reset (expected during shutdown). Exiting."
                     );
@@ -269,7 +269,10 @@ impl<Inter: IsChannel, Intra: IsChannel> SecondaryReceiveRelay<Inter, Intra> {
             let core_signal: Signal = match protocol_signal.try_into() {
                 Ok(signal) => signal,
                 Err(_) => {
-                    error!("[SecondaryReceiveRelay]Received unexpected signal {protocol_signal:?}");
+                    error!(
+                        "[SecondaryReceiveRelay]Received unexpected signal {:?}",
+                        protocol_signal
+                    );
                     continue;
                 },
             };
@@ -280,7 +283,10 @@ impl<Inter: IsChannel, Intra: IsChannel> SecondaryReceiveRelay<Inter, Intra> {
                     // This is a targeted signal for a specific activity.
                     // Lookup corresponding worker id.
                     let Some(worker_id) = activity_worker_map.get(&act_id) else {
-                        error!("[SecondaryReceiveRelay]Received unexpected activity id {act_id:?} in {core_signal:?}");
+                        error!(
+                            "[SecondaryReceiveRelay]Received unexpected activity id {:?} in {:?}",
+                            act_id, core_signal
+                        );
                         continue;
                     };
 
@@ -418,7 +424,7 @@ impl<Inter: IsChannel, Intra: IsChannel> SecondarySendRelay<Inter, Intra> {
             let core_signal: Signal = match signal.try_into() {
                 Ok(signal) => signal,
                 Err(_) => {
-                    error!("[SecondarySendRelay]Received unexpected signal {signal:?}");
+                    error!("[SecondarySendRelay]Received unexpected signal {:?}", signal);
                     continue;
                 },
             };

@@ -19,7 +19,7 @@ use crate::signalling::common::socket::client::{SocketClient, TcpClient, UnixCli
 use crate::signalling::common::socket::ProtocolSignal;
 use alloc::vec::Vec;
 use core::net::SocketAddr;
-use core::time::Duration;
+use feo_time::Duration;
 use mio::net::{TcpStream, UnixStream};
 use mio::Events;
 use std::io;

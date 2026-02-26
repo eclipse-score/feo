@@ -51,11 +51,12 @@ use core::mem::{size_of, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use core::slice::from_raw_parts;
 use core::sync::atomic::Ordering;
-use feo_log::{debug, error, info};
 use nix::fcntl::OFlag;
 use nix::sys::mman::{mmap, shm_open, MapFlags, ProtFlags};
 use nix::sys::stat::Mode;
 use nix::unistd;
+use score_log::fmt::ScoreDebug;
+use score_log::{debug, error, info};
 use std::collections::HashMap;
 use std::io::{read_to_string, Write};
 use std::net::Shutdown;
@@ -120,7 +121,7 @@ impl ComRuntime {
     fn service_main(mut requests_to_serve: usize) {
         let _ = std::fs::remove_file(SOCKET);
         let listener = UnixListener::bind(SOCKET).unwrap_or_else(|e| panic!("can't bind socket at {SOCKET}: {e}"));
-        debug!("Listening for {requests_to_serve} topic mapping requests...");
+        debug!("Listening for {} topic mapping requests...", requests_to_serve);
         loop {
             if requests_to_serve < 1 {
                 break;
@@ -132,7 +133,8 @@ impl ComRuntime {
                     }
                 },
                 Err(e) => {
-                    error!("socket connection failed: {e}");
+                    // Allocates, but only used during init
+                    error!("socket connection failed: {}", format!("{e:?}"));
                 },
             }
         }
@@ -150,12 +152,16 @@ impl ComRuntime {
             Some(mapping) => {
                 match stream.write_all(format!("ok\n{}\n{}", mapping.ptr.size, &mapping.mapping_id).as_bytes()) {
                     Ok(_) => result = true,
-                    Err(e) => error!("socket write failed: {e}"),
+                    Err(e) => {
+                        // Allocates, but only used during init
+                        error!("socket write failed: {}", format!("{e:?}"))
+                    },
                 }
             },
             None => {
                 if let Err(e) = stream.write_all(b"error\ntopic not found") {
-                    error!("socket write failed: {e}");
+                    // Allocates, but only used during init
+                    error!("socket write failed: {}", format!("{e:?}"));
                 }
             },
         }
@@ -198,7 +204,7 @@ impl ComRuntime {
         also_map: bool,
     ) {
         let size = size_of::<T>();
-        info!("Initializing topic {topic} (LinuxShm, {size} bytes)...");
+        info!("Initializing topic {} (LinuxShm, {} bytes)...", topic, size);
         let mapping_id = Self::unique_mapping_id();
         let native_mapping = shm_open(
             mapping_id.as_str(),
@@ -293,7 +299,7 @@ impl ComRuntime {
 }
 
 // Initialize the topic and register it in the global COM runtime
-pub fn init_topic<T: Debug + Default + 'static>(
+pub fn init_topic<T: Debug + ScoreDebug + Default + 'static>(
     topic: Topic,
     mapping_mode: MappingMode,
     agent_role: TopicInitializationAgentRole,
@@ -302,9 +308,9 @@ pub fn init_topic<T: Debug + Default + 'static>(
     TopicHandle::from(Box::new(()))
 }
 
-pub struct LinuxShmInputGuard<T: Debug>(MappedPtrReadGuard<T>);
+pub struct LinuxShmInputGuard<T: Debug + ScoreDebug>(MappedPtrReadGuard<T>);
 
-impl<T: Debug> Deref for LinuxShmInputGuard<T> {
+impl<T: Debug + ScoreDebug> Deref for LinuxShmInputGuard<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -312,13 +318,13 @@ impl<T: Debug> Deref for LinuxShmInputGuard<T> {
     }
 }
 
-pub struct LinuxShmOutputGuard<T: Debug> {
+pub struct LinuxShmOutputGuard<T: Debug + ScoreDebug> {
     ptr: MappedPtrWriteGuard<T>,
 }
 
 impl<T> LinuxShmOutputGuard<T>
 where
-    T: Debug,
+    T: Debug + ScoreDebug,
 {
     pub(crate) fn send(self) -> Result<(), Error> {
         self.ptr.send();
@@ -326,7 +332,7 @@ where
     }
 }
 
-impl<T: Debug> Deref for LinuxShmOutputGuard<T> {
+impl<T: Debug + ScoreDebug> Deref for LinuxShmOutputGuard<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -334,17 +340,17 @@ impl<T: Debug> Deref for LinuxShmOutputGuard<T> {
     }
 }
 
-impl<T: Debug> DerefMut for LinuxShmOutputGuard<T> {
+impl<T: Debug + ScoreDebug> DerefMut for LinuxShmOutputGuard<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         DerefMut::deref_mut(&mut self.ptr)
     }
 }
 
-pub struct LinuxShmOutputUninitGuard<T: Debug>(MappedPtrWriteGuard<T>);
+pub struct LinuxShmOutputUninitGuard<T: Debug + ScoreDebug>(MappedPtrWriteGuard<T>);
 
 impl<T> LinuxShmOutputUninitGuard<T>
 where
-    T: Debug,
+    T: Debug + ScoreDebug,
 {
     // Value is initialized when allocated
     pub(crate) fn assume_init(self) -> LinuxShmOutputGuard<T> {
@@ -360,7 +366,7 @@ where
 
 impl<T> LinuxShmOutputUninitGuard<T>
 where
-    T: Debug + Default,
+    T: Debug + ScoreDebug + Default,
 {
     // Overwrites with [Default::default]
     pub(crate) fn init(mut self) -> LinuxShmOutputGuard<T> {
@@ -369,7 +375,7 @@ where
     }
 }
 
-impl<T: Debug> Deref for LinuxShmOutputUninitGuard<T> {
+impl<T: Debug + ScoreDebug> Deref for LinuxShmOutputUninitGuard<T> {
     type Target = MaybeUninit<T>;
 
     fn deref(&self) -> &Self::Target {
@@ -379,7 +385,7 @@ impl<T: Debug> Deref for LinuxShmOutputUninitGuard<T> {
     }
 }
 
-impl<T: Debug> DerefMut for LinuxShmOutputUninitGuard<T> {
+impl<T: Debug + ScoreDebug> DerefMut for LinuxShmOutputUninitGuard<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         // Safety: MaybeUninit<T> is guaranteed to have the same size, alignment, and ABI as T (according to Rust docs)
         // T is guarantied to be initialized
@@ -393,7 +399,7 @@ pub struct LinuxShmInput<T> {
     _type: PhantomData<T>,
 }
 
-impl<T: Debug + 'static> LinuxShmInput<T> {
+impl<T: Debug + ScoreDebug + 'static> LinuxShmInput<T> {
     pub fn new(topic: Topic) -> Self {
         Self {
             ptr: ComRuntime::global_runtime().topic_mapping::<T>(topic, MappingMode::Read),
@@ -404,7 +410,7 @@ impl<T: Debug + 'static> LinuxShmInput<T> {
 
 impl<T> ActivityInput<T> for LinuxShmInput<T>
 where
-    T: Debug + 'static,
+    T: Debug + ScoreDebug + 'static,
 {
     fn read(&self) -> Result<InputGuard<T>, Error> {
         Ok(InputGuard::LinuxShm(LinuxShmInputGuard(self.ptr.get())))
@@ -417,7 +423,7 @@ pub struct LinuxShmOutput<T> {
     _type: PhantomData<T>,
 }
 
-impl<T: Debug + 'static> LinuxShmOutput<T> {
+impl<T: Debug + ScoreDebug + 'static> LinuxShmOutput<T> {
     pub fn new(topic: Topic) -> Self {
         Self {
             ptr: ComRuntime::global_runtime().topic_mapping::<T>(topic, MappingMode::Write),
@@ -428,7 +434,7 @@ impl<T: Debug + 'static> LinuxShmOutput<T> {
 
 impl<T> ActivityOutput<T> for LinuxShmOutput<T>
 where
-    T: Debug + 'static,
+    T: Debug + ScoreDebug + 'static,
 {
     // Initialized when allocated
     fn write_uninit(&mut self) -> Result<OutputUninitGuard<T>, Error> {
@@ -440,7 +446,7 @@ where
 
 impl<T> ActivityOutputDefault<T> for LinuxShmOutput<T>
 where
-    T: Debug + Default + 'static,
+    T: Debug + ScoreDebug + Default + 'static,
 {
     // Overwrites with [Default::default]
     fn write_init(&mut self) -> Result<OutputGuard<T>, Error> {

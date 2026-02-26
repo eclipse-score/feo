@@ -11,14 +11,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // *******************************************************************************
 
+use crate::debug_fmt::ScoreDebugDebug;
 use crate::signalling::common::socket::connection::Connection;
 use crate::signalling::common::socket::{EncodeDecode, ProtocolSignal};
 use core::fmt;
 use core::net::SocketAddr;
-use core::time::Duration;
-use feo_log::{debug, info, warn};
+use feo_time::Duration;
 use mio::net::{TcpListener, TcpStream, UnixListener, UnixStream};
 use mio::{event, Events, Interest, Poll, Token};
+use score_log::{debug, info, warn};
 use std::collections::HashMap;
 use std::fs;
 use std::io;
@@ -68,7 +69,7 @@ where
 
         // There was no readable connection -> poll
         loop {
-            match self.poll.poll(events, Some(timeout)) {
+            match self.poll.poll(events, Some(timeout.into())) {
                 Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {
                     // ignore system interrupts
                 },
@@ -83,7 +84,7 @@ where
                     self.accepted_connections.get_mut(&token).unwrap().set_stream_readable();
                 },
                 other => {
-                    warn!("Received readiness event for unknown token {other:?}");
+                    warn!("Received readiness event for unknown token {}", other.0);
                 },
             }
         }
@@ -120,7 +121,7 @@ where
 
                     self.accepted_connections.insert(token, connection);
 
-                    info!("Accepted connection from {peer_addr:?}");
+                    info!("Accepted connection from {:?}", ScoreDebugDebug::<_, 256>(&peer_addr));
                 },
                 Err(err) if err.kind() == io::ErrorKind::WouldBlock => break,
                 Err(err) => panic!("failed to accept connection: {err}"),
@@ -180,9 +181,9 @@ impl SocketServer<UnixListener> {
         // Check for and remove stale socket file
         // This is a workaround until the shutdown is defined in FEO
         if path.exists() {
-            debug!("Removing stale socket file {}", path.display());
+            debug!("Removing stale socket file {:?}", path.to_str().expect("invalid path"));
             fs::remove_file(path)
-                .unwrap_or_else(|e| panic!("failed to remove stale socket file {}: {e}", path.display()));
+                .unwrap_or_else(|e| panic!("failed to remove stale socket file {}: {e}", path.to_string_lossy()));
         }
 
         let listener = UnixListener::bind(path).unwrap();

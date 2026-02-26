@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-feo-log = { workspace = true }
 libc = { workspace = true }
 postcard = { workspace = true }
 serde = { workspace = true }

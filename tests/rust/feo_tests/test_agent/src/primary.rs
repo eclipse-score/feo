@@ -19,8 +19,8 @@ use crate::scenario::ScenarioConfig;
 use crate::{Scenario, Signalling};
 use feo::agent::com_init::initialize_com_primary;
 use feo::error::Error;
-use feo_log::info;
 use feo_time::Duration;
+use score_log::info;
 use std::path::PathBuf;
 
 pub trait PrimaryLauncher {
@@ -30,7 +30,7 @@ pub trait PrimaryLauncher {
 
 impl PrimaryLauncher for Signalling {
     fn launch_primary(&self, scenario: Scenario, server_name: String) -> Result<(), Error> {
-        info!("Starting primary agent {PRIMARY_AGENT_ID}");
+        info!("Starting primary agent {}", PRIMARY_AGENT_ID);
 
         // Initialize topics. Do not drop.
         let _topic_guards = initialize_com_primary(

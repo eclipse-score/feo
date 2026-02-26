@@ -13,8 +13,8 @@
 
 use crate::signalling::common::socket::EncodeDecode;
 use core::marker::PhantomData;
-use feo_log::trace;
 use mio::net::{TcpStream, UnixStream};
+use score_log::trace;
 use std::io::{self, Cursor};
 
 /// Size of the buffer within a connection
@@ -143,7 +143,7 @@ where
                     return Err(io::ErrorKind::ConnectionReset.into());
                 },
                 Ok(n) => {
-                    trace!("Read {n} bytes");
+                    trace!("Read {} bytes", n);
                     self.recv_end += n;
                     self.buffer_readable = true;
 

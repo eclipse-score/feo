@@ -13,8 +13,8 @@
 
 use feo::ids::AgentId;
 use feo::recording::recorder::RecordingRules;
-use feo_log::{debug, LevelFilter};
 use mini_adas::activities::messages::{self, BrakeInstruction, CameraImage, RadarScan, Scene, Steering};
+use score_log::{debug, LevelFilter};
 
 use feo::agent::com_init::initialize_com_recorder;
 use feo::topicspec::TopicSpecification;
@@ -23,9 +23,16 @@ use mini_adas::config::{
     TOPIC_INFERRED_SCENE, TOPIC_RADAR_FRONT,
 };
 use std::collections::HashMap;
+use stdout_logger::StdoutLoggerBuilder;
 
 fn main() {
-    feo_logger::init(LevelFilter::Trace, true, true);
+    StdoutLoggerBuilder::new()
+        .context("adas-recorder")
+        .show_module(true)
+        .show_file(true)
+        .show_line(true)
+        .log_level(LevelFilter::Trace)
+        .set_as_default_logger();
 
     let params = Params::from_args();
 

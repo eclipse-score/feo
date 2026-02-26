@@ -39,6 +39,7 @@ use core::any::Any;
 use core::fmt;
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
+use score_log::fmt::ScoreDebug;
 
 pub type Topic<'a> = &'a str;
 
@@ -61,7 +62,7 @@ pub enum Error {
 /// A trait for structs which can provide handles to input buffers
 pub trait ActivityInput<T>: fmt::Debug
 where
-    T: fmt::Debug,
+    T: fmt::Debug + ScoreDebug,
 {
     /// Get a handle to an input buffer
     fn read(&self) -> Result<InputGuard<T>, Error>;
@@ -74,7 +75,7 @@ where
 /// It is an enum so that it has a size known at compile-time.
 pub enum InputGuard<T>
 where
-    T: fmt::Debug,
+    T: fmt::Debug + ScoreDebug,
 {
     #[cfg(feature = "ipc_iceoryx2")]
     Iox2(Iox2InputGuard<T>),
@@ -84,7 +85,7 @@ where
 
 impl<T> Deref for InputGuard<T>
 where
-    T: fmt::Debug,
+    T: fmt::Debug + ScoreDebug,
 {
     type Target = T;
 
@@ -101,7 +102,7 @@ where
 /// A trait for structs which can provide handles to uninitialized output buffers
 pub trait ActivityOutput<T>: fmt::Debug
 where
-    T: fmt::Debug,
+    T: fmt::Debug + ScoreDebug,
 {
     /// Get a handle to an uninitialized output buffer
     fn write_uninit(&mut self) -> Result<OutputUninitGuard<T>, Error>;
@@ -110,7 +111,7 @@ where
 /// A trait for structs which can provide handles to default-initialized output buffers
 pub trait ActivityOutputDefault<T>: fmt::Debug
 where
-    T: fmt::Debug + Default,
+    T: fmt::Debug + ScoreDebug + Default,
 {
     /// Get a handle to a default initialized output buffer
     fn write_init(&mut self) -> Result<OutputGuard<T>, Error>;
@@ -137,7 +138,7 @@ where
 /// For the buffer to be receivable as input, it has to be [Self::send],
 /// consuming the handle.
 #[must_use = "buffer has to be sent to be observable"]
-pub enum OutputGuard<T: fmt::Debug> {
+pub enum OutputGuard<T: fmt::Debug + ScoreDebug> {
     #[cfg(feature = "ipc_iceoryx2")]
     Iox2(Iox2OutputGuard<T>),
     #[cfg(feature = "ipc_linux_shm")]
@@ -146,7 +147,7 @@ pub enum OutputGuard<T: fmt::Debug> {
 
 impl<T> OutputGuard<T>
 where
-    T: fmt::Debug,
+    T: fmt::Debug + ScoreDebug,
 {
     /// Send this buffer
     pub fn send(self) -> Result<(), Error> {
@@ -161,7 +162,7 @@ where
 
 impl<T> Deref for OutputGuard<T>
 where
-    T: fmt::Debug,
+    T: fmt::Debug + ScoreDebug,
 {
     type Target = T;
 
@@ -177,7 +178,7 @@ where
 
 impl<T> DerefMut for OutputGuard<T>
 where
-    T: fmt::Debug + Default,
+    T: fmt::Debug + ScoreDebug + Default,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match self {
@@ -205,7 +206,7 @@ where
 /// - Writing directly to the uninitialized memory and call [Self::assume_init].
 ///   This is `unsafe` and the caller has to ensure that the buffer is initialized
 ///   to a valid value before calling [Self::assume_init].
-pub enum OutputUninitGuard<T: fmt::Debug> {
+pub enum OutputUninitGuard<T: fmt::Debug + ScoreDebug> {
     #[cfg(feature = "ipc_iceoryx2")]
     Iox2(Iox2OutputUninitGuard<T>),
     #[cfg(feature = "ipc_linux_shm")]
@@ -214,7 +215,7 @@ pub enum OutputUninitGuard<T: fmt::Debug> {
 
 impl<T> OutputUninitGuard<T>
 where
-    T: fmt::Debug,
+    T: fmt::Debug + ScoreDebug,
 {
     /// Assume the backing buffer is initialized
     ///
@@ -244,7 +245,7 @@ where
 
 impl<T> OutputUninitGuard<T>
 where
-    T: fmt::Debug + Default,
+    T: fmt::Debug + ScoreDebug + Default,
 {
     /// Initialize the uninitialized buffer with its [Default] trait
     pub fn init(self) -> OutputGuard<T> {
@@ -259,7 +260,7 @@ where
 
 impl<T> Deref for OutputUninitGuard<T>
 where
-    T: fmt::Debug,
+    T: fmt::Debug + ScoreDebug,
 {
     type Target = MaybeUninit<T>;
 
@@ -275,7 +276,7 @@ where
 
 impl<T> DerefMut for OutputUninitGuard<T>
 where
-    T: fmt::Debug,
+    T: fmt::Debug + ScoreDebug,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match self {
@@ -337,7 +338,7 @@ impl<'a> ComBackendTopicSecondaryInitialization<'a> {
     }
 }
 
-pub fn init_topic_primary<T: fmt::Debug + Default + 'static>(
+pub fn init_topic_primary<T: fmt::Debug + ScoreDebug + Default + 'static>(
     params: &ComBackendTopicPrimaryInitialization,
 ) -> TopicHandle {
     match params.backend {
@@ -362,7 +363,7 @@ pub fn init_topic_primary<T: fmt::Debug + Default + 'static>(
     }
 }
 
-pub fn init_topic_secondary<T: fmt::Debug + Default + 'static>(
+pub fn init_topic_secondary<T: fmt::Debug + ScoreDebug + Default + 'static>(
     params: &ComBackendTopicSecondaryInitialization,
 ) -> TopicHandle {
     match params.backend {

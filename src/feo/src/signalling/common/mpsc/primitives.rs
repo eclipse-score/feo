@@ -15,7 +15,7 @@
 
 use crate::error::Error;
 use core::fmt;
-use core::time::Duration;
+use feo_time::Duration;
 use std::sync::mpsc;
 use std::sync::mpsc::RecvTimeoutError;
 
@@ -38,7 +38,7 @@ impl<T: fmt::Debug + 'static> Receiver<T> {
     }
 
     pub fn receive(&mut self, timeout: Duration) -> Result<Option<T>, Error> {
-        match self.receiver.recv_timeout(timeout) {
+        match self.receiver.recv_timeout(timeout.into()) {
             Ok(v) => Ok(Some(v)),
             Err(err) => match err {
                 RecvTimeoutError::Timeout => Ok(None),
