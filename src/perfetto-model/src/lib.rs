@@ -10,4 +10,18 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 // *******************************************************************************
+
+#[cfg(cargo_build)]
+mod perfetto_proto {
+    pub mod perfetto {
+        pub mod protos {
+            include!(concat!(env!("OUT_DIR"), "/perfetto.protos.rs"));
+        }
+    }
+}
+
+#[cfg(not(cargo_build))]
+pub use perfetto_proto::perfetto::protos::*;
+
+#[cfg(cargo_build)]
 pub use perfetto_proto::perfetto::protos::*;
