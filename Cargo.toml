@@ -2,17 +2,17 @@
 members = [
     "examples/rust/cycle-benchmark",
     "examples/rust/mini-adas",
-    "feo",
-    "feo-com",
-    "feo-cpp-build",
-    "feo-cpp-macros",
-    "feo-log",
-    "feo-logger",
-    "feo-time",
-    "feo-tracer",
-    "feo-tracing",
-    "logd",
-    "perfetto-model",
+    "src/feo",
+    "src/feo-com",
+    "src/feo-cpp-build",
+    "src/feo-cpp-macros",
+    "src/feo-log",
+    "src/feo-logger",
+    "src/feo-time",
+    "src/feo-tracer",
+    "src/feo-tracing",
+    "src/logd",
+    "src/perfetto-model",
     "tests/rust/feo_tests/test_agent",
     "tests/rust/feo_tests",
 ]
@@ -31,14 +31,14 @@ cc = "1.2.34"
 console = "0.16.0"
 clap = { version = "4.5.50", features = ["derive"] }
 env_logger = "0.11.8"
-feo = { path = "feo", default-features = false }
-feo-com = { path = "feo-com" }
-feo-cpp-build = { path = "feo-cpp-build" }
-feo-cpp-macros = { path = "feo-cpp-macros" }
-feo-log = { path = "feo-log" }
-feo-logger = { path = "feo-logger" }
-feo-time = { path = "feo-time" }
-feo-tracing = { path = "feo-tracing" }
+feo = { path = "src/feo", default-features = false }
+feo-com = { path = "src/feo-com" }
+feo-cpp-build = { path = "src/feo-cpp-build" }
+feo-cpp-macros = { path = "src/feo-cpp-macros" }
+feo-log = { path = "src/feo-log" }
+feo-logger = { path = "src/feo-logger" }
+feo-time = { path = "src/feo-time" }
+feo-tracing = { path = "src/feo-tracing" }
 ctrlc = { version = "3.4.4", features = ["termination"] }
 futures = "0.3.31"
 human_bytes = "0.4.3"
@@ -49,7 +49,7 @@ libc = "1.0.0-alpha.1"
 log = { version = "0.4.27" }
 mio = { version = "1.0.4", features = ["net", "os-poll"] }
 nix = { version = "0.30.1", features = ["fs", "mman", "signal"] }
-perfetto-model = { path = "perfetto-model" }
+perfetto-model = { path = "src/perfetto-model" }
 postcard = "1.1.3"
 prost = "0.14.1"
 prost-build = "0.14.1"
