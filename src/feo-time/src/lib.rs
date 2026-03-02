@@ -73,6 +73,7 @@ pub struct Duration(pub core::time::Duration);
 
 impl Duration {
     pub const ZERO: Duration = Duration(core::time::Duration::ZERO);
+    pub const MAX: Duration = Duration(core::time::Duration::MAX);
 
     pub fn as_secs(&self) -> u64 {
         self.0.as_secs()
@@ -590,7 +591,7 @@ impl Add<Duration> for SystemTime {
     /// This function may panic if the resulting point in time cannot be represented by the
     /// underlying data structure. See [`SystemTime::checked_add`] for a version without panic.
     fn add(self, dur: Duration) -> SystemTime {
-        SystemTime(self.0.add(dur.into()))
+        SystemTime(self.0.add(dur.0))
     }
 }
 
@@ -604,7 +605,7 @@ impl Sub<Duration> for SystemTime {
     type Output = SystemTime;
 
     fn sub(self, dur: Duration) -> SystemTime {
-        SystemTime(self.0.sub(dur.into()))
+        SystemTime(self.0.sub(dur.0))
     }
 }
 

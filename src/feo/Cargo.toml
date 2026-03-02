@@ -7,6 +7,7 @@ edition = "2024"
 feo-com = { workspace = true }
 feo-time = { workspace = true }
 feo-tracing = { workspace = true }
+score_log = { workspace = true }
 libc = { workspace = true }
 mio = { workspace = true }
 postcard = { workspace = true, features = [

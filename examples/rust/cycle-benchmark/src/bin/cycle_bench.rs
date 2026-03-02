@@ -21,7 +21,7 @@ const DEFAULT_FEO_CYCLE_TIME: Duration = Duration::from_millis(5);
 
 fn main() {
     // Uncomment one or both of the following lines for benchmarking with logging/tracing
-    // feo_logger::init(feo_log::LevelFilter::Debug, true, true);
+    // feo_logger::init(score_log::LevelFilter::Debug, true, true);
     // feo_tracing::init(feo_tracing::LevelFilter::TRACE);
 
     let params = Params::from_args();

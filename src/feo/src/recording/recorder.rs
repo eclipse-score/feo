@@ -291,13 +291,12 @@ impl MaxSize for DataDescriptionRecord<'_> {
 mod test {
     use super::*;
     use alloc::string::String;
-    use core::time::Duration;
 
     #[test]
     fn test_max_size_for_data_description_record() {
         let s = String::from_utf8(vec![b'a'; TOPIC_TYPENAME_MAX_SIZE]).expect("valid string");
         let record = DataDescriptionRecord {
-            timestamp: Timestamp(Duration::MAX),
+            timestamp: Timestamp(feo_time::Duration::MAX),
             data_size: usize::MAX,
             type_name: &s,
             topic: &s,

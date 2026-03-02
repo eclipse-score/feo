@@ -14,4 +14,6 @@ perfetto-model = { workspace = true }
 postcard = { workspace = true }
 prost = { workspace = true }
 rand = { workspace = true }
-tokio = { workspace = true, features = ["rt-multi-thread"] }
+score_log = { workspace = true }
+stdout_logger = { workspace = true }
+tokio = { workspace = true }

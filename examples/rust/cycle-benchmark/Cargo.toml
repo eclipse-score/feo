@@ -16,6 +16,7 @@ tracing = { workspace = true }
 postcard = { workspace = true, features = ["experimental-derive"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
+score_log = { workspace = true }
 
 [build-dependencies]
 

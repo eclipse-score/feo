@@ -22,7 +22,6 @@ use alloc::format;
 use core::fmt;
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
-use feo_log::{error, info};
 use iceoryx2::config::Config;
 use iceoryx2::node::{Node, NodeBuilder, NodeState};
 use iceoryx2::port::publisher::Publisher;
@@ -32,6 +31,7 @@ use iceoryx2::sample::Sample;
 use iceoryx2::sample_mut::SampleMut;
 use iceoryx2::sample_mut_uninit::SampleMutUninit;
 use iceoryx2::service::ipc;
+use score_log::{error, info};
 use std::process;
 
 /// Initialize topic with the given number of writers (publishers) and readers (subscribers).

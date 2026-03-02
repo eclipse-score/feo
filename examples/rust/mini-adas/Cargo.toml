@@ -21,6 +21,8 @@ feo-time = { workspace = true }
 feo-tracing = { workspace = true }
 postcard = { workspace = true, features = ["experimental-derive"] }
 serde = { workspace = true, optional = true }
+score_log = { workspace = true }
+stdout_logger = { workspace = true }
 tracing = { workspace = true }
 
 [build-dependencies]
@@ -29,7 +31,7 @@ feo-cpp-build = { workspace = true }
 [features]
 com_iox2 = ["feo-com/ipc_iceoryx2"]
 com_linux_shm = ["feo-com/ipc_linux_shm"]
-default = ["com_iox2", "signalling_relayed_tcp"]
+default = ["com_linux_shm", "signalling_relayed_tcp"]
 signalling_direct_mpsc = []
 signalling_direct_tcp = []
 signalling_direct_unix = []

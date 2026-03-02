@@ -6,3 +6,11 @@ edition = "2024"
 [dependencies]
 time = { workspace = true }
 serde = { workspace = true }
+score_log = { workspace = true }
+
+[dev-dependencies]
+stdout_logger = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["serde/std"]

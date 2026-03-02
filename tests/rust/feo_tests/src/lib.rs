@@ -31,7 +31,10 @@ mod monitor;
 fn aquire_lock() -> MutexGuard<'static, ()> {
     static MUTEX: Mutex<()> = Mutex::new(());
     let _ = env_logger::try_init();
-    MUTEX.lock().unwrap()
+    match MUTEX.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    }
 }
 
 #[derive(Parser)]
@@ -253,9 +256,22 @@ pub const TEST_AGENT_PATH: &str = "./tests/rust/feo_tests/test_agent/test_agent"
 
 impl Default for Cli {
     fn default() -> Self {
-        Self {
-            test_agent: PathBuf::from(TEST_AGENT_PATH),
+        let mut test_agent = PathBuf::from(TEST_AGENT_PATH);
+        if !test_agent.exists() {
+            // Fallback for cargo. Find the workspace root.
+            let mut current = std::env::current_dir().unwrap();
+            loop {
+                let candidate = current.join("target/debug/test_agent");
+                if candidate.exists() {
+                    test_agent = candidate;
+                    break;
+                }
+                if !current.pop() {
+                    break;
+                }
+            }
         }
+        Self { test_agent }
     }
 }
 

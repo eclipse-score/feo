@@ -19,3 +19,5 @@ libc = { workspace = true }
 clap = { workspace = true }
 ipc-channel = { workspace = true }
 serde = { workspace = true }
+score_log = { workspace = true }
+stdout_logger = { workspace = true }

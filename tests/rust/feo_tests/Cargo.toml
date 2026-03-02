@@ -9,4 +9,5 @@ ipc-channel = { workspace = true }
 serde = { workspace = true }
 nix = { workspace = true }
 log = { workspace = true }
+score_log = { workspace = true }
 env_logger = { workspace = true }
