@@ -12,5 +12,7 @@
 // *******************************************************************************
 
 fn main() -> std::io::Result<()> {
+    println!("cargo:rustc-check-cfg=cfg(cargo_build)");
+    println!("cargo:rustc-cfg=cargo_build");
     prost_build::compile_protos(&["protos/perfetto_trace.proto"], &["protos"]).map(drop)
 }
