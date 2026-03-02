@@ -4,8 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-com_iox2 = []
-com_linux_shm = []
+default = ["com_linux_shm"]
+com_iox2 = ["feo-com/ipc_iceoryx2"]
+com_linux_shm = ["feo-com/ipc_linux_shm"]
 
 [dependencies]
 feo = { workspace = true }
