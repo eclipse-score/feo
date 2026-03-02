@@ -27,7 +27,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install protobuf-compiler
-        run: sudo apt-get install protobuf-compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install protobuf-compiler
 
       - uses: bazelbuild/setup-bazelisk@v3
 
