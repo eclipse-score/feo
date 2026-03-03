@@ -83,6 +83,10 @@ impl Duration {
         self.0.subsec_nanos()
     }
 
+    pub fn subsec_micros(&self) -> u32 {
+        self.0.subsec_micros()
+    }
+
     #[allow(dead_code)]
     pub const fn from_secs(secs: u64) -> Self {
         Self(core::time::Duration::from_secs(secs))

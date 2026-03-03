@@ -515,7 +515,7 @@ mod loop_duration_meter {
 
     impl<const NUM_STEPS: usize> LoopDurationMeter<NUM_STEPS> {
         pub fn track(&mut self, duration: &feo_time::Duration) {
-            self.duration_micros += duration.0.subsec_micros() as usize + 1000000 * duration.as_secs() as usize;
+            self.duration_micros += duration.subsec_micros() as usize + 1000000 * duration.as_secs() as usize;
             self.num_steps += 1;
 
             if self.num_steps == NUM_STEPS {
