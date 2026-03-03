@@ -23,11 +23,11 @@ rust_test(
     data = ["//tests/rust/feo_tests/test_agent"],
     edition = "2024",
     deps = [
+        "@feo_crates//:nix",
         "@score_crates//:clap",
         "@score_crates//:env_logger",
         "@score_crates//:ipc_channel",
         "@score_crates//:log",
-        "@feo_crates//:nix",
         "@score_crates//:serde",
     ],
 )
