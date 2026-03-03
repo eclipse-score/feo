@@ -64,7 +64,7 @@ pub fn initialize_from(sync_info: SyncInfo) {
     let time_info_now = time_info_now();
 
     // Calculate the startup time of the primary agent
-    let startup_time = std::time::SystemTime::UNIX_EPOCH + sync_info.since_epoch.0;
+    let startup_time = std::time::SystemTime::UNIX_EPOCH + core::time::Duration::from(sync_info.since_epoch);
 
     // Calculate the time elapsed since the startup of the primary agent;
     // assumption is that system clocks are synchronized (but monotonic clocks can be unsynchronized).
