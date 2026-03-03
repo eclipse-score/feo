@@ -27,7 +27,7 @@ rust_test(
         "@score_crates//:env_logger",
         "@score_crates//:ipc_channel",
         "@score_crates//:log",
-        "@score_crates//:nix",
+        "@feo_crates//:nix",
         "@score_crates//:serde",
     ],
 )

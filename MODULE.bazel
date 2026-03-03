@@ -33,6 +33,22 @@ git_override(
 bazel_dep(name = "rules_rust", version = "0.67.0")
 bazel_dep(name = "rules_rust_prost", version = "0.67.0")
 
+# score_crates 0.0.6 only enables ["fs", "mman"] for nix, but feo_tests also needs
+# ["signal", "process"]. Define a local crate repository with the full feature set.
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.spec(
+    features = [
+        "fs",
+        "mman",
+        "process",
+        "signal",
+    ],
+    package = "nix",
+    version = "0.30.1",
+)
+crate.from_specs(name = "feo_crates")
+use_repo(crate, "feo_crates")
+
 # Protobuf
 # Repo_name override is needed here for compatibility with WORKSPACE (e.g.for rules_rust_prost)
 # Newer protobuf versions generate warnings during compilation which will cause the build failure due
