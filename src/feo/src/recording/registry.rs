@@ -16,7 +16,6 @@ use crate::recording::transcoder::{ComRecTranscoderBuilder, RecordingTranscoder}
 use alloc::borrow::ToOwned as _;
 use alloc::boxed::Box;
 use feo_com::interface::ActivityInput;
-use score_log::ScoreDebug;
 use serde::Serialize;
 use std::collections::HashMap;
 
@@ -146,6 +145,8 @@ macro_rules! register_types {
 
 #[test]
 fn test_type_registry() {
+    use score_log::ScoreDebug;
+
     #[derive(Debug)]
     // Dummy input implementation for the test
     struct DummyInput;
