@@ -17,11 +17,17 @@ module(
 )
 
 bazel_dep(name = "platforms", version = "1.0.0")
-bazel_dep(name = "score_bazel_platforms", version = "0.0.4")
+bazel_dep(name = "score_bazel_platforms", version = "0.1.1")
 
 # SCORE bazel module dependencies
 bazel_dep(name = "score_tooling", version = "1.1.0")
 bazel_dep(name = "score_crates", version = "0.0.6")
+git_override(
+    module_name = "score_crates",
+    commit = "e629bc327b776f4b7a9301aea75957f3a0b065bc",
+    remote = "https://github.com/eclipse-score/score-crates.git",
+)
+
 bazel_dep(name = "score_baselibs_rust", version = "0.1.0")
 git_override(
     module_name = "score_baselibs_rust",
@@ -30,7 +36,7 @@ git_override(
 )
 
 # Rust rules for Bazel
-bazel_dep(name = "rules_rust", version = "0.67.0")
+bazel_dep(name = "rules_rust", version = "0.68.1-score")
 bazel_dep(name = "rules_rust_prost", version = "0.67.0")
 
 # Protobuf
@@ -42,7 +48,7 @@ bazel_dep(name = "protobuf", version = "30.2", repo_name = "com_google_protobuf"
 bazel_dep(name = "rules_proto", version = "7.1.0")
 
 # Tooling
-bazel_dep(name = "aspect_rules_lint", version = "1.5.3")
+bazel_dep(name = "aspect_rules_lint", version = "2.0.0")
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2")
 bazel_dep(name = "googletest", version = "1.17.0")
 bazel_dep(name = "score_docs_as_code", version = "3.0.0")
@@ -82,7 +88,7 @@ bazel_dep(name = "score_rust_policies", version = "0.0.5", dev_dependency = True
 register_toolchains("//toolchain/prost:prost_toolchain")
 
 # Python toolchain
-bazel_dep(name = "rules_python", version = "1.4.1")
+bazel_dep(name = "rules_python", version = "1.8.3")
 
 PYTHON_VERSION = "3.12"
 
