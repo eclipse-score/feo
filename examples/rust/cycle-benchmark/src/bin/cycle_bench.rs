@@ -13,8 +13,6 @@
 
 use cycle_benchmark::config::{ApplicationConfig, SignallingType};
 use feo::ids::AgentId;
-use feo::recording::recorder::RecordingRules;
-use feo::recording::registry::TypeRegistry;
 use feo_time::Duration;
 
 const DEFAULT_FEO_CYCLE_TIME: Duration = Duration::from_millis(5);
@@ -31,8 +29,6 @@ fn main() {
         run_as_primary(params, app_config);
     } else if app_config.secondaries().contains(&params.agent_id) {
         run_as_secondary(params, app_config);
-    } else if app_config.recorders().contains(&params.agent_id) {
-        run_as_recorder(params, app_config);
     } else {
         eprintln!(
             "ERROR: Agent or recorder id {} not defined in system configuration",
@@ -96,34 +92,6 @@ fn run_as_secondary(params: Params, app_config: ApplicationConfig) {
     }
 }
 
-fn run_as_recorder(params: Params, app_config: ApplicationConfig) {
-    let signalling = app_config.signalling();
-    println!(
-        "Starting recorder {} using signalling {:?}",
-        params.agent_id, signalling
-    );
-
-    // the benchmarking application does not exchange data,
-    // so have an empty type registry and an empty set of recording rules
-    let registry = TypeRegistry::default();
-    let rules: RecordingRules = Default::default();
-
-    match signalling {
-        SignallingType::DirectMpsc => {
-            let config = direct_mpsc::make_recorder_config(params, app_config, &registry, rules);
-            direct_mpsc::Recorder::new(config).run();
-        },
-        signalling @ SignallingType::DirectTcp | signalling @ SignallingType::DirectUnix => {
-            let config = direct_sockets::make_recorder_config(params, app_config, &registry, rules, signalling);
-            direct_sockets::Recorder::new(config).run();
-        },
-        signalling @ SignallingType::RelayedTcp | signalling @ SignallingType::RelayedUnix => {
-            let config = relayed_sockets::make_recorder_config(params, app_config, &registry, rules, signalling);
-            relayed_sockets::Recorder::new(config).run();
-        },
-    }
-}
-
 /// Parameters of the primary
 struct Params {
     /// Agent ID
@@ -162,11 +130,8 @@ impl Params {
 mod direct_mpsc {
     use super::{Duration, Params};
     use cycle_benchmark::config::ApplicationConfig;
-    use feo::recording::recorder::RecordingRules;
-    use feo::recording::registry::TypeRegistry;
 
     pub(super) use feo::agent::direct::primary_mpsc::{Primary, PrimaryConfig};
-    pub(super) use feo::agent::direct::recorder::{Recorder, RecorderConfig};
     pub(super) use feo::agent::direct::secondary::{Secondary, SecondaryConfig};
 
     pub(super) fn make_primary_config(params: Params, app_config: ApplicationConfig) -> PrimaryConfig {
@@ -195,26 +160,14 @@ mod direct_mpsc {
     pub(super) fn make_secondary_config(_: Params, _: ApplicationConfig) -> SecondaryConfig {
         panic!("direct mpsc signalling does not support secondary agents");
     }
-
-    pub(super) fn make_recorder_config(
-        _: Params,
-        _: ApplicationConfig,
-        _: &TypeRegistry,
-        _: RecordingRules,
-    ) -> RecorderConfig<'_> {
-        panic!("direct mpsc signalling does not support recorders");
-    }
 }
 
 mod direct_sockets {
     use super::{Duration, Params};
     use cycle_benchmark::config::{ApplicationConfig, SignallingType};
     use feo::agent::NodeAddress;
-    use feo::recording::recorder::RecordingRules;
-    use feo::recording::registry::TypeRegistry;
 
     pub(super) use feo::agent::direct::primary::{Primary, PrimaryConfig};
-    pub(super) use feo::agent::direct::recorder::{Recorder, RecorderConfig};
     pub(super) use feo::agent::direct::secondary::{Secondary, SecondaryConfig};
 
     fn endpoint(app_config: &ApplicationConfig, signalling: SignallingType) -> NodeAddress {
@@ -261,35 +214,14 @@ mod direct_sockets {
             endpoint: endpoint(&app_config, signalling),
         }
     }
-
-    pub(super) fn make_recorder_config(
-        params: Params,
-        app_config: ApplicationConfig,
-        type_registry: &TypeRegistry,
-        recording_rules: RecordingRules,
-        signalling: SignallingType,
-    ) -> RecorderConfig<'_> {
-        let agent_id = params.agent_id;
-        RecorderConfig {
-            id: agent_id,
-            record_file: "./rec.bin",
-            rules: recording_rules,
-            registry: type_registry,
-            receive_timeout: Duration::from_secs(10),
-            endpoint: endpoint(&app_config, signalling),
-        }
-    }
 }
 
 mod relayed_sockets {
     use super::{Duration, Params};
     use cycle_benchmark::config::{ApplicationConfig, SignallingType};
     use feo::agent::NodeAddress;
-    use feo::recording::recorder::RecordingRules;
-    use feo::recording::registry::TypeRegistry;
 
     pub(super) use feo::agent::relayed::primary::{Primary, PrimaryConfig};
-    pub(super) use feo::agent::relayed::recorder::{Recorder, RecorderConfig};
     pub(super) use feo::agent::relayed::secondary::{Secondary, SecondaryConfig};
 
     fn endpoints(app_config: &ApplicationConfig, signalling: SignallingType) -> (NodeAddress, NodeAddress) {
@@ -342,26 +274,6 @@ mod relayed_sockets {
             id: agent_id,
             worker_assignments: app_config.worker_assignments().remove(&agent_id).unwrap(),
             timeout: Duration::from_secs(10),
-            bind_address_senders: endpoints.0,
-            bind_address_receivers: endpoints.1,
-        }
-    }
-
-    pub(super) fn make_recorder_config(
-        params: Params,
-        app_config: ApplicationConfig,
-        type_registry: &TypeRegistry,
-        recording_rules: RecordingRules,
-        signalling: SignallingType,
-    ) -> RecorderConfig<'_> {
-        let agent_id = params.agent_id;
-        let endpoints = endpoints(&app_config, signalling);
-        RecorderConfig {
-            id: agent_id,
-            record_file: "./rec.bin",
-            rules: recording_rules,
-            registry: type_registry,
-            receive_timeout: Duration::from_secs(10),
             bind_address_senders: endpoints.0,
             bind_address_receivers: endpoints.1,
         }

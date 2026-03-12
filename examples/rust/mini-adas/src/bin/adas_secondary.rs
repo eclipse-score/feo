@@ -11,7 +11,15 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+#[cfg(not(feature = "com_mw"))]
+use feo::agent::com_init::initialize_com_secondary;
+#[cfg(not(feature = "com_mw"))]
+use feo::ids::ActivityId;
+#[cfg(not(feature = "com_mw"))]
+use mini_adas::config::{agent_assignments_ids, topic_dependencies, COM_BACKEND};
 use score_log::{info, LevelFilter};
+#[cfg(not(feature = "com_mw"))]
+use std::collections::HashSet;
 use stdout_logger::StdoutLoggerBuilder;
 
 #[cfg(any(feature = "signalling_direct_tcp", feature = "signalling_direct_unix"))]
@@ -48,6 +56,7 @@ fn main() {
     };
 
     // determine set of activity ids belonging to this agent
+    #[cfg(not(feature = "com_mw"))]
     let local_activities: HashSet<ActivityId> = agent_assignments_ids()
         .remove(&params.agent_id)
         .unwrap()
@@ -55,6 +64,10 @@ fn main() {
         .flat_map(|(_, acts)| acts.iter())
         .copied()
         .collect();
+
+    // Initialize topics. Do not drop.
+    #[cfg(not(feature = "com_mw"))]
+    let _topic_guards = initialize_com_secondary(COM_BACKEND, topic_dependencies(), &local_activities);
 
     let secondary = Secondary::new(config);
     secondary.run();
@@ -83,6 +96,20 @@ fn main() {
         bind_address_senders: NodeAddress::Tcp(BIND_ADDR),
         bind_address_receivers: NodeAddress::Tcp(BIND_ADDR2),
     };
+
+    // determine set of activity ids belonging to this agent
+    #[cfg(not(feature = "com_mw"))]
+    let local_activities: HashSet<ActivityId> = agent_assignments_ids()
+        .remove(&params.agent_id)
+        .unwrap()
+        .iter()
+        .flat_map(|(_, acts)| acts.iter())
+        .copied()
+        .collect();
+
+    // Initialize topics. Do not drop.
+    #[cfg(not(feature = "com_mw"))]
+    let _topic_guards = initialize_com_secondary(COM_BACKEND, topic_dependencies(), &local_activities);
 
     let secondary = Secondary::new(config);
     secondary.run();
@@ -114,6 +141,20 @@ fn main() {
         bind_address_senders: NodeAddress::UnixSocket(socket_paths().0),
         bind_address_receivers: NodeAddress::UnixSocket(socket_paths().1),
     };
+
+    // determine set of activity ids belonging to this agent
+    #[cfg(not(feature = "com_mw"))]
+    let local_activities: HashSet<ActivityId> = agent_assignments_ids()
+        .remove(&params.agent_id)
+        .unwrap()
+        .iter()
+        .flat_map(|(_, acts)| acts.iter())
+        .copied()
+        .collect();
+
+    // Initialize topics. Do not drop.
+    #[cfg(not(feature = "com_mw"))]
+    let _topic_guards = initialize_com_secondary(COM_BACKEND, topic_dependencies(), &local_activities);
 
     let secondary = Secondary::new(config);
     secondary.run();

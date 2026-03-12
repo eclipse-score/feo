@@ -14,6 +14,35 @@
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 rust_library(
+    name = "libfeo_com_rust_mw_com",
+    srcs = [
+        "src/interface.rs",
+        # Disabled due to compilation error of iceoryx2
+        # "src/iox2/mod.rs",
+        "src/lib.rs",
+        "src/linux_shm/mod.rs",
+        "src/linux_shm/shared_memory.rs",
+        "src/mw_com/mod.rs",
+    ],
+    crate_features = [
+        # Disabled due to compilation error of iceoryx2
+        # "ipc_iceoryx2",
+        "ipc_linux_shm",
+        "ipc_mw_com",
+    ],
+    crate_name = "feo_com",
+    visibility = ["//visibility:public"],
+    deps = [
+        # Disabled due to compilation error of iceoryx2
+        # "@score_crates//:iceoryx2",
+        "@score_crates//:nix",
+        "@score_crates//:rand",
+        "@score_baselibs_rust//src/log/score_log",
+        "@score_communication//score/mw/com/impl/rust/com-api/com-api",
+    ],
+)
+
+rust_library(
     name = "libfeo_com_rust",
     srcs = [
         "src/interface.rs",
@@ -24,8 +53,6 @@ rust_library(
         "src/linux_shm/shared_memory.rs",
     ],
     crate_features = [
-        # bazel has a different concept (select) for optional dependencies than cargo,
-        # so we activate all features until we refactor to select
         # Disabled due to compilation error of iceoryx2
         # "ipc_iceoryx2",
         "ipc_linux_shm",
@@ -33,8 +60,6 @@ rust_library(
     crate_name = "feo_com",
     visibility = ["//visibility:public"],
     deps = [
-        # all_crate_deps only contains optional dependencies which are default-activated,
-        # so we add all optional dependencies here to be independent of cargo default features
         # Disabled due to compilation error of iceoryx2
         # "@score_crates//:iceoryx2",
         "@score_crates//:nix",

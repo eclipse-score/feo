@@ -11,57 +11,36 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use crate::config::mw_com_runtime;
-use com_api::{
-    Builder, CommData, FindServiceSpecifier, InstanceSpecifier, Interface, LolaRuntimeImpl, Producer, Publisher,
-    Runtime, SampleContainer, SampleMaybeUninit, SampleMut, ServiceDiscovery, Subscriber, Subscription,
-};
+use crate::activities::input::input;
+use crate::activities::output::output;
+#[cfg(feature = "com_mw")]
+use com_api::{LolaRuntimeImpl, Runtime, SampleContainer, Subscriber};
 use core::hash::{BuildHasher as _, Hasher as _};
 use core::mem::MaybeUninit;
-use core::ops::{Deref, DerefMut, Range};
+use core::ops::DerefMut;
+use core::ops::{Deref, Range};
 use core::time::Duration;
 use feo::activity::Activity;
 use feo::error::ActivityError;
 use feo::ids::ActivityId;
+use feo_com::interface::{ActivityInput, ActivityOutput};
 use feo_tracing::instrument;
+#[cfg(feature = "com_mw")]
 use mini_adas_gen::{
-    BrakeControllerConsumer, BrakeControllerInterface, CameraConsumer, CameraInterface, NeuralNetConsumer,
-    NeuralNetInterface, RadarConsumer, RadarInterface, SteeringControllerConsumer, SteeringControllerInterface,
+    BrakeControllerConsumer, BrakeControllerInterface, BrakeControllerOfferedProducer, CameraConsumer, CameraInterface,
+    CameraOfferedProducer, NeuralNetConsumer, NeuralNetInterface, NeuralNetOfferedProducer, RadarConsumer,
+    RadarInterface, RadarOfferedProducer, SteeringControllerConsumer, SteeringControllerInterface,
+    SteeringControllerOfferedProducer,
 };
 use mini_adas_gen::{BrakeInstruction, CameraImage, RadarScan, Scene, Steering};
 use score_log::debug;
 use std::hash::RandomState;
 use std::thread;
-use std::thread::sleep;
 
 const SLEEP_RANGE: Range<i64> = 10..45;
 
-pub struct DebugWrapper<T>(pub T);
-
-impl<T> core::fmt::Debug for DebugWrapper<T> {
-    fn fmt(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        Ok(())
-    }
-}
-
-impl<T> core::ops::Deref for DebugWrapper<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T> DerefMut for DebugWrapper<T> {
-    fn deref_mut(&mut self) -> &mut <Self as core::ops::Deref>::Target {
-        &mut self.0
-    }
-}
-
-type MwComPublisher<T> = <LolaRuntimeImpl as Runtime>::Publisher<T>;
-type MwComSubscription<T> =
-    <<LolaRuntimeImpl as Runtime>::Subscriber<T> as Subscriber<T, LolaRuntimeImpl>>::Subscription;
-type MwComSample<'a, T> = <MwComSubscription<T> as Subscription<T, LolaRuntimeImpl>>::Sample<'a>;
+#[cfg(feature = "com_mw")]
+type MwComSubscriber<T> = <LolaRuntimeImpl as Runtime>::Subscriber<T>;
 
 /// Camera activity
 ///
@@ -71,8 +50,7 @@ pub struct Camera {
     /// ID of the activity
     activity_id: ActivityId,
     /// Image output
-    output_image: DebugWrapper<MwComPublisher<CameraImage>>,
-
+    output_image: Box<dyn ActivityOutput<CameraImage>>,
     // Local state for pseudo-random output generation
     num_people: usize,
     num_cars: usize,
@@ -81,9 +59,10 @@ pub struct Camera {
 
 impl Camera {
     pub fn build(activity_id: ActivityId, image_topic: &str) -> Box<dyn Activity> {
+        let output_image = output!(CameraInterface, image_topic, |i: CameraOfferedProducer<_>| i.image);
         Box::new(Self {
             activity_id,
-            output_image: DebugWrapper(create_producer::<CameraInterface>(image_topic).image),
+            output_image,
             num_people: 4,
             num_cars: 10,
             distance_obstacle: 40.0,
@@ -125,7 +104,12 @@ impl Activity for Camera {
 
         let image = self.get_image();
         debug!("Sending image: {:?}", image);
-        self.output_image.send(image).unwrap();
+        self.output_image
+            .write_uninit()
+            .unwrap()
+            .write_payload(image)
+            .send()
+            .unwrap();
         Ok(())
     }
 
@@ -144,7 +128,7 @@ pub struct Radar {
     /// ID of the activity
     activity_id: ActivityId,
     /// Radar scan output
-    output_scan: DebugWrapper<<LolaRuntimeImpl as Runtime>::Publisher<RadarScan>>,
+    output_scan: Box<dyn ActivityOutput<RadarScan>>,
 
     // Local state for pseudo-random output generation
     distance_obstacle: f64,
@@ -152,9 +136,10 @@ pub struct Radar {
 
 impl Radar {
     pub fn build(activity_id: ActivityId, radar_topic: &str) -> Box<dyn Activity> {
+        let output_scan = output!(RadarInterface, radar_topic, |r: RadarOfferedProducer<_>| r.scan);
         Box::new(Self {
             activity_id,
-            output_scan: DebugWrapper(create_producer::<RadarInterface>(radar_topic).scan),
+            output_scan,
             distance_obstacle: 40.0,
         })
     }
@@ -191,7 +176,12 @@ impl Activity for Radar {
 
         let scan = self.get_scan();
         debug!("Sending scan: {:?}", scan);
-        self.output_scan.send(scan).unwrap();
+        self.output_scan
+            .write_uninit()
+            .unwrap()
+            .write_payload(scan)
+            .send()
+            .unwrap();
         Ok(())
     }
 
@@ -199,48 +189,6 @@ impl Activity for Radar {
     fn shutdown(&mut self) -> Result<(), ActivityError> {
         debug!("Shutting down Radar activity {}", self.activity_id);
         Ok(())
-    }
-}
-
-struct MwComInput<T: CommData> {
-    count: usize,
-    /// Subscription
-    subscription: MwComSubscription<T>,
-    /// Sample container
-    sample_container: SampleContainer<MwComSample<'static, T>>,
-}
-
-impl<T: CommData> core::fmt::Debug for MwComInput<T> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "MwComInput")
-    }
-}
-
-impl<T: CommData> MwComInput<T> {
-    fn new<C, I: Interface<Consumer<LolaRuntimeImpl> = C>>(
-        topic: &str,
-        f: impl FnOnce(C) -> <LolaRuntimeImpl as Runtime>::Subscriber<T>,
-    ) -> Self {
-        Self {
-            count: 0,
-            subscription: f(create_consumer::<I>(topic)).subscribe(1).unwrap(),
-            sample_container: SampleContainer::new(1),
-        }
-    }
-
-    fn read(&mut self) -> MwComSample<'_, T> {
-        debug!("Starting to read {}", self.count);
-        self.count += 1;
-        assert_eq!(
-            1,
-            self.subscription
-                .try_receive(&mut self.sample_container, 1,)
-                .expect("receive failed"),
-            "mw com read failed"
-        );
-        let result = self.sample_container.pop_front().expect("pop_front failed");
-        debug!("Reading done");
-        result
     }
 }
 
@@ -254,20 +202,29 @@ pub struct NeuralNet {
     /// ID of the activity
     activity_id: ActivityId,
     /// Image input
-    input_image: MwComInput<CameraImage>,
+    input_image: Box<dyn ActivityInput<CameraImage>>,
     /// Radar scan input
-    input_scan: MwComInput<RadarScan>,
+    input_scan: Box<dyn ActivityInput<RadarScan>>,
     /// Scene output
-    output_scene: DebugWrapper<MwComPublisher<Scene>>,
+    output_scene: Box<dyn ActivityOutput<Scene>>,
 }
 
 impl NeuralNet {
     pub fn build(activity_id: ActivityId, image_topic: &str, scan_topic: &str, scene_topic: &str) -> Box<dyn Activity> {
-        let output_scene = DebugWrapper(create_producer::<NeuralNetInterface>(scene_topic).scene);
+        let output_scene = output!(NeuralNetInterface, scene_topic, |s: NeuralNetOfferedProducer<_>| s
+            .scene);
         Box::new(Self {
             activity_id,
-            input_image: MwComInput::new::<_, CameraInterface>(image_topic, |i: CameraConsumer<_>| i.image),
-            input_scan: MwComInput::new::<_, RadarInterface>(scan_topic, |r: RadarConsumer<_>| r.scan),
+            input_image: input!(
+                CameraInterface,
+                image_topic,
+                |i: CameraConsumer<_>| -> MwComSubscriber<CameraImage> { i.image }
+            ),
+            input_scan: input!(
+                RadarInterface,
+                scan_topic,
+                |r: RadarConsumer<_>| -> MwComSubscriber<RadarScan> { r.scan }
+            ),
             output_scene,
         })
     }
@@ -313,13 +270,13 @@ impl Activity for NeuralNet {
         debug!("Stepping NeuralNet");
         sleep_random();
 
-        let camera = self.input_image.read();
-        let radar = self.input_scan.read();
+        let camera = self.input_image.read().unwrap();
+        let radar = self.input_scan.read().unwrap();
 
         debug!("Inferring scene with neural network");
 
-        let mut scene = self.output_scene.allocate().unwrap();
-        Self::infer(&camera, &radar, scene.as_mut());
+        let mut scene = self.output_scene.write_uninit().unwrap();
+        Self::infer(&camera, &radar, scene.deref_mut());
         // Safety: `Scene` has `repr(C)` and was fully initialized by `Self::infer` above.
         let scene = unsafe { scene.assume_init() };
         debug!("Sending Scene {:?}", scene.deref());
@@ -345,18 +302,25 @@ pub struct EmergencyBraking {
     /// ID of the activity
     activity_id: ActivityId,
     /// Scene input
-    input_scene: MwComInput<Scene>,
+    input_scene: Box<dyn ActivityInput<Scene>>,
     /// Brake instruction output
-    output_brake_instruction: DebugWrapper<<LolaRuntimeImpl as Runtime>::Publisher<BrakeInstruction>>,
+    output_brake_instruction: Box<dyn ActivityOutput<BrakeInstruction>>,
 }
 
 impl EmergencyBraking {
     pub fn build(activity_id: ActivityId, scene_topic: &str, brake_instruction_topic: &str) -> Box<dyn Activity> {
-        let output_brake_instruction =
-            DebugWrapper(create_producer::<BrakeControllerInterface>(brake_instruction_topic).brake_instruction);
+        let output_brake_instruction = output!(
+            BrakeControllerInterface,
+            brake_instruction_topic,
+            |b: BrakeControllerOfferedProducer<_>| b.brake_instruction
+        );
         Box::new(Self {
             activity_id,
-            input_scene: MwComInput::new::<_, NeuralNetInterface>(scene_topic, |n: NeuralNetConsumer<_>| n.scene),
+            input_scene: input!(
+                NeuralNetInterface,
+                scene_topic,
+                |n: NeuralNetConsumer<_>| -> MwComSubscriber<Scene> { n.scene }
+            ),
             output_brake_instruction,
         })
     }
@@ -377,8 +341,8 @@ impl Activity for EmergencyBraking {
         debug!("Stepping EmergencyBraking");
         sleep_random();
 
-        let scene = self.input_scene.read();
-        let brake_instruction = self.output_brake_instruction.allocate().unwrap();
+        let scene = self.input_scene.read().unwrap();
+        let brake_instruction = self.output_brake_instruction.write_uninit().unwrap();
 
         const ENGAGE_DISTANCE: f64 = 30.0;
         const MAX_BRAKE_DISTANCE: f64 = 15.0;
@@ -390,10 +354,10 @@ impl Activity for EmergencyBraking {
                 (ENGAGE_DISTANCE - scene.distance_obstacle) / (ENGAGE_DISTANCE - MAX_BRAKE_DISTANCE),
             );
 
-            let brake_instruction = brake_instruction.write(BrakeInstruction { active: true, level });
+            let brake_instruction = brake_instruction.write_payload(BrakeInstruction { active: true, level });
             brake_instruction.send().unwrap();
         } else {
-            let brake_instruction = brake_instruction.write(BrakeInstruction {
+            let brake_instruction = brake_instruction.write_payload(BrakeInstruction {
                 active: false,
                 level: 0.0,
             });
@@ -420,16 +384,17 @@ pub struct BrakeController {
     /// ID of the activity
     activity_id: ActivityId,
     /// Brake instruction input
-    input_brake_instruction: MwComInput<BrakeInstruction>,
+    input_brake_instruction: Box<dyn ActivityInput<BrakeInstruction>>,
 }
 
 impl BrakeController {
     pub fn build(activity_id: ActivityId, brake_instruction_topic: &str) -> Box<dyn Activity> {
         Box::new(Self {
             activity_id,
-            input_brake_instruction: MwComInput::new::<_, BrakeControllerInterface>(
+            input_brake_instruction: input!(
+                BrakeControllerInterface,
                 brake_instruction_topic,
-                |b: BrakeControllerConsumer<_>| b.brake_instruction,
+                |b: BrakeControllerConsumer<_>| -> MwComSubscriber<BrakeInstruction> { b.brake_instruction }
             ),
         })
     }
@@ -450,7 +415,7 @@ impl Activity for BrakeController {
         debug!("Stepping BrakeController");
         sleep_random();
 
-        let brake_instruction = self.input_brake_instruction.read();
+        let brake_instruction = self.input_brake_instruction.read().unwrap();
         if brake_instruction.active {
             debug!(
                 "BrakeController activating brakes with level {:.3}",
@@ -477,14 +442,18 @@ pub struct EnvironmentRenderer {
     /// ID of the activity
     activity_id: ActivityId,
     /// Scene input
-    input_scene: MwComInput<Scene>,
+    input_scene: Box<dyn ActivityInput<Scene>>,
 }
 
 impl EnvironmentRenderer {
     pub fn build(activity_id: ActivityId, scene_topic: &str) -> Box<dyn Activity> {
         Box::new(Self {
             activity_id,
-            input_scene: MwComInput::new::<_, NeuralNetInterface>(scene_topic, |n: NeuralNetConsumer<_>| n.scene),
+            input_scene: input!(
+                NeuralNetInterface,
+                scene_topic,
+                |n: NeuralNetConsumer<_>| -> MwComSubscriber<Scene> { n.scene }
+            ),
         })
     }
 }
@@ -527,16 +496,17 @@ pub struct SteeringController {
     /// ID of the activity
     activity_id: ActivityId,
     /// Steering input
-    input_steering: MwComInput<Steering>,
+    input_steering: Box<dyn ActivityInput<Steering>>,
 }
 
 impl SteeringController {
     pub fn build(activity_id: ActivityId, steering_topic: &str) -> Box<dyn Activity> {
         Box::new(Self {
             activity_id,
-            input_steering: MwComInput::new::<_, SteeringControllerInterface>(
+            input_steering: input!(
+                SteeringControllerInterface,
                 steering_topic,
-                |s: SteeringControllerConsumer<_>| s.steering,
+                |s: SteeringControllerConsumer<_>| -> MwComSubscriber<Steering> { s.steering }
             ),
         })
     }
@@ -557,7 +527,7 @@ impl Activity for SteeringController {
         debug!("Stepping SteeringController");
         sleep_random();
 
-        let steering = self.input_steering.read();
+        let steering = self.input_steering.read().unwrap();
         debug!("SteeringController adjusting angle to {:.3}", steering.angle);
         Ok(())
     }
@@ -576,14 +546,19 @@ pub struct LaneAssist {
     /// ID of the activity
     activity_id: ActivityId,
     /// Brake instruction output
-    steering_controller: DebugWrapper<<LolaRuntimeImpl as Runtime>::Publisher<Steering>>,
+    steering_controller: Box<dyn ActivityOutput<Steering>>,
 }
 
 impl LaneAssist {
     pub fn build(activity_id: ActivityId, steering_topic: &str) -> Box<dyn Activity> {
+        let steering_controller = output!(
+            SteeringControllerInterface,
+            steering_topic,
+            |s: SteeringControllerOfferedProducer<_>| s.steering
+        );
         Box::new(Self {
             activity_id,
-            steering_controller: DebugWrapper(create_producer::<SteeringControllerInterface>(steering_topic).steering),
+            steering_controller,
         })
     }
 }
@@ -602,7 +577,12 @@ impl Activity for LaneAssist {
     fn step(&mut self) -> Result<(), ActivityError> {
         debug!("Stepping LaneAssist");
         sleep_random();
-        self.steering_controller.send(Steering { angle: 2.34 }).unwrap();
+        self.steering_controller
+            .write_uninit()
+            .unwrap()
+            .write_payload(Steering { angle: 2.34 })
+            .send()
+            .unwrap();
         Ok(())
     }
 
@@ -687,41 +667,4 @@ fn random_walk_integer(previous: usize, change_prop: f64, max_delta: usize) -> u
 /// Sleep for a random amount of time
 fn sleep_random() {
     thread::sleep(Duration::from_millis(gen_random_in_range(SLEEP_RANGE) as u64));
-}
-
-fn create_producer<I: Interface>(
-    topic: &str,
-) -> <<I as Interface>::Producer<LolaRuntimeImpl> as Producer<LolaRuntimeImpl>>::OfferedProducer {
-    debug!("Creating MW COM Producer for {}...", topic);
-    let service_id = InstanceSpecifier::new(topic).expect("Failed to create InstanceSpecifier");
-    let producer_builder = mw_com_runtime().producer_builder::<I>(service_id);
-    let producer = producer_builder.build().unwrap();
-    producer.offer().expect("can't offer a producer")
-}
-
-fn create_consumer<I: Interface>(topic: &str) -> <I as Interface>::Consumer<LolaRuntimeImpl> {
-    debug!("Creating MW COM Consumer for {}...", topic);
-    let mut tries = 0;
-    loop {
-        let service_id = InstanceSpecifier::new(topic).expect("Failed to create InstanceSpecifier");
-        let consumer_discovery = mw_com_runtime().find_service::<I>(FindServiceSpecifier::Specific(service_id));
-        let available_service_instances = consumer_discovery.get_available_instances().unwrap();
-
-        if available_service_instances.is_empty() {
-            debug!("No producer yet available for {}, waiting...", topic);
-            sleep(Duration::from_millis(500));
-            tries += 1;
-            if tries > 100 {
-                break;
-            }
-            continue;
-        }
-
-        // Select service instance at specific handle_index
-        let handle_index = 0; // or any index you need from vector of instances
-        let consumer_builder = available_service_instances.into_iter().nth(handle_index).unwrap();
-
-        return consumer_builder.build().unwrap();
-    }
-    panic!("can't create consumer for {topic}")
 }

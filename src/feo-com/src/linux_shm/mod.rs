@@ -33,8 +33,8 @@
 pub(crate) mod shared_memory;
 
 use crate::interface::{
-    ActivityInput, ActivityOutput, ActivityOutputDefault, Error, InputGuard, OutputGuard, OutputUninitGuard, Topic,
-    TopicHandle,
+    ActivityInput, ActivityOutput, ActivityOutputDefault, Error, FeoComData, FeoComDefault, InputGuard, OutputGuard,
+    OutputUninitGuard, Topic, TopicHandle,
 };
 use crate::linux_shm::shared_memory::{
     MappedPtrReadGuard, MappedPtrWriteGuard, MappingMode, ReadWriteAccessControlPtr, TopicInitializationAgentRole,
@@ -55,7 +55,6 @@ use nix::fcntl::OFlag;
 use nix::sys::mman::{mmap, shm_open, MapFlags, ProtFlags};
 use nix::sys::stat::Mode;
 use nix::unistd;
-use score_log::fmt::ScoreDebug;
 use score_log::{debug, error, info};
 use std::collections::HashMap;
 use std::io::{read_to_string, Write};
@@ -299,7 +298,7 @@ impl ComRuntime {
 }
 
 // Initialize the topic and register it in the global COM runtime
-pub fn init_topic<T: Debug + ScoreDebug + Default + 'static>(
+pub fn init_topic<T: FeoComData + Default + 'static>(
     topic: Topic,
     mapping_mode: MappingMode,
     agent_role: TopicInitializationAgentRole,
@@ -308,9 +307,9 @@ pub fn init_topic<T: Debug + ScoreDebug + Default + 'static>(
     TopicHandle::from(Box::new(()))
 }
 
-pub struct LinuxShmInputGuard<T: Debug + ScoreDebug>(MappedPtrReadGuard<T>);
+pub struct LinuxShmInputGuard<T: FeoComData>(MappedPtrReadGuard<T>);
 
-impl<T: Debug + ScoreDebug> Deref for LinuxShmInputGuard<T> {
+impl<T: FeoComData> Deref for LinuxShmInputGuard<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -318,13 +317,13 @@ impl<T: Debug + ScoreDebug> Deref for LinuxShmInputGuard<T> {
     }
 }
 
-pub struct LinuxShmOutputGuard<T: Debug + ScoreDebug> {
+pub struct LinuxShmOutputGuard<T: FeoComData> {
     ptr: MappedPtrWriteGuard<T>,
 }
 
 impl<T> LinuxShmOutputGuard<T>
 where
-    T: Debug + ScoreDebug,
+    T: FeoComData,
 {
     pub(crate) fn send(self) -> Result<(), Error> {
         self.ptr.send();
@@ -332,7 +331,7 @@ where
     }
 }
 
-impl<T: Debug + ScoreDebug> Deref for LinuxShmOutputGuard<T> {
+impl<T: FeoComData> Deref for LinuxShmOutputGuard<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -340,17 +339,17 @@ impl<T: Debug + ScoreDebug> Deref for LinuxShmOutputGuard<T> {
     }
 }
 
-impl<T: Debug + ScoreDebug> DerefMut for LinuxShmOutputGuard<T> {
+impl<T: FeoComData> DerefMut for LinuxShmOutputGuard<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         DerefMut::deref_mut(&mut self.ptr)
     }
 }
 
-pub struct LinuxShmOutputUninitGuard<T: Debug + ScoreDebug>(MappedPtrWriteGuard<T>);
+pub struct LinuxShmOutputUninitGuard<T: FeoComData>(MappedPtrWriteGuard<T>);
 
 impl<T> LinuxShmOutputUninitGuard<T>
 where
-    T: Debug + ScoreDebug,
+    T: FeoComData,
 {
     // Value is initialized when allocated
     pub(crate) fn assume_init(self) -> LinuxShmOutputGuard<T> {
@@ -366,7 +365,7 @@ where
 
 impl<T> LinuxShmOutputUninitGuard<T>
 where
-    T: Debug + ScoreDebug + Default,
+    T: FeoComData + Default,
 {
     // Overwrites with [Default::default]
     pub(crate) fn init(mut self) -> LinuxShmOutputGuard<T> {
@@ -375,7 +374,7 @@ where
     }
 }
 
-impl<T: Debug + ScoreDebug> Deref for LinuxShmOutputUninitGuard<T> {
+impl<T: FeoComData> Deref for LinuxShmOutputUninitGuard<T> {
     type Target = MaybeUninit<T>;
 
     fn deref(&self) -> &Self::Target {
@@ -385,7 +384,7 @@ impl<T: Debug + ScoreDebug> Deref for LinuxShmOutputUninitGuard<T> {
     }
 }
 
-impl<T: Debug + ScoreDebug> DerefMut for LinuxShmOutputUninitGuard<T> {
+impl<T: FeoComData> DerefMut for LinuxShmOutputUninitGuard<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         // Safety: MaybeUninit<T> is guaranteed to have the same size, alignment, and ABI as T (according to Rust docs)
         // T is guarantied to be initialized
@@ -399,7 +398,7 @@ pub struct LinuxShmInput<T> {
     _type: PhantomData<T>,
 }
 
-impl<T: Debug + ScoreDebug + 'static> LinuxShmInput<T> {
+impl<T: FeoComData + 'static> LinuxShmInput<T> {
     pub fn new(topic: Topic) -> Self {
         Self {
             ptr: ComRuntime::global_runtime().topic_mapping::<T>(topic, MappingMode::Read),
@@ -410,9 +409,9 @@ impl<T: Debug + ScoreDebug + 'static> LinuxShmInput<T> {
 
 impl<T> ActivityInput<T> for LinuxShmInput<T>
 where
-    T: Debug + ScoreDebug + 'static,
+    T: FeoComData + 'static,
 {
-    fn read(&self) -> Result<InputGuard<T>, Error> {
+    fn read(&self) -> Result<InputGuard<'_, T>, Error> {
         Ok(InputGuard::LinuxShm(LinuxShmInputGuard(self.ptr.get())))
     }
 }
@@ -423,7 +422,7 @@ pub struct LinuxShmOutput<T> {
     _type: PhantomData<T>,
 }
 
-impl<T: Debug + ScoreDebug + 'static> LinuxShmOutput<T> {
+impl<T: FeoComData + 'static> LinuxShmOutput<T> {
     pub fn new(topic: Topic) -> Self {
         Self {
             ptr: ComRuntime::global_runtime().topic_mapping::<T>(topic, MappingMode::Write),
@@ -434,10 +433,10 @@ impl<T: Debug + ScoreDebug + 'static> LinuxShmOutput<T> {
 
 impl<T> ActivityOutput<T> for LinuxShmOutput<T>
 where
-    T: Debug + ScoreDebug + 'static,
+    T: FeoComData + 'static,
 {
     // Initialized when allocated
-    fn write_uninit(&mut self) -> Result<OutputUninitGuard<T>, Error> {
+    fn write_uninit(&mut self) -> Result<OutputUninitGuard<'_, T>, Error> {
         Ok(OutputUninitGuard::LinuxShm(LinuxShmOutputUninitGuard(
             self.ptr.get_mut(),
         )))
@@ -446,10 +445,10 @@ where
 
 impl<T> ActivityOutputDefault<T> for LinuxShmOutput<T>
 where
-    T: Debug + ScoreDebug + Default + 'static,
+    T: FeoComData + FeoComDefault + 'static,
 {
     // Overwrites with [Default::default]
-    fn write_init(&mut self) -> Result<OutputGuard<T>, Error> {
+    fn write_init(&mut self) -> Result<OutputGuard<'_, T>, Error> {
         let mut ptr = self.ptr.get_mut();
         *ptr = T::default();
         Ok(OutputGuard::LinuxShm(LinuxShmOutputGuard { ptr }))

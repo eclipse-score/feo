@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2025 Contributors to the Eclipse Foundation
+ * Copyright (c) 2026 Contributors to the Eclipse Foundation
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information regarding copyright ownership.
@@ -11,24 +11,9 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use com_api::{
-    CommData, Consumer, Interface, OfferedProducer, Producer, ProviderInfo, Publisher, Reloc, Runtime, Subscriber,
-};
-use score_log::ScoreDebug;
+use crate::*;
 
-/// Camera image
-///
-/// A neural network could detect the number of people,
-/// number of cars and the distance to the closest obstacle.
-/// Given that we do not have a real neural network,
-/// we already include information to be dummy inferred.
-#[derive(Debug, Default, Reloc, ScoreDebug)]
-#[repr(C)]
-pub struct CameraImage {
-    pub num_people: libc::size_t,
-    pub num_cars: libc::size_t,
-    pub distance_obstacle: f64,
-}
+use com_api::{CommData, Consumer, Interface, OfferedProducer, Producer, ProviderInfo, Publisher, Runtime, Subscriber};
 
 impl CommData for CameraImage {
     const ID: &'static str = "CameraImage";
@@ -100,18 +85,6 @@ impl<R: Runtime + ?Sized> OfferedProducer<R> for CameraOfferedProducer<R> {
         self.instance_info.stop_offer_service()?;
         Ok(producer)
     }
-}
-
-/// Radar scan
-///
-/// With post-processing, we could detect the closest object
-/// from a real radar scan. In this example,
-/// the message type already carries the information to be dummy extracted.
-#[derive(Debug, Default, Reloc, ScoreDebug)]
-#[repr(C)]
-pub struct RadarScan {
-    pub distance_obstacle: f64,
-    pub error_margin: f64,
 }
 
 impl CommData for RadarScan {
@@ -186,20 +159,6 @@ impl<R: Runtime + ?Sized> OfferedProducer<R> for RadarOfferedProducer<R> {
     }
 }
 
-/// Scene
-///
-/// The scene is the result of fusing the camera image and the radar scan
-/// with a neural network. In our example, we just extract the information.
-#[derive(Debug, Default, Reloc, ScoreDebug)]
-#[repr(C)]
-pub struct Scene {
-    pub num_people: usize,
-    pub num_cars: usize,
-    pub distance_obstacle: f64,
-    pub distance_left_lane: f64,
-    pub distance_right_lane: f64,
-}
-
 impl CommData for Scene {
     const ID: &'static str = "Scene";
 }
@@ -270,16 +229,6 @@ impl<R: Runtime + ?Sized> OfferedProducer<R> for NeuralNetOfferedProducer<R> {
         self.instance_info.stop_offer_service()?;
         Ok(producer)
     }
-}
-
-/// Brake instruction
-///
-/// This is an instruction whether to engage the brakes and at which level.
-#[derive(Debug, Default, Reloc, ScoreDebug)]
-#[repr(C)]
-pub struct BrakeInstruction {
-    pub active: bool,
-    pub level: f64,
 }
 
 impl CommData for BrakeInstruction {
@@ -354,15 +303,6 @@ impl<R: Runtime + ?Sized> OfferedProducer<R> for BrakeControllerOfferedProducer<
         self.instance_info.stop_offer_service()?;
         Ok(producer)
     }
-}
-
-/// Steering
-///
-/// This carries the angle of steering.
-#[derive(Debug, Default, Reloc, ScoreDebug)]
-#[repr(C)]
-pub struct Steering {
-    pub angle: f64,
 }
 
 impl CommData for Steering {

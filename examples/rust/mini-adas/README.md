@@ -9,68 +9,33 @@ You need to run the following commands in separate terminals.
 
 ```sh
 # Use 400ms cycle time
-bazel run //examples/rust/mini-adas:adas_primary -- 400
+bazelisk run //examples/rust/mini-adas:adas_primary -- 400
 ```
 
 ```sh
-bazel run //examples/rust/mini-adas:adas_secondary -- 1
+bazelisk run //examples/rust/mini-adas:adas_secondary -- 1
 ```
 
 ```sh
-bazel run //examples/rust/mini-adas:adas_secondary -- 2
+bazelisk run //examples/rust/mini-adas:adas_secondary -- 2
 ```
 
-If you want to include recording,
-you need to pass the recorder's agent ID to the primary
-and start the recorder.
+## Using middleware COM for data exchange
 
-```sh
-# Use 400ms cycle time
-# Wait for recorder with ID 900
-bazel run //examples/rust/mini-adas:adas_primary -- 400 900
-```
-
-```sh
-bazel run //examples/rust/mini-adas:adas_secondary -- 1
-```
-
-```sh
-bazel run //examples/rust/mini-adas:adas_secondary -- 2
-```
-
-```sh
-# Start recorder with ID 900
-bazel run //examples/rust/mini-adas:adas_recorder -- 900
-```
-
-You may also use more than one recorder by specifying multiple recorder agent ids as a dot-separated
-list to the primary and then start all the corresponding recorders.
-
+In order to use mw com instead of feo-com for data exchange use the following bazel targets instead:
 
 ```sh
 # Use 400ms cycle time
-# Wait for two recorders with IDs 900 and 901
-bazel run //examples/rust/mini-adas:adas_primary -- 400 900.901
+bazelisk run //examples/rust/mini-adas:adas_primary_mw_com -- 400
 ```
 
 ```sh
-bazel run //examples/rust/mini-adas:adas_secondary -- 1
+bazelisk run //examples/rust/mini-adas:adas_secondary_mw_com -- 1
 ```
 
 ```sh
-bazel run //examples/rust/mini-adas:adas_secondary -- 2
+bazelisk run //examples/rust/mini-adas:adas_secondary_mw_com -- 2
 ```
-
-```sh
-# Start recorder with ID 900
-bazel run //examples/rust/mini-adas:adas_recorder -- 900
-```
-
-```sh
-# Start recorder with ID 901
-bazel run //examples/rust/mini-adas:adas_recorder -- 901
-```
-
 
 ## Different signalling layer
 

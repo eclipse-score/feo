@@ -15,16 +15,17 @@ use crate::activities::components::{
     BrakeController, Camera, EmergencyBraking, EnvironmentRenderer, LaneAssist, NeuralNet, Radar, SteeringController,
     TrajectoryVisualizer,
 };
+#[cfg(feature = "com_mw")]
 use com_api::{Builder, LolaRuntimeBuilderImpl, LolaRuntimeImpl, RuntimeBuilder};
 use core::net::{IpAddr, Ipv4Addr, SocketAddr};
 use feo::activity::{ActivityBuilder, ActivityIdAndBuilder};
 use feo::ids::{ActivityId, AgentId, WorkerId};
 use feo::topicspec::{Direction, TopicSpecification};
+#[cfg(not(feature = "com_mw"))]
 use feo_com::interface::ComBackend;
 use mini_adas_gen::{BrakeInstruction, CameraImage, RadarScan, Scene, Steering};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::LazyLock;
 
 pub type WorkerAssignment = (WorkerId, Vec<(ActivityId, Box<dyn ActivityBuilder>)>);
 
@@ -48,7 +49,9 @@ pub const TOPIC_RADAR_FRONT: &str = "/feo/com/MiniAdasRadar";
 /// Allow up to two recorder processes (that potentially need to subscribe to every topic)
 pub const MAX_ADDITIONAL_SUBSCRIBERS: usize = 2;
 
+#[cfg(feature = "com_mw")]
 pub fn mw_com_runtime() -> &'static LolaRuntimeImpl {
+    use std::sync::LazyLock;
     static RUNTIME: LazyLock<LolaRuntimeImpl> = LazyLock::new(|| {
         let mut lola_runtime_builder = LolaRuntimeBuilderImpl::new();
         lola_runtime_builder.load_config(&PathBuf::from("./examples/rust/mini-adas/etc/mw_com_config.json"));

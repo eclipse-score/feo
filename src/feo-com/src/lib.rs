@@ -28,3 +28,5 @@ pub mod interface;
 pub mod iox2;
 #[cfg(feature = "ipc_linux_shm")]
 pub mod linux_shm;
+#[cfg(feature = "ipc_mw_com")]
+pub mod mw_com;

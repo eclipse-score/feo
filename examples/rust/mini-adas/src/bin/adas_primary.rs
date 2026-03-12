@@ -11,9 +11,14 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+#[cfg(not(feature = "com_mw"))]
+use feo::agent::com_init::initialize_com_primary;
 use feo::ids::AgentId;
 use feo_time::Duration;
+#[cfg(feature = "com_mw")]
 use mini_adas::config::mw_com_runtime;
+#[cfg(not(feature = "com_mw"))]
+use mini_adas::config::{agent_assignments_ids, topic_dependencies, COM_BACKEND, MAX_ADDITIONAL_SUBSCRIBERS};
 use score_log::{error, info, LevelFilter};
 use std::collections::HashSet;
 use stdout_logger::StdoutLoggerBuilder;
@@ -36,7 +41,18 @@ fn main() {
 
     let config = cfg::make_config(params);
 
+    // Initialize topics. Do not drop.
+    #[cfg(not(feature = "com_mw"))]
+    let _topic_guards = initialize_com_primary(
+        COM_BACKEND,
+        AGENT_ID,
+        topic_dependencies(),
+        &agent_assignments_ids(),
+        MAX_ADDITIONAL_SUBSCRIBERS,
+    );
+
     // Initialize MW COM
+    #[cfg(feature = "com_mw")]
     mw_com_runtime();
 
     // Setup and run primary

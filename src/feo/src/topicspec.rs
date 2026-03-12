@@ -16,10 +16,10 @@
 use crate::ids::ActivityId;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-use core::fmt;
+use core::fmt::Debug;
 use feo_com::interface::{
     init_topic_primary, init_topic_secondary, ComBackendTopicPrimaryInitialization,
-    ComBackendTopicSecondaryInitialization, Topic, TopicHandle,
+    ComBackendTopicSecondaryInitialization, FeoComData, FeoComDefault, Topic, TopicHandle,
 };
 use score_log::fmt::ScoreDebug;
 
@@ -46,7 +46,7 @@ pub struct TopicSpecification<'a> {
 }
 
 impl<'a> TopicSpecification<'a> {
-    pub fn new<T: Default + fmt::Debug + ScoreDebug + 'static>(
+    pub fn new<T: FeoComData + FeoComDefault + Debug + ScoreDebug + 'static>(
         topic: Topic<'a>,
         peers: Vec<(ActivityId, Direction)>,
     ) -> Self {

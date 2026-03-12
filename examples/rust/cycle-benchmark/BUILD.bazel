@@ -29,7 +29,7 @@ rust_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//src/feo:libfeo_recording_rust",
+        "//src/feo:libfeo_rust",
         "//src/feo-com:libfeo_com_rust",
         "//src/feo-time:libfeo_time_rust",
         "//src/feo-tracing:libfeo_tracing_rust",
@@ -54,7 +54,7 @@ rust_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":libcycle_benchmark_rust",
-        "//src/feo:libfeo_recording_rust",
+        "//src/feo:libfeo_rust",
         "//src/feo-time:libfeo_time_rust",
         "//src/feo-tracing:libfeo_tracing_rust",
         "@score_baselibs_rust//src/log/score_log",

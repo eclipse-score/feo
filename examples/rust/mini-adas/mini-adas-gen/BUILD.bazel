@@ -14,8 +14,12 @@ load("@rules_rust//rust:defs.bzl", "rust_library")
 load("@score_baselibs//score/language/safecpp:toolchain_features.bzl", "COMPILER_WARNING_FEATURES")
 
 rust_library(
-    name = "mini_adas_gen_rs",
-    srcs = ["mini_adas_gen.rs"],
+    name = "mini_adas_gen_rs_mw_com",
+    srcs = [
+        "lib.rs",
+        "mini_adas_gen_mw_com.rs",
+    ],
+    crate_features = ["mw_com"],
     crate_name = "mini_adas_gen",
     features = ["link_std_cpp_lib"],
     visibility = [
@@ -25,6 +29,19 @@ rust_library(
         ":mini_adas_gen_cpp",
         "@score_baselibs_rust//src/log/score_log",
         "@score_communication//score/mw/com/impl/rust/com-api/com-api",
+        "@score_crates//:libc",
+    ],
+)
+
+rust_library(
+    name = "mini_adas_gen_rs",
+    srcs = ["lib.rs"],
+    crate_name = "mini_adas_gen",
+    visibility = [
+        "//examples/rust/mini-adas:__subpackages__",
+    ],
+    deps = [
+        "@score_baselibs_rust//src/log/score_log",
         "@score_crates//:libc",
     ],
 )
