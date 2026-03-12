@@ -60,18 +60,18 @@ jobs:
 
       - name: Build via Bazel
         run: |
-          echo "Running: bazel build //..."
-          bazel build //...
+          echo "Running: bazel build --lockfile_mode=error //..."
+          bazel build --lockfile_mode=error //...
 
       - name: Run Unit Tests via Bazel
         run: |
-          echo "Running: bazel test //:unit_tests"
-          bazel test //:unit_tests
+          echo "Running: bazel test --lockfile_mode=error //:unit_tests"
+          bazel test --lockfile_mode=error //:unit_tests
 
       - name: Run Unit Test with Coverage for Rust
         run: |
           # Run tests
-          bazel coverage //:unit_tests \
+          bazel coverage --lockfile_mode=error //:unit_tests \
             --collect_code_coverage \
             --combined_report=lcov \
             --experimental_generate_llvm_lcov \
