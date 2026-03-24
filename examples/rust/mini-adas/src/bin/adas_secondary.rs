@@ -15,6 +15,8 @@
 use feo::agent::com_init::initialize_com_secondary;
 #[cfg(not(feature = "com_mw"))]
 use feo::ids::ActivityId;
+#[cfg(feature = "com_mw")]
+use mini_adas::config::init_mw_com_runtime;
 #[cfg(not(feature = "com_mw"))]
 use mini_adas::config::{agent_assignments_ids, topic_dependencies, COM_BACKEND};
 use score_log::{info, LevelFilter};
@@ -65,6 +67,10 @@ fn main() {
         .copied()
         .collect();
 
+    // Initialize MW COM
+    #[cfg(feature = "com_mw")]
+    init_mw_com_runtime(params.agent_id);
+
     // Initialize topics. Do not drop.
     #[cfg(not(feature = "com_mw"))]
     let _topic_guards = initialize_com_secondary(COM_BACKEND, topic_dependencies(), &local_activities);
@@ -106,6 +112,10 @@ fn main() {
         .flat_map(|(_, acts)| acts.iter())
         .copied()
         .collect();
+
+    // Initialize MW COM
+    #[cfg(feature = "com_mw")]
+    init_mw_com_runtime(params.agent_id);
 
     // Initialize topics. Do not drop.
     #[cfg(not(feature = "com_mw"))]
@@ -151,6 +161,10 @@ fn main() {
         .flat_map(|(_, acts)| acts.iter())
         .copied()
         .collect();
+
+    // Initialize MW COM
+    #[cfg(feature = "com_mw")]
+    init_mw_com_runtime(params.agent_id);
 
     // Initialize topics. Do not drop.
     #[cfg(not(feature = "com_mw"))]

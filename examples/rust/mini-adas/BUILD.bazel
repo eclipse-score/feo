@@ -97,7 +97,7 @@ rust_binary(
     ],
     data = [
         "etc/logging.json",
-        "etc/mw_com_config.json",
+        "etc/mw_com_config_100.json",
     ],
     env = {
         "MW_LOG_CONFIG_FILE": "examples/rust/mini-adas/etc/logging.json",
@@ -149,7 +149,8 @@ rust_binary(
     ],
     data = [
         "etc/logging.json",
-        "etc/mw_com_config.json",
+        "etc/mw_com_config_101.json",
+        "etc/mw_com_config_102.json",
     ],
     env = {
         "MW_LOG_CONFIG_FILE": "examples/rust/mini-adas/etc/logging.json",

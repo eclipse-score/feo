@@ -16,7 +16,7 @@ use feo::agent::com_init::initialize_com_primary;
 use feo::ids::AgentId;
 use feo_time::Duration;
 #[cfg(feature = "com_mw")]
-use mini_adas::config::mw_com_runtime;
+use mini_adas::config::init_mw_com_runtime;
 #[cfg(not(feature = "com_mw"))]
 use mini_adas::config::{agent_assignments_ids, topic_dependencies, COM_BACKEND, MAX_ADDITIONAL_SUBSCRIBERS};
 use score_log::{error, info, LevelFilter};
@@ -53,7 +53,7 @@ fn main() {
 
     // Initialize MW COM
     #[cfg(feature = "com_mw")]
-    mw_com_runtime();
+    init_mw_com_runtime(AGENT_ID);
 
     // Setup and run primary
     cfg::Primary::new(config)

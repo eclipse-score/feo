@@ -1,4 +1,7 @@
 {
+  "global": {
+    "applicationID": 4000
+  },
   "serviceTypes": [
     {
       "serviceTypeName": "/feo/com/CameraInterface",

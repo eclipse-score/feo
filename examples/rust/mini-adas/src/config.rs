@@ -26,6 +26,8 @@ use feo_com::interface::ComBackend;
 use mini_adas_gen::{BrakeInstruction, CameraImage, RadarScan, Scene, Steering};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+#[cfg(feature = "com_mw")]
+use std::sync::OnceLock;
 
 pub type WorkerAssignment = (WorkerId, Vec<(ActivityId, Box<dyn ActivityBuilder>)>);
 
@@ -50,14 +52,23 @@ pub const TOPIC_RADAR_FRONT: &str = "/feo/com/MiniAdasRadar";
 pub const MAX_ADDITIONAL_SUBSCRIBERS: usize = 2;
 
 #[cfg(feature = "com_mw")]
-pub fn mw_com_runtime() -> &'static LolaRuntimeImpl {
-    use std::sync::LazyLock;
-    static RUNTIME: LazyLock<LolaRuntimeImpl> = LazyLock::new(|| {
+static MW_COM_RUNTIME: OnceLock<LolaRuntimeImpl> = OnceLock::new();
+
+#[cfg(feature = "com_mw")]
+pub fn init_mw_com_runtime(agent_id: AgentId) -> &'static LolaRuntimeImpl {
+    MW_COM_RUNTIME.get_or_init(|| {
         let mut lola_runtime_builder = LolaRuntimeBuilderImpl::new();
-        lola_runtime_builder.load_config(&PathBuf::from("./examples/rust/mini-adas/etc/mw_com_config.json"));
+        lola_runtime_builder.load_config(&PathBuf::from(format!(
+            "./examples/rust/mini-adas/etc/mw_com_config_{}.json",
+            agent_id.id()
+        )));
         lola_runtime_builder.build().unwrap()
-    });
-    &RUNTIME
+    })
+}
+
+#[cfg(feature = "com_mw")]
+pub fn mw_com_runtime() -> &'static LolaRuntimeImpl {
+    MW_COM_RUNTIME.get().unwrap()
 }
 
 pub fn socket_paths() -> (PathBuf, PathBuf) {
