@@ -13,3 +13,8 @@
 # /docs/verification        @eclipse-score/<module_name>/quality-manager @eclipse-score/<module_name>/safety-manager
 # /components               @eclipse-score/<module_name>/technical-lead
 # /components/*/            @eclipse-score/<module_name>/automotive-score-committers
+
+# For more information about CODEOWNERS, see:
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+* @armin-acn, @johannes-esr, @masc2023
