@@ -41,7 +41,7 @@ jobs:
       - name: Bazel info (discover paths)
         id: bazel-info
         run: |
-          echo "BAZEL_OUTPUT_BASE=$(bazel info output_base)" >> $GITHUB_ENV
+          echo "BAZEL_OUTPUT_BASE=$(bazel info --lockfile_mode=error output_base)" >> $GITHUB_ENV
           echo "BAZEL_USER_ROOT=$(bazel info output_user_root)" >> $GITHUB_ENV
           echo "BAZEL_REPO_CACHE=$(bazel info repository_cache)" >> $GITHUB_ENV
           bazel info
@@ -61,12 +61,12 @@ jobs:
       - name: Build via Bazel
         run: |
           echo "Running: bazel build //..."
-          bazel build //...
+          bazel build --lockfile_mode=error //...
 
       - name: Run Unit Tests via Bazel
         run: |
           echo "Running: bazel test //:unit_tests"
-          bazel test //:unit_tests
+          bazel test --lockfile_mode=error //:unit_tests
 
       - name: Run Unit Test with Coverage for Rust
         run: |

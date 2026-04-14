@@ -32,11 +32,11 @@ jobs:
           path: "~/.cache/bazel"
           key: bazel
 
-      - name: Bazel mod tidy
-        run: bazel mod tidy
+      - name: Bazel mod deps --lockfile_mode=refresh
+        run: bazel mod deps --lockfile_mode=refresh
 
       - name: Build all workspace targets
-        run: bazel build --config=x86_64-linux //...
+        run: bazel build --lockfile_mode=error --config=x86_64-linux //...
 
       - name: Run all workspace tests
         run: bazel test --config=x86_64-linux //...
