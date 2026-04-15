@@ -34,14 +34,73 @@ use crate::linux_shm;
 use crate::linux_shm::shared_memory::{MappingMode, TopicInitializationAgentRole};
 #[cfg(feature = "ipc_linux_shm")]
 use crate::linux_shm::{LinuxShmInputGuard, LinuxShmOutputGuard, LinuxShmOutputUninitGuard};
+#[cfg(feature = "ipc_mw_com")]
+use crate::mw_com::{MwComInputGuard, MwComOutputGuard, MwComOutputUninitGuard};
 use alloc::boxed::Box;
 use core::any::Any;
 use core::fmt;
+use core::fmt::Debug;
 use core::mem::MaybeUninit;
 use core::ops::{Deref, DerefMut};
 use score_log::fmt::ScoreDebug;
 
 pub type Topic<'a> = &'a str;
+
+#[cfg(feature = "ipc_mw_com")]
+pub trait FeoComData: Debug + ScoreDebug + com_api::CommData {}
+
+#[cfg(not(feature = "ipc_mw_com"))]
+pub trait FeoComData: Debug + ScoreDebug {}
+
+#[cfg(feature = "ipc_mw_com")]
+pub trait FeoComDefault: Default + com_api::PlacementDefault {}
+
+#[cfg(not(feature = "ipc_mw_com"))]
+pub trait FeoComDefault: Default {}
+
+#[cfg(feature = "ipc_mw_com")]
+impl<T: Debug + ScoreDebug + com_api::CommData> FeoComData for T {}
+
+#[cfg(not(feature = "ipc_mw_com"))]
+impl<T: Debug + ScoreDebug> FeoComData for T {}
+
+#[cfg(feature = "ipc_mw_com")]
+impl<T: Default + com_api::PlacementDefault> FeoComDefault for T {}
+
+#[cfg(not(feature = "ipc_mw_com"))]
+impl<T: Default> FeoComDefault for T {}
+
+pub struct DebugWrapper<T>(pub T);
+
+impl<T> core::fmt::Debug for DebugWrapper<T> {
+    fn fmt(&self, _f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        Ok(())
+    }
+}
+
+impl<T> score_log::fmt::ScoreDebug for DebugWrapper<T> {
+    fn fmt(
+        &self,
+        _w: &mut dyn score_log::fmt::ScoreWrite,
+        _spec: &score_log::fmt::FormatSpec,
+    ) -> score_log::fmt::Result {
+        Ok(())
+    }
+}
+
+impl<T> core::ops::Deref for DebugWrapper<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T> DerefMut for DebugWrapper<T> {
+    fn deref_mut(&mut self) -> &mut <Self as core::ops::Deref>::Target {
+        &mut self.0
+    }
+}
 
 // COM backend runtime switch.
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
@@ -50,6 +109,8 @@ pub enum ComBackend {
     Iox2,
     #[cfg(feature = "ipc_linux_shm")]
     LinuxShm,
+    #[cfg(feature = "ipc_mw_com")]
+    MwCom,
 }
 
 /// Error type of communication module
@@ -59,13 +120,21 @@ pub enum Error {
     SendFailed,
 }
 
+#[cfg(feature = "ipc_mw_com")]
+impl From<com_api::Error> for Error {
+    fn from(_e: com_api::Error) -> Self {
+        // TODO
+        Self::SendFailed
+    }
+}
+
 /// A trait for structs which can provide handles to input buffers
 pub trait ActivityInput<T>: fmt::Debug
 where
-    T: fmt::Debug + ScoreDebug,
+    T: FeoComData,
 {
     /// Get a handle to an input buffer
-    fn read(&self) -> Result<InputGuard<T>, Error>;
+    fn read(&self) -> Result<InputGuard<'_, T>, Error>;
 }
 
 /// Handle to an input buffer
@@ -73,19 +142,23 @@ where
 /// This handle wraps buffers of specific com implementations
 /// and thereby provides references to the buffer with a lifetime.
 /// It is an enum so that it has a size known at compile-time.
-pub enum InputGuard<T>
+pub enum InputGuard<'a, T>
 where
-    T: fmt::Debug + ScoreDebug,
+    T: FeoComData,
 {
     #[cfg(feature = "ipc_iceoryx2")]
     Iox2(Iox2InputGuard<T>),
     #[cfg(feature = "ipc_linux_shm")]
     LinuxShm(LinuxShmInputGuard<T>),
+    #[cfg(feature = "ipc_mw_com")]
+    MwCom(MwComInputGuard<'a, T>),
+    #[cfg(not(feature = "ipc_mw_com"))]
+    _Placeholder(core::marker::PhantomData<&'a T>),
 }
 
-impl<T> Deref for InputGuard<T>
+impl<T> Deref for InputGuard<'_, T>
 where
-    T: fmt::Debug + ScoreDebug,
+    T: FeoComData,
 {
     type Target = T;
 
@@ -95,26 +168,30 @@ where
             Self::Iox2(guard) => guard,
             #[cfg(feature = "ipc_linux_shm")]
             Self::LinuxShm(guard) => guard,
+            #[cfg(feature = "ipc_mw_com")]
+            Self::MwCom(guard) => guard,
+            #[cfg(not(feature = "ipc_mw_com"))]
+            Self::_Placeholder(_) => unimplemented!(),
         }
     }
 }
 
 /// A trait for structs which can provide handles to uninitialized output buffers
-pub trait ActivityOutput<T>: fmt::Debug
+pub trait ActivityOutput<T>: Debug
 where
-    T: fmt::Debug + ScoreDebug,
+    T: FeoComData,
 {
     /// Get a handle to an uninitialized output buffer
-    fn write_uninit(&mut self) -> Result<OutputUninitGuard<T>, Error>;
+    fn write_uninit(&mut self) -> Result<OutputUninitGuard<'_, T>, Error>;
 }
 
 /// A trait for structs which can provide handles to default-initialized output buffers
-pub trait ActivityOutputDefault<T>: fmt::Debug
+pub trait ActivityOutputDefault<T>: Debug
 where
-    T: fmt::Debug + ScoreDebug + Default,
+    T: FeoComData + FeoComDefault,
 {
     /// Get a handle to a default initialized output buffer
-    fn write_init(&mut self) -> Result<OutputGuard<T>, Error>;
+    fn write_init(&mut self) -> Result<OutputGuard<'_, T>, Error>;
 }
 
 /// Handle to an initialized output buffer
@@ -138,16 +215,20 @@ where
 /// For the buffer to be receivable as input, it has to be [Self::send],
 /// consuming the handle.
 #[must_use = "buffer has to be sent to be observable"]
-pub enum OutputGuard<T: fmt::Debug + ScoreDebug> {
+pub enum OutputGuard<'a, T: FeoComData> {
     #[cfg(feature = "ipc_iceoryx2")]
     Iox2(Iox2OutputGuard<T>),
     #[cfg(feature = "ipc_linux_shm")]
     LinuxShm(LinuxShmOutputGuard<T>),
+    #[cfg(feature = "ipc_mw_com")]
+    MwCom(MwComOutputGuard<'a, T>),
+    #[cfg(not(feature = "ipc_mw_com"))]
+    _Placeholder(core::marker::PhantomData<&'a T>),
 }
 
-impl<T> OutputGuard<T>
+impl<T> OutputGuard<'_, T>
 where
-    T: fmt::Debug + ScoreDebug,
+    T: FeoComData,
 {
     /// Send this buffer
     pub fn send(self) -> Result<(), Error> {
@@ -156,13 +237,17 @@ where
             Self::Iox2(guard) => guard.send(),
             #[cfg(feature = "ipc_linux_shm")]
             Self::LinuxShm(guard) => guard.send(),
+            #[cfg(feature = "ipc_mw_com")]
+            Self::MwCom(guard) => guard.send(),
+            #[cfg(not(feature = "ipc_mw_com"))]
+            Self::_Placeholder(_) => unimplemented!(),
         }
     }
 }
 
-impl<T> Deref for OutputGuard<T>
+impl<T> Deref for OutputGuard<'_, T>
 where
-    T: fmt::Debug + ScoreDebug,
+    T: FeoComData,
 {
     type Target = T;
 
@@ -172,13 +257,17 @@ where
             Self::Iox2(guard) => guard,
             #[cfg(feature = "ipc_linux_shm")]
             Self::LinuxShm(guard) => guard,
+            #[cfg(feature = "ipc_mw_com")]
+            Self::MwCom(guard) => guard.deref(),
+            #[cfg(not(feature = "ipc_mw_com"))]
+            Self::_Placeholder(_) => unimplemented!(),
         }
     }
 }
 
-impl<T> DerefMut for OutputGuard<T>
+impl<T> DerefMut for OutputGuard<'_, T>
 where
-    T: fmt::Debug + ScoreDebug + Default,
+    T: FeoComData + Default,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match self {
@@ -186,6 +275,10 @@ where
             Self::Iox2(guard) => guard,
             #[cfg(feature = "ipc_linux_shm")]
             Self::LinuxShm(guard) => guard,
+            #[cfg(feature = "ipc_mw_com")]
+            Self::MwCom(guard) => guard.deref_mut(),
+            #[cfg(not(feature = "ipc_mw_com"))]
+            Self::_Placeholder(_) => unimplemented!(),
         }
     }
 }
@@ -206,16 +299,20 @@ where
 /// - Writing directly to the uninitialized memory and call [Self::assume_init].
 ///   This is `unsafe` and the caller has to ensure that the buffer is initialized
 ///   to a valid value before calling [Self::assume_init].
-pub enum OutputUninitGuard<T: fmt::Debug + ScoreDebug> {
+pub enum OutputUninitGuard<'a, T: FeoComData> {
     #[cfg(feature = "ipc_iceoryx2")]
     Iox2(Iox2OutputUninitGuard<T>),
     #[cfg(feature = "ipc_linux_shm")]
     LinuxShm(LinuxShmOutputUninitGuard<T>),
+    #[cfg(feature = "ipc_mw_com")]
+    MwCom(MwComOutputUninitGuard<'a, T>),
+    #[cfg(not(feature = "ipc_mw_com"))]
+    _Placeholder(core::marker::PhantomData<&'a T>),
 }
 
-impl<T> OutputUninitGuard<T>
+impl<'a, T> OutputUninitGuard<'a, T>
 where
-    T: fmt::Debug + ScoreDebug,
+    T: FeoComData,
 {
     /// Assume the backing buffer is initialized
     ///
@@ -223,44 +320,56 @@ where
     ///
     /// The caller has to ensure that the uninitialized memory
     /// was completely initialized with a valid value.
-    pub unsafe fn assume_init(self) -> OutputGuard<T> {
+    pub unsafe fn assume_init(self) -> OutputGuard<'a, T> {
         match self {
             #[cfg(feature = "ipc_iceoryx2")]
             Self::Iox2(guard) => unsafe { OutputGuard::Iox2(guard.assume_init()) },
             #[cfg(feature = "ipc_linux_shm")]
             Self::LinuxShm(guard) => OutputGuard::LinuxShm(guard.assume_init()),
+            #[cfg(feature = "ipc_mw_com")]
+            Self::MwCom(guard) => OutputGuard::MwCom(guard.assume_init()),
+            #[cfg(not(feature = "ipc_mw_com"))]
+            Self::_Placeholder(_) => unimplemented!(),
         }
     }
 
     /// Write a complete valid type into the uninitialized buffer, initializing it in the process
-    pub fn write_payload(self, value: T) -> OutputGuard<T> {
+    pub fn write_payload(self, value: T) -> OutputGuard<'a, T> {
         match self {
             #[cfg(feature = "ipc_iceoryx2")]
             Self::Iox2(guard) => OutputGuard::Iox2(guard.write_payload(value)),
             #[cfg(feature = "ipc_linux_shm")]
             Self::LinuxShm(guard) => OutputGuard::LinuxShm(guard.write_payload(value)),
+            #[cfg(feature = "ipc_mw_com")]
+            Self::MwCom(guard) => OutputGuard::MwCom(guard.write_payload(value)),
+            #[cfg(not(feature = "ipc_mw_com"))]
+            Self::_Placeholder(_) => unimplemented!(),
         }
     }
 }
 
-impl<T> OutputUninitGuard<T>
+impl<'a, T> OutputUninitGuard<'a, T>
 where
-    T: fmt::Debug + ScoreDebug + Default,
+    T: FeoComData + FeoComDefault,
 {
     /// Initialize the uninitialized buffer with its [Default] trait
-    pub fn init(self) -> OutputGuard<T> {
+    pub fn init(self) -> OutputGuard<'a, T> {
         match self {
             #[cfg(feature = "ipc_iceoryx2")]
             Self::Iox2(guard) => OutputGuard::Iox2(guard.init()),
             #[cfg(feature = "ipc_linux_shm")]
             Self::LinuxShm(guard) => OutputGuard::LinuxShm(guard.init()),
+            #[cfg(feature = "ipc_mw_com")]
+            Self::MwCom(guard) => OutputGuard::MwCom(guard.init()),
+            #[cfg(not(feature = "ipc_mw_com"))]
+            Self::_Placeholder(_) => unimplemented!(),
         }
     }
 }
 
-impl<T> Deref for OutputUninitGuard<T>
+impl<T> Deref for OutputUninitGuard<'_, T>
 where
-    T: fmt::Debug + ScoreDebug,
+    T: FeoComData,
 {
     type Target = MaybeUninit<T>;
 
@@ -270,13 +379,17 @@ where
             Self::Iox2(guard) => guard,
             #[cfg(feature = "ipc_linux_shm")]
             Self::LinuxShm(guard) => guard,
+            #[cfg(feature = "ipc_mw_com")]
+            Self::MwCom(guard) => guard,
+            #[cfg(not(feature = "ipc_mw_com"))]
+            Self::_Placeholder(_) => unimplemented!(),
         }
     }
 }
 
-impl<T> DerefMut for OutputUninitGuard<T>
+impl<T> DerefMut for OutputUninitGuard<'_, T>
 where
-    T: fmt::Debug + ScoreDebug,
+    T: FeoComData,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match self {
@@ -284,6 +397,10 @@ where
             Self::Iox2(guard) => guard,
             #[cfg(feature = "ipc_linux_shm")]
             Self::LinuxShm(guard) => guard,
+            #[cfg(feature = "ipc_mw_com")]
+            Self::MwCom(guard) => guard,
+            #[cfg(not(feature = "ipc_mw_com"))]
+            Self::_Placeholder(_) => unimplemented!(),
         }
     }
 }
@@ -338,7 +455,7 @@ impl<'a> ComBackendTopicSecondaryInitialization<'a> {
     }
 }
 
-pub fn init_topic_primary<T: fmt::Debug + ScoreDebug + Default + 'static>(
+pub fn init_topic_primary<T: FeoComData + Default + 'static>(
     params: &ComBackendTopicPrimaryInitialization,
 ) -> TopicHandle {
     match params.backend {
@@ -360,10 +477,13 @@ pub fn init_topic_primary<T: fmt::Debug + ScoreDebug + Default + 'static>(
             };
             linux_shm::init_topic::<T>(params.topic, mapping_mode, agent_role)
         },
+
+        #[cfg(feature = "ipc_mw_com")]
+        ComBackend::MwCom => Box::new(()).into(),
     }
 }
 
-pub fn init_topic_secondary<T: fmt::Debug + ScoreDebug + Default + 'static>(
+pub fn init_topic_secondary<T: FeoComData + FeoComDefault + 'static>(
     params: &ComBackendTopicSecondaryInitialization,
 ) -> TopicHandle {
     match params.backend {
@@ -383,6 +503,9 @@ pub fn init_topic_secondary<T: fmt::Debug + ScoreDebug + Default + 'static>(
             };
             linux_shm::init_topic::<T>(params.topic, mapping_mode, agent_role)
         },
+
+        #[cfg(feature = "ipc_mw_com")]
+        ComBackend::MwCom => Box::new(()).into(),
     }
 }
 
@@ -409,5 +532,7 @@ pub fn run_backend(backend: ComBackend, _local_requests: usize, _remote_requests
         ComBackend::LinuxShm => {
             linux_shm::ComRuntime::run_service(_remote_requests);
         },
+        #[cfg(feature = "ipc_mw_com")]
+        ComBackend::MwCom => {},
     }
 }

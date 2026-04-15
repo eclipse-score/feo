@@ -29,7 +29,7 @@ pub type WorkerAssignments = HashMap<AgentId, Vec<(WorkerId, Vec<ActivityIdAndBu
 pub type ActivityDependencies = HashMap<ActivityId, Vec<ActivityId>>;
 
 /// Path of the config file relative to this file
-static CONFIG_PATH: &str = "../config/cycle_bench.json";
+static CONFIG_PATH: &str = "examples/rust/cycle-benchmark/config/cycle_bench.json";
 
 pub const BIND_ADDR: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8081);
 pub const BIND_ADDR2: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8082);
@@ -246,12 +246,7 @@ impl ApplicationConfig {
 }
 
 fn application_config() -> ApplicationConfig {
-    let config_file = Path::new(file!())
-        .parent()
-        .unwrap()
-        .join(CONFIG_PATH)
-        .canonicalize()
-        .unwrap();
+    let config_file = Path::new(CONFIG_PATH);
     info!("Reading configuration from {}", format!("{config_file:?}"));
 
     let file = File::open(config_file).unwrap_or_else(|e| panic!("failed to open config file: {e}"));

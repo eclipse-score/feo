@@ -39,3 +39,9 @@ build:lint --@aspect_rules_lint//lint:fail_on_violation=true
 build:lint-rust --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
 build:lint-rust --output_groups=+clippy_checks
 build:lint-rust --@rules_rust//:clippy.toml=//:clippy.toml
+
+# Communication integration
+common --@score_logging//score/mw/log/flags:KRemote_Logging=False
+common --@score_baselibs//score/json:base_library=nlohmann
+common --@score_baselibs//score/memory/shared/flags:use_typedshmd=False
+common --@score_communication//score/mw/com/flags:tracing_library=@score_baselibs//score/analysis/tracing/generic_trace_library/stub_implementation

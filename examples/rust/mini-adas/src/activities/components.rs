@@ -11,26 +11,36 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use crate::activities::messages::{BrakeInstruction, CameraImage, RadarScan, Scene, Steering};
-use core::fmt;
+use crate::activities::input::input;
+use crate::activities::output::output;
+#[cfg(feature = "com_mw")]
+use com_api::{LolaRuntimeImpl, Runtime, SampleContainer, Subscriber};
 use core::hash::{BuildHasher as _, Hasher as _};
 use core::mem::MaybeUninit;
-use core::ops::{Deref, DerefMut, Range};
+use core::ops::DerefMut;
+use core::ops::{Deref, Range};
 use core::time::Duration;
 use feo::activity::Activity;
 use feo::error::ActivityError;
 use feo::ids::ActivityId;
 use feo_com::interface::{ActivityInput, ActivityOutput};
-#[cfg(feature = "com_iox2")]
-use feo_com::iox2::{Iox2Input, Iox2Output};
-#[cfg(feature = "com_linux_shm")]
-use feo_com::linux_shm::{LinuxShmInput, LinuxShmOutput};
 use feo_tracing::instrument;
+#[cfg(feature = "com_mw")]
+use mini_adas_gen::{
+    BrakeControllerConsumer, BrakeControllerInterface, BrakeControllerOfferedProducer, CameraConsumer, CameraInterface,
+    CameraOfferedProducer, NeuralNetConsumer, NeuralNetInterface, NeuralNetOfferedProducer, RadarConsumer,
+    RadarInterface, RadarOfferedProducer, SteeringControllerConsumer, SteeringControllerInterface,
+    SteeringControllerOfferedProducer,
+};
+use mini_adas_gen::{BrakeInstruction, CameraImage, RadarScan, Scene, Steering};
 use score_log::debug;
-use score_log::fmt::ScoreDebug;
 use std::hash::RandomState;
 use std::thread;
+
 const SLEEP_RANGE: Range<i64> = 10..45;
+
+#[cfg(feature = "com_mw")]
+type MwComSubscriber<T> = <LolaRuntimeImpl as Runtime>::Subscriber<T>;
 
 /// Camera activity
 ///
@@ -41,7 +51,6 @@ pub struct Camera {
     activity_id: ActivityId,
     /// Image output
     output_image: Box<dyn ActivityOutput<CameraImage>>,
-
     // Local state for pseudo-random output generation
     num_people: usize,
     num_cars: usize,
@@ -50,9 +59,10 @@ pub struct Camera {
 
 impl Camera {
     pub fn build(activity_id: ActivityId, image_topic: &str) -> Box<dyn Activity> {
+        let output_image = output!(CameraInterface, image_topic, |i: CameraOfferedProducer<_>| i.image);
         Box::new(Self {
             activity_id,
-            output_image: activity_output(image_topic),
+            output_image,
             num_people: 4,
             num_cars: 10,
             distance_obstacle: 40.0,
@@ -92,12 +102,14 @@ impl Activity for Camera {
         debug!("Stepping Camera");
         sleep_random();
 
-        if let Ok(camera) = self.output_image.write_uninit() {
-            let image = self.get_image();
-            debug!("Sending image: {:?}", image);
-            let camera = camera.write_payload(image);
-            camera.send().unwrap();
-        }
+        let image = self.get_image();
+        debug!("Sending image: {:?}", image);
+        self.output_image
+            .write_uninit()
+            .unwrap()
+            .write_payload(image)
+            .send()
+            .unwrap();
         Ok(())
     }
 
@@ -124,9 +136,10 @@ pub struct Radar {
 
 impl Radar {
     pub fn build(activity_id: ActivityId, radar_topic: &str) -> Box<dyn Activity> {
+        let output_scan = output!(RadarInterface, radar_topic, |r: RadarOfferedProducer<_>| r.scan);
         Box::new(Self {
             activity_id,
-            output_scan: activity_output(radar_topic),
+            output_scan,
             distance_obstacle: 40.0,
         })
     }
@@ -161,12 +174,14 @@ impl Activity for Radar {
         debug!("Stepping Radar");
         sleep_random();
 
-        if let Ok(radar) = self.output_scan.write_uninit() {
-            let scan = self.get_scan();
-            debug!("Sending scan: {}", scan);
-            let radar = radar.write_payload(scan);
-            radar.send().unwrap();
-        }
+        let scan = self.get_scan();
+        debug!("Sending scan: {:?}", scan);
+        self.output_scan
+            .write_uninit()
+            .unwrap()
+            .write_payload(scan)
+            .send()
+            .unwrap();
         Ok(())
     }
 
@@ -196,11 +211,21 @@ pub struct NeuralNet {
 
 impl NeuralNet {
     pub fn build(activity_id: ActivityId, image_topic: &str, scan_topic: &str, scene_topic: &str) -> Box<dyn Activity> {
+        let output_scene = output!(NeuralNetInterface, scene_topic, |s: NeuralNetOfferedProducer<_>| s
+            .scene);
         Box::new(Self {
             activity_id,
-            input_image: activity_input(image_topic),
-            input_scan: activity_input(scan_topic),
-            output_scene: activity_output(scene_topic),
+            input_image: input!(
+                CameraInterface,
+                image_topic,
+                |i: CameraConsumer<_>| -> MwComSubscriber<CameraImage> { i.image }
+            ),
+            input_scan: input!(
+                RadarInterface,
+                scan_topic,
+                |r: RadarConsumer<_>| -> MwComSubscriber<RadarScan> { r.scan }
+            ),
+            output_scene,
         })
     }
 
@@ -245,19 +270,17 @@ impl Activity for NeuralNet {
         debug!("Stepping NeuralNet");
         sleep_random();
 
-        let camera = self.input_image.read();
-        let radar = self.input_scan.read();
-        let scene = self.output_scene.write_uninit();
+        let camera = self.input_image.read().unwrap();
+        let radar = self.input_scan.read().unwrap();
 
-        if let (Ok(camera), Ok(radar), Ok(mut scene)) = (camera, radar, scene) {
-            debug!("Inferring scene with neural network");
+        debug!("Inferring scene with neural network");
 
-            Self::infer(camera.deref(), radar.deref(), scene.deref_mut());
-            // Safety: `Scene` has `repr(C)` and was fully initialized by `Self::infer` above.
-            let scene = unsafe { scene.assume_init() };
-            debug!("Sending Scene {}", scene.deref());
-            scene.send().unwrap();
-        }
+        let mut scene = self.output_scene.write_uninit().unwrap();
+        Self::infer(&camera, &radar, scene.deref_mut());
+        // Safety: `Scene` has `repr(C)` and was fully initialized by `Self::infer` above.
+        let scene = unsafe { scene.assume_init() };
+        debug!("Sending Scene {:?}", scene.deref());
+        scene.send().unwrap();
         Ok(())
     }
 
@@ -286,10 +309,19 @@ pub struct EmergencyBraking {
 
 impl EmergencyBraking {
     pub fn build(activity_id: ActivityId, scene_topic: &str, brake_instruction_topic: &str) -> Box<dyn Activity> {
+        let output_brake_instruction = output!(
+            BrakeControllerInterface,
+            brake_instruction_topic,
+            |b: BrakeControllerOfferedProducer<_>| b.brake_instruction
+        );
         Box::new(Self {
             activity_id,
-            input_scene: activity_input(scene_topic),
-            output_brake_instruction: activity_output(brake_instruction_topic),
+            input_scene: input!(
+                NeuralNetInterface,
+                scene_topic,
+                |n: NeuralNetConsumer<_>| -> MwComSubscriber<Scene> { n.scene }
+            ),
+            output_brake_instruction,
         })
     }
 }
@@ -309,29 +341,27 @@ impl Activity for EmergencyBraking {
         debug!("Stepping EmergencyBraking");
         sleep_random();
 
-        let scene = self.input_scene.read();
-        let brake_instruction = self.output_brake_instruction.write_uninit();
+        let scene = self.input_scene.read().unwrap();
+        let brake_instruction = self.output_brake_instruction.write_uninit().unwrap();
 
-        if let (Ok(scene), Ok(brake_instruction)) = (scene, brake_instruction) {
-            const ENGAGE_DISTANCE: f64 = 30.0;
-            const MAX_BRAKE_DISTANCE: f64 = 15.0;
+        const ENGAGE_DISTANCE: f64 = 30.0;
+        const MAX_BRAKE_DISTANCE: f64 = 15.0;
 
-            if scene.distance_obstacle < ENGAGE_DISTANCE {
-                // Map distances ENGAGE_DISTANCE..MAX_BRAKE_DISTANCE to intensities 0.0..1.0
-                let level = f64::min(
-                    1.0,
-                    (ENGAGE_DISTANCE - scene.distance_obstacle) / (ENGAGE_DISTANCE - MAX_BRAKE_DISTANCE),
-                );
+        if scene.distance_obstacle < ENGAGE_DISTANCE {
+            // Map distances ENGAGE_DISTANCE..MAX_BRAKE_DISTANCE to intensities 0.0..1.0
+            let level = f64::min(
+                1.0,
+                (ENGAGE_DISTANCE - scene.distance_obstacle) / (ENGAGE_DISTANCE - MAX_BRAKE_DISTANCE),
+            );
 
-                let brake_instruction = brake_instruction.write_payload(BrakeInstruction { active: true, level });
-                brake_instruction.send().unwrap();
-            } else {
-                let brake_instruction = brake_instruction.write_payload(BrakeInstruction {
-                    active: false,
-                    level: 0.0,
-                });
-                brake_instruction.send().unwrap();
-            }
+            let brake_instruction = brake_instruction.write_payload(BrakeInstruction { active: true, level });
+            brake_instruction.send().unwrap();
+        } else {
+            let brake_instruction = brake_instruction.write_payload(BrakeInstruction {
+                active: false,
+                level: 0.0,
+            });
+            brake_instruction.send().unwrap();
         }
         Ok(())
     }
@@ -361,7 +391,11 @@ impl BrakeController {
     pub fn build(activity_id: ActivityId, brake_instruction_topic: &str) -> Box<dyn Activity> {
         Box::new(Self {
             activity_id,
-            input_brake_instruction: activity_input(brake_instruction_topic),
+            input_brake_instruction: input!(
+                BrakeControllerInterface,
+                brake_instruction_topic,
+                |b: BrakeControllerConsumer<_>| -> MwComSubscriber<BrakeInstruction> { b.brake_instruction }
+            ),
         })
     }
 }
@@ -381,13 +415,12 @@ impl Activity for BrakeController {
         debug!("Stepping BrakeController");
         sleep_random();
 
-        if let Ok(brake_instruction) = self.input_brake_instruction.read() {
-            if brake_instruction.active {
-                debug!(
-                    "BrakeController activating brakes with level {:.3}",
-                    brake_instruction.level
-                )
-            }
+        let brake_instruction = self.input_brake_instruction.read().unwrap();
+        if brake_instruction.active {
+            debug!(
+                "BrakeController activating brakes with level {:.3}",
+                brake_instruction.level
+            )
         }
         Ok(())
     }
@@ -416,7 +449,11 @@ impl EnvironmentRenderer {
     pub fn build(activity_id: ActivityId, scene_topic: &str) -> Box<dyn Activity> {
         Box::new(Self {
             activity_id,
-            input_scene: activity_input(scene_topic),
+            input_scene: input!(
+                NeuralNetInterface,
+                scene_topic,
+                |n: NeuralNetConsumer<_>| -> MwComSubscriber<Scene> { n.scene }
+            ),
         })
     }
 }
@@ -436,9 +473,8 @@ impl Activity for EnvironmentRenderer {
         debug!("Stepping EnvironmentRenderer");
         sleep_random();
 
-        if let Ok(_scene) = self.input_scene.read() {
-            debug!("Rendering scene");
-        }
+        let _scene = self.input_scene.read();
+        debug!("Rendering scene");
         Ok(())
     }
 
@@ -467,7 +503,11 @@ impl SteeringController {
     pub fn build(activity_id: ActivityId, steering_topic: &str) -> Box<dyn Activity> {
         Box::new(Self {
             activity_id,
-            input_steering: activity_input(steering_topic),
+            input_steering: input!(
+                SteeringControllerInterface,
+                steering_topic,
+                |s: SteeringControllerConsumer<_>| -> MwComSubscriber<Steering> { s.steering }
+            ),
         })
     }
 }
@@ -487,9 +527,8 @@ impl Activity for SteeringController {
         debug!("Stepping SteeringController");
         sleep_random();
 
-        if let Ok(steering) = self.input_steering.read() {
-            debug!("SteeringController adjusting angle to {:.3}", steering.angle)
-        }
+        let steering = self.input_steering.read().unwrap();
+        debug!("SteeringController adjusting angle to {:.3}", steering.angle);
         Ok(())
     }
 
@@ -500,26 +539,94 @@ impl Activity for SteeringController {
     }
 }
 
-/// Create an activity input.
-fn activity_input<T>(topic: &str) -> Box<dyn ActivityInput<T>>
-where
-    T: fmt::Debug + ScoreDebug + 'static,
-{
-    #[cfg(feature = "com_iox2")]
-    return Box::new(Iox2Input::new(topic));
-    #[cfg(feature = "com_linux_shm")]
-    return Box::new(LinuxShmInput::new(topic));
+/// LaneAssist stub activity
+///
+#[derive(Debug)]
+pub struct LaneAssist {
+    /// ID of the activity
+    activity_id: ActivityId,
+    /// Brake instruction output
+    steering_controller: Box<dyn ActivityOutput<Steering>>,
 }
 
-/// Create an activity output.
-fn activity_output<T>(topic: &str) -> Box<dyn ActivityOutput<T>>
-where
-    T: fmt::Debug + ScoreDebug + 'static,
-{
-    #[cfg(feature = "com_iox2")]
-    return Box::new(Iox2Output::new(topic));
-    #[cfg(feature = "com_linux_shm")]
-    return Box::new(LinuxShmOutput::new(topic));
+impl LaneAssist {
+    pub fn build(activity_id: ActivityId, steering_topic: &str) -> Box<dyn Activity> {
+        let steering_controller = output!(
+            SteeringControllerInterface,
+            steering_topic,
+            |s: SteeringControllerOfferedProducer<_>| s.steering
+        );
+        Box::new(Self {
+            activity_id,
+            steering_controller,
+        })
+    }
+}
+
+impl Activity for LaneAssist {
+    fn id(&self) -> ActivityId {
+        self.activity_id
+    }
+
+    #[instrument(name = "LaneAssist startup")]
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
+
+    #[instrument(name = "LaneAssist")]
+    fn step(&mut self) -> Result<(), ActivityError> {
+        debug!("Stepping LaneAssist");
+        sleep_random();
+        self.steering_controller
+            .write_uninit()
+            .unwrap()
+            .write_payload(Steering { angle: 2.34 })
+            .send()
+            .unwrap();
+        Ok(())
+    }
+
+    #[instrument(name = "LaneAssist shutdown")]
+    fn shutdown(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
+}
+
+/// TrajectoryVisualizer stub activity
+///
+#[derive(Debug)]
+pub struct TrajectoryVisualizer {
+    /// ID of the activity
+    activity_id: ActivityId,
+}
+
+impl TrajectoryVisualizer {
+    pub fn build(activity_id: ActivityId) -> Box<dyn Activity> {
+        Box::new(Self { activity_id })
+    }
+}
+
+impl Activity for TrajectoryVisualizer {
+    fn id(&self) -> ActivityId {
+        self.activity_id
+    }
+
+    #[instrument(name = "TrajectoryVisualizer startup")]
+    fn startup(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
+
+    #[instrument(name = "TrajectoryVisualizer")]
+    fn step(&mut self) -> Result<(), ActivityError> {
+        debug!("Stepping TrajectoryVisualizer");
+        sleep_random();
+        Ok(())
+    }
+
+    #[instrument(name = "TrajectoryVisualizer shutdown")]
+    fn shutdown(&mut self) -> Result<(), ActivityError> {
+        Ok(())
+    }
 }
 
 /// Generate a pseudo-random number in the specified range.

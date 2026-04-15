@@ -14,6 +14,7 @@
 //! Implementation of the primary agent for mixed signalling using sockets and mpsc channels
 
 use crate::activity::ActivityIdAndBuilder;
+use crate::agent::register_sigterm_handler;
 use crate::agent::NodeAddress;
 use crate::error::Error;
 use crate::ids::{ActivityId, AgentId, WorkerId};
@@ -27,7 +28,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::sync::atomic::AtomicBool;
 use feo_time::Duration;
-use score_log::{debug, info};
+use score_log::debug;
 use std::collections::HashMap;
 use std::thread::{self, JoinHandle};
 
@@ -144,12 +145,7 @@ impl Primary {
 
         // Create a shared flag to signal shutdown from an OS signal (e.g., Ctrl-C).
         let shutdown_requested = Arc::new(AtomicBool::new(false));
-        let shutdown_clone = shutdown_requested.clone();
-        ctrlc::set_handler(move || {
-            info!("Ctrl-C detected. Requesting graceful shutdown...");
-            shutdown_clone.store(true, core::sync::atomic::Ordering::Relaxed);
-        })
-        .expect("Error setting Ctrl-C handler");
+        register_sigterm_handler(shutdown_requested.clone());
 
         let scheduler = Scheduler::new(
             id,

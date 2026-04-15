@@ -24,6 +24,7 @@ use alloc::vec::Vec;
 use alloc::{boxed::Box, collections::BTreeSet};
 use core::sync::atomic::{AtomicBool, Ordering};
 use feo_time::Instant;
+use score_log::ScoreDebug;
 use score_log::{debug, error, info, trace};
 use std::collections::HashMap;
 use std::thread;
@@ -163,7 +164,7 @@ impl Scheduler {
                 // Wait until a new ready signal has been received.
                 // If we receive an error (i.e., an ActivityFailed signal), proceed to graceful shutdown.
                 if let Err(e) = self.wait_next_ready() {
-                    error!("A failure occurred during step execution: {:?}", e);
+                    error!("A failure occurred during step execution: {:?}, while waiting for activities ready signal: {:?}", e, &self.activity_states);
                     self.shutdown_gracefully("A failure occurred during step execution.");
                     return;
                 }
@@ -492,6 +493,7 @@ impl Scheduler {
 }
 
 /// Current state of an activity
+#[derive(Debug, ScoreDebug)]
 struct ActivityState {
     /// Whether the activity has been triggered for an action
     triggered: bool,

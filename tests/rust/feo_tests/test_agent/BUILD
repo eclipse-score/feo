@@ -35,11 +35,12 @@ rust_binary(
     visibility = ["//visibility:public"],
     deps = [
         "//src/feo:libfeo_rust",
-        "//src/feo-com:libfeo_com_rust",
+        "//src/feo-com:libfeo_com_rust_mw_com",
         "//src/feo-time:libfeo_time_rust",
         "//src/feo-tracing:libfeo_tracing_rust",
         "@score_baselibs_rust//src/log/score_log",
         "@score_baselibs_rust//src/log/stdout_logger",
+        "@score_communication//score/mw/com/impl/rust/com-api/com-api",
         "@score_crates//:clap",
         "@score_crates//:ipc_channel",
         "@score_crates//:libc",

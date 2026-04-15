@@ -47,8 +47,6 @@ pub mod cpp;
 pub mod debug_fmt;
 pub mod error;
 pub mod ids;
-#[cfg(feature = "recording")]
-pub mod recording;
 pub mod scheduler;
 pub mod signalling;
 mod timestamp;

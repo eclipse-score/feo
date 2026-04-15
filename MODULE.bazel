@@ -20,7 +20,13 @@ bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "score_bazel_platforms", version = "0.1.1")
 
 # SCORE bazel module dependencies
-bazel_dep(name = "score_tooling", version = "1.1.0")
+bazel_dep(name = "score_tooling", version = "1.1.2")
+git_override(
+    module_name = "score_tooling",
+    commit = "58581abf75b321defbb53ffbad3b65e7f62b5082",
+    remote = "https://github.com/eclipse-score/tooling.git",
+)
+
 bazel_dep(name = "score_crates", version = "0.0.6")
 git_override(
     module_name = "score_crates",
@@ -34,6 +40,47 @@ git_override(
     commit = "1b9f2786cd746ae9745dd2e81bf9073b4185a5e2",
     remote = "https://github.com/eclipse-score/baselibs_rust.git",
 )
+
+# SCORE communication integration
+bazel_dep(name = "score_communication", version = "0.1.2")
+#bazel_dep(name = "rules_doxygen", version = "2.6.1", dev_dependency = True)
+
+git_override(
+    module_name = "score_communication",
+    commit = "ced8c0e09d136c5de430268fd2270878b6f297ee",
+    remote = "https://github.com/eclipse-score/communication.git",
+)
+
+bazel_dep(name = "score_baselibs", version = "0.2.4")
+git_override(
+    module_name = "score_baselibs",
+    commit = "052c2f271be4239f97182b164f4903b8c88d6c72",
+    remote = "https://github.com/eclipse-score/baselibs.git",
+)
+
+## TRLC dependency for requirements traceability
+bazel_dep(name = "trlc", version = "0.0.0", dev_dependency = True)
+git_override(
+    module_name = "trlc",
+    commit = "a4f7e95210d8093ba208b91cbc5b681eae8d502b",  # trlc-2.0.3 release
+    remote = "https://github.com/bmw-software-engineering/trlc.git",
+)
+
+bazel_dep(name = "score_logging", version = "0.1.2")
+git_override(
+    module_name = "score_logging",
+    commit = "2833f5d6f28cbd8be1f3037dfa1217aa1ec94848",
+    remote = "https://github.com/eclipse-score/logging.git",
+)
+
+bazel_dep(name = "rules_boost", repo_name = "com_github_nelhage_rules_boost")
+archive_override(
+    module_name = "rules_boost",
+    strip_prefix = "rules_boost-master",
+    urls = ["https://github.com/nelhage/rules_boost/archive/refs/heads/master.tar.gz"],
+)
+
+bazel_dep(name = "boost.program_options", version = "1.87.0")
 
 # Rust rules for Bazel
 bazel_dep(name = "rules_rust", version = "0.68.1-score")
@@ -51,7 +98,7 @@ bazel_dep(name = "rules_proto", version = "7.1.0")
 bazel_dep(name = "aspect_rules_lint", version = "2.0.0")
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2")
 bazel_dep(name = "googletest", version = "1.17.0")
-bazel_dep(name = "score_docs_as_code", version = "3.0.0")
+bazel_dep(name = "score_docs_as_code", version = "3.0.1")
 
 # Toolchains
 bazel_dep(name = "rules_cc", version = "0.2.16")

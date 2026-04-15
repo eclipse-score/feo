@@ -12,17 +12,22 @@
  ********************************************************************************/
 
 use crate::activities::components::{
-    BrakeController, Camera, EmergencyBraking, EnvironmentRenderer, NeuralNet, Radar, SteeringController,
+    BrakeController, Camera, EmergencyBraking, EnvironmentRenderer, LaneAssist, NeuralNet, Radar, SteeringController,
+    TrajectoryVisualizer,
 };
-use crate::activities::messages::{BrakeInstruction, CameraImage, RadarScan, Scene, Steering};
-use crate::ffi::{lane_assist, trajectory_visualizer};
+#[cfg(feature = "com_mw")]
+use com_api::{Builder, LolaRuntimeBuilderImpl, LolaRuntimeImpl, RuntimeBuilder};
 use core::net::{IpAddr, Ipv4Addr, SocketAddr};
 use feo::activity::{ActivityBuilder, ActivityIdAndBuilder};
 use feo::ids::{ActivityId, AgentId, WorkerId};
 use feo::topicspec::{Direction, TopicSpecification};
+#[cfg(not(feature = "com_mw"))]
 use feo_com::interface::ComBackend;
+use mini_adas_gen::{BrakeInstruction, CameraImage, RadarScan, Scene, Steering};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+#[cfg(feature = "com_mw")]
+use std::sync::OnceLock;
 
 pub type WorkerAssignment = (WorkerId, Vec<(ActivityId, Box<dyn ActivityBuilder>)>);
 
@@ -37,14 +42,34 @@ pub const COM_BACKEND: ComBackend = ComBackend::LinuxShm;
 pub const BIND_ADDR: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8081);
 pub const BIND_ADDR2: SocketAddr = SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8082);
 
-pub const TOPIC_INFERRED_SCENE: &str = "feo/com/vehicle/inferred/scene";
-pub const TOPIC_CONTROL_BRAKES: &str = "feo/com/vehicle/control/brakes";
-pub const TOPIC_CONTROL_STEERING: &str = "feo/com/vehicle/control/steering";
-pub const TOPIC_CAMERA_FRONT: &str = "feo/com/vehicle/camera/front";
-pub const TOPIC_RADAR_FRONT: &str = "feo/com/vehicle/radar/front";
+pub const TOPIC_INFERRED_SCENE: &str = "/feo/com/MiniAdasNeuralNet";
+pub const TOPIC_CONTROL_BRAKES: &str = "/feo/com/MiniAdasBrakeController";
+pub const TOPIC_CONTROL_STEERING: &str = "/feo/com/MiniAdasSteeringController";
+pub const TOPIC_CAMERA_FRONT: &str = "/feo/com/MiniAdasCamera";
+pub const TOPIC_RADAR_FRONT: &str = "/feo/com/MiniAdasRadar";
 
 /// Allow up to two recorder processes (that potentially need to subscribe to every topic)
 pub const MAX_ADDITIONAL_SUBSCRIBERS: usize = 2;
+
+#[cfg(feature = "com_mw")]
+static MW_COM_RUNTIME: OnceLock<LolaRuntimeImpl> = OnceLock::new();
+
+#[cfg(feature = "com_mw")]
+pub fn init_mw_com_runtime(agent_id: AgentId) -> &'static LolaRuntimeImpl {
+    MW_COM_RUNTIME.get_or_init(|| {
+        let mut lola_runtime_builder = LolaRuntimeBuilderImpl::new();
+        lola_runtime_builder.load_config(&PathBuf::from(format!(
+            "./examples/rust/mini-adas/etc/mw_com_config_{}.json",
+            agent_id.id()
+        )));
+        lola_runtime_builder.build().unwrap()
+    })
+}
+
+#[cfg(feature = "com_mw")]
+pub fn mw_com_runtime() -> &'static LolaRuntimeImpl {
+    MW_COM_RUNTIME.get().unwrap()
+}
 
 pub fn socket_paths() -> (PathBuf, PathBuf) {
     (
@@ -94,12 +119,12 @@ pub fn agent_assignments() -> HashMap<AgentId, Vec<(WorkerId, Vec<ActivityIdAndB
     let w44: WorkerAssignment = (
         44.into(),
         vec![
-            (5.into(), Box::new(|id| lane_assist::CppActivity::build(id))),
+            (5.into(), Box::new(|id| LaneAssist::build(id, TOPIC_CONTROL_STEERING))),
             (
                 7.into(),
                 Box::new(|id| SteeringController::build(id, TOPIC_CONTROL_STEERING)),
             ),
-            (8.into(), Box::new(|id| trajectory_visualizer::CppActivity::build(id))),
+            (8.into(), Box::new(|id| TrajectoryVisualizer::build(id))),
         ],
     );
 

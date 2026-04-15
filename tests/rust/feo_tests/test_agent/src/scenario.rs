@@ -14,6 +14,7 @@
 use crate::activities::{Monitor, Receiver, Sender};
 use crate::config::TOPIC_COUNTER;
 use crate::Scenario;
+use com_api::{CommData, PlacementDefault, Reloc};
 use feo::activity::{ActivityBuilder, ActivityIdAndBuilder};
 use feo::ids::{ActivityId, AgentId, WorkerId};
 use feo::topicspec::{Direction, TopicSpecification};
@@ -132,4 +133,21 @@ impl ScenarioConfig for Scenario {
 #[derive(Debug, Default, ScoreDebug)]
 pub struct Counter {
     pub counter: usize,
+}
+
+impl CommData for Counter {
+    const ID: &'static str = "Counter";
+}
+
+// SAFETY: safe to relocate
+unsafe impl Reloc for Counter {}
+
+// SAFETY: only writes via field access
+unsafe impl PlacementDefault for Counter {
+    #[allow(clippy::not_unsafe_ptr_arg_deref)] // part of MW COM API
+    fn placement_default(s: *mut Self) {
+        unsafe {
+            (*s).counter = 0;
+        }
+    }
 }

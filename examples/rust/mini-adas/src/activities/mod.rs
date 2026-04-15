@@ -12,4 +12,5 @@
  ********************************************************************************/
 
 pub mod components;
-pub mod messages;
+pub mod input;
+pub mod output;

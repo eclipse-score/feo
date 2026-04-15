@@ -11,10 +11,14 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+#[cfg(feature = "com_mw")]
+use adas::config::init_mw_com_runtime;
+#[cfg(not(feature = "com_mw"))]
+use adas::config::{agent_assignments_ids, topic_dependencies, COM_BACKEND, MAX_ADDITIONAL_SUBSCRIBERS};
+#[cfg(not(feature = "com_mw"))]
 use feo::agent::com_init::initialize_com_primary;
 use feo::ids::AgentId;
 use feo_time::Duration;
-use mini_adas::config::{agent_assignments_ids, topic_dependencies, COM_BACKEND, MAX_ADDITIONAL_SUBSCRIBERS};
 use score_log::{error, info, LevelFilter};
 use std::collections::HashSet;
 use stdout_logger::StdoutLoggerBuilder;
@@ -38,6 +42,7 @@ fn main() {
     let config = cfg::make_config(params);
 
     // Initialize topics. Do not drop.
+    #[cfg(not(feature = "com_mw"))]
     let _topic_guards = initialize_com_primary(
         COM_BACKEND,
         AGENT_ID,
@@ -45,6 +50,10 @@ fn main() {
         &agent_assignments_ids(),
         MAX_ADDITIONAL_SUBSCRIBERS,
     );
+
+    // Initialize MW COM
+    #[cfg(feature = "com_mw")]
+    init_mw_com_runtime(AGENT_ID);
 
     // Setup and run primary
     cfg::Primary::new(config)
@@ -118,11 +127,11 @@ mod cfg {
 #[cfg(feature = "signalling_direct_tcp")]
 mod cfg {
     use super::{check_ids, Duration, Params, AGENT_ID};
+    use adas::config::{activity_dependencies, agent_assignments, worker_agent_map, BIND_ADDR};
     use feo::{
         agent::NodeAddress,
         ids::{ActivityId, AgentId, WorkerId},
     };
-    use mini_adas::config::{activity_dependencies, agent_assignments, worker_agent_map, BIND_ADDR};
     use std::collections::{HashMap, HashSet};
 
     pub(super) use feo::agent::direct::primary::{Primary, PrimaryConfig};
@@ -163,11 +172,11 @@ mod cfg {
 #[cfg(feature = "signalling_direct_unix")]
 mod cfg {
     use super::{check_ids, Duration, Params, AGENT_ID};
+    use adas::config::{activity_dependencies, agent_assignments, socket_paths, worker_agent_map};
     use feo::{
         agent::NodeAddress,
         ids::{ActivityId, AgentId, WorkerId},
     };
-    use mini_adas::config::{activity_dependencies, agent_assignments, socket_paths, worker_agent_map};
     use std::collections::{HashMap, HashSet};
 
     pub(super) use feo::agent::direct::primary::{Primary, PrimaryConfig};
@@ -208,9 +217,9 @@ mod cfg {
 #[cfg(feature = "signalling_relayed_tcp")]
 mod cfg {
     use super::{check_ids, Duration, Params, AGENT_ID};
+    use adas::config::{activity_dependencies, agent_assignments, worker_agent_map, BIND_ADDR, BIND_ADDR2};
     use feo::agent::NodeAddress;
     use feo::ids::{ActivityId, AgentId, WorkerId};
-    use mini_adas::config::{activity_dependencies, agent_assignments, worker_agent_map, BIND_ADDR, BIND_ADDR2};
     use std::collections::{HashMap, HashSet};
 
     pub(super) use feo::agent::relayed::primary::{Primary, PrimaryConfig};
@@ -247,9 +256,9 @@ mod cfg {
 #[cfg(feature = "signalling_relayed_unix")]
 mod cfg {
     use super::{check_ids, Duration, Params, AGENT_ID};
+    use adas::config::{activity_dependencies, agent_assignments, socket_paths, worker_agent_map};
     use feo::agent::NodeAddress;
     use feo::ids::{ActivityId, AgentId, WorkerId};
-    use mini_adas::config::{activity_dependencies, agent_assignments, socket_paths, worker_agent_map};
     use std::collections::{HashMap, HashSet};
 
     pub(super) use feo::agent::relayed::primary::{Primary, PrimaryConfig};
