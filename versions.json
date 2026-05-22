@@ -4,11 +4,11 @@
     "url": "https://eclipse-score.github.io/feo/main/"
   },
   {
-    "version": "pr-93",
-    "url": "https://eclipse-score.github.io/feo/pr-93/"
-  },
-  {
     "version": "pr-103",
     "url": "https://eclipse-score.github.io/feo/pr-103/"
+  },
+  {
+    "version": "pr-93",
+    "url": "https://eclipse-score.github.io/feo/pr-93/"
   }
 ]
