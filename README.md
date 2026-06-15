@@ -10,8 +10,7 @@ cd feo
 
 ## Rust setup
 
-You can build the Rust code both with `bazel` and with `cargo`.
-The CI will run both builds and ensure neither one is broken.
+You can build the Rust code with `bazel`.
 
 ### Bazel specific commands
 
@@ -50,7 +49,7 @@ bazel query //...
 Run example rust binary
 
 ```sh
-bazel run //examples/rust/mini-adas:adas_primary
+bazel run //examples/rust/mini-adas:adas_primary_com_iox2_direct_unix
 ```
 
 [bazelisk]: https://github.com/bazelbuild/bazelisk
@@ -70,8 +69,8 @@ curl --proto '=https' --tlsv1.2 -LsSf https://github.com/mstange/samply/releases
 Profile:
 
 ```sh
-cargo build --example hello_tracing --profile profiling
-samply record target/profiling/examples/hello_tracing
+bazel build -c opt //examples/rust/mini-adas:adas_primary_com_iox2_direct_unix
+samply record bazel-bin/examples/rust/mini-adas/adas_primary_com_iox2_direct_unix
 # ...
 # <ctrl-c>
 ```
@@ -96,7 +95,8 @@ mv bytehound libbytehound.so $HOME/.cargo/bin
 Record something with bytehound:
 
 ```sh
-LD_PRELOAD=$HOME/.cargo/bin/libbytehound.so target/debug/examples/hello_tracing
+bazel build //examples/rust/mini-adas:adas_primary_com_iox2_direct_unix
+LD_PRELOAD=$HOME/.cargo/bin/libbytehound.so bazel-bin/examples/rust/mini-adas/adas_primary_com_iox2_direct_unix
 # ...
 # <ctrl-c>
 ```
