@@ -435,3 +435,146 @@ mod loop_duration_meter {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::vec; // Import the vec! macro
+    use std::collections::VecDeque;
+    use std::sync::Mutex;
+
+    #[derive(Default)]
+    struct MockState {
+        sent_signals: Vec<(ActivityId, Signal)>,
+        broadcasted_signals: Vec<Signal>,
+        receive_queue: VecDeque<Signal>,
+        connected_agents: Vec<AgentId>,
+    }
+
+    struct MockConnector {
+        state: Arc<Mutex<MockState>>,
+    }
+
+    impl ConnectScheduler for MockConnector {
+        fn sync_time(&mut self) -> Result<(), Error> {
+            Ok(())
+        }
+
+        fn send_to_activity(&mut self, id: ActivityId, signal: &Signal) -> Result<(), Error> {
+            self.state.lock().unwrap().sent_signals.push((id, signal.clone()));
+            Ok(())
+        }
+        fn connect_remotes(&mut self) -> Result<(), Error> {
+            Ok(())
+        }
+
+        fn broadcast_terminate(&mut self, signal: &Signal) -> Result<(), Error> {
+            self.state.lock().unwrap().broadcasted_signals.push(signal.clone());
+            Ok(())
+        }
+
+        fn receive(&mut self, _timeout: feo_time::Duration) -> Result<Option<Signal>, Error> {
+            Ok(self.state.lock().unwrap().receive_queue.pop_front())
+        }
+
+        fn get_connected_agent_ids(&self) -> Vec<AgentId> {
+            self.state.lock().unwrap().connected_agents.clone()
+        }
+    }
+
+    static INIT: std::sync::Once = std::sync::Once::new();
+
+    fn init_test_env() {
+        INIT.call_once(|| {
+            crate::timestamp::initialize();
+        });
+    }
+
+    #[test]
+    fn test_step_ready_activities() {
+        init_test_env();
+        let state = Arc::new(Mutex::new(MockState::default()));
+        let connector = Box::new(MockConnector { state: state.clone() });
+        let shutdown_req = Arc::new(AtomicBool::new(false));
+
+        let id_a = ActivityId::from(1);
+        let id_b = ActivityId::from(2);
+        let id_c = ActivityId::from(3);
+
+        let mut depends = HashMap::new();
+        depends.insert(id_a, vec![]);
+        depends.insert(id_b, vec![]);
+        depends.insert(id_c, vec![id_a, id_b]);
+
+        let mut scheduler = Scheduler::new(
+            AgentId::from(1),
+            feo_time::Duration::from_millis(10),
+            feo_time::Duration::from_millis(10),
+            feo_time::Duration::from_millis(10),
+            depends,
+            connector,
+            shutdown_req,
+        );
+
+        // Mark A and B as ready (their fake operations have completed)
+        scheduler.activity_states.get_mut(&id_a).unwrap().triggered = true;
+        scheduler.activity_states.get_mut(&id_a).unwrap().ready = true;
+        scheduler.activity_states.get_mut(&id_b).unwrap().triggered = true;
+        scheduler.activity_states.get_mut(&id_b).unwrap().ready = true;
+
+        // Trigger evaluation
+        scheduler.step_ready_activities();
+
+        // C should now be triggered since A and B are ready
+        assert!(scheduler.activity_states.get(&id_c).unwrap().triggered);
+
+        // Verify the scheduler actually attempted to send the `Step` signal to C over the connector
+        let sent = &state.lock().unwrap().sent_signals;
+        assert_eq!(sent.len(), 1);
+        assert_eq!(sent[0].0, id_c);
+        assert!(matches!(sent[0].1, Signal::Step(_)));
+    }
+
+    #[test]
+    fn test_graceful_shutdown_only_started_activities() {
+        init_test_env();
+        let state = Arc::new(Mutex::new(MockState::default()));
+        let connector = Box::new(MockConnector { state: state.clone() });
+        let shutdown_req = Arc::new(AtomicBool::new(false));
+
+        let id_1 = ActivityId::from(1);
+        let id_2 = ActivityId::from(2);
+        let id_3 = ActivityId::from(3);
+
+        let mut depends = HashMap::new();
+        depends.insert(id_1, vec![]);
+        depends.insert(id_2, vec![]);
+        depends.insert(id_3, vec![]);
+
+        let mut scheduler = Scheduler::new(
+            AgentId::from(1),
+            feo_time::Duration::from_millis(10),
+            feo_time::Duration::from_millis(10),
+            feo_time::Duration::from_millis(10),
+            depends,
+            connector,
+            shutdown_req,
+        );
+
+        // Emulate a state where activities 1 and 2 successfully started, but 3 never did
+        scheduler.activity_states.get_mut(&id_1).unwrap().ever_ready = true;
+        scheduler.activity_states.get_mut(&id_2).unwrap().ever_ready = true;
+        scheduler.activity_states.get_mut(&id_3).unwrap().ever_ready = false;
+
+        scheduler.shutdown_gracefully("test shutdown");
+
+        let sent = &state.lock().unwrap().sent_signals;
+
+        // Should only send shutdown to 1 and 2, but NOT 3
+        assert_eq!(sent.len(), 2);
+        let sent_ids: BTreeSet<_> = sent.iter().map(|(id, _)| *id).collect();
+        assert!(sent_ids.contains(&id_1));
+        assert!(sent_ids.contains(&id_2));
+        assert!(!sent_ids.contains(&id_3));
+    }
+}

@@ -11,7 +11,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # *******************************************************************************
 
-load("@rules_rust//rust:defs.bzl", "rust_library")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 rust_library(
     name = "libfeo_rust",
@@ -102,4 +102,9 @@ cc_library(
         "@score_communication//score/mw/com/impl/rust/com-api/com-api-ffi-lola:registry_bridge_macro_cpp",
     ],
     alwayslink = True,
+)
+
+rust_test(
+    name = "feo_test",
+    crate = ":libfeo_rust",
 )
