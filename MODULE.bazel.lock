@@ -1515,6 +1515,34 @@
         ]
       }
     },
+    "@@rules_apple+//apple:extensions.bzl%non_module_deps": {
+      "general": {
+        "bzlTransitiveDigest": "CwnxZSval4booBn3AH4F4AU4C9LwBCZuIK9TxDRaO0k=",
+        "usagesDigest": "nVxkKreSQeZiSDD2uTCzqF98fvkcZpq4JTrk3u5qIeo=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "xctestrunner": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
+            "attributes": {
+              "urls": [
+                "https://github.com/google/xctestrunner/archive/b7698df3d435b6491b4b4c0f9fc7a63fbed5e3a6.tar.gz"
+              ],
+              "strip_prefix": "xctestrunner-b7698df3d435b6491b4b4c0f9fc7a63fbed5e3a6",
+              "sha256": "ae3a063c985a8633cb7eb566db21656f8db8eb9a0edb8c182312c7f0db53730d"
+            }
+          }
+        },
+        "recordedRepoMappingEntries": [
+          [
+            "rules_apple+",
+            "bazel_tools",
+            "bazel_tools"
+          ]
+        ]
+      }
+    },
     "@@rules_boost+//:boost/repositories.bzl%non_module_dependencies": {
       "general": {
         "bzlTransitiveDigest": "CH6D1dDIfTpuNTGyX/7xa+CD9PWcYPQYkAeDxz9LWME=",
@@ -8061,8 +8089,8 @@
     },
     "@@rules_swift+//swift:extensions.bzl%non_module_deps": {
       "general": {
-        "bzlTransitiveDigest": "hNHTAfoM6YZwUAHSOQ3qj3IXBjzcXrq7uH3M8BY2Xso=",
-        "usagesDigest": "9w18ec4dj90mX/JqpR2tBU2YVc1GU9yNxi/d7q6lLVA=",
+        "bzlTransitiveDigest": "188HAR1B7/zgGCexknNy/LA9sxfIShSv1ttw1bk62XM=",
+        "usagesDigest": "mhACFnrdMv9Wi0Mt67bxocJqviRkDSV+Ee5Mqdj5akA=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -8209,6 +8237,11 @@
             "rules_swift+",
             "bazel_tools",
             "bazel_tools"
+          ],
+          [
+            "rules_swift+",
+            "build_bazel_rules_swift",
+            "rules_swift+"
           ]
         ]
       }
