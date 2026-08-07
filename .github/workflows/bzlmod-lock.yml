@@ -22,7 +22,16 @@ on:
     branches:
       - main
 jobs:
-  bzlmod-lock:
-    uses: eclipse-score/cicd-workflows/.github/workflows/bzlmod-lock-check.yml@main
-    with:
-      working-directory: .
+  bzlmod-lockfile-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: bazelbuild/setup-bazelisk@v3
+      - uses: actions/cache@v4
+        with:
+          path: "~/.cache/bazel"
+          key: bazel
+      - name: Check lockfile is up to date
+        run: |
+          bazel mod tidy
+          git diff --exit-code
