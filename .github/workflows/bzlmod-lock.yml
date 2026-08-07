@@ -30,7 +30,7 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: "~/.cache/bazel"
-          key: bazel
+          key: bazel-${{ runner.os }}-${{ hashFiles('.bazelversion', 'MODULE.bazel', 'MODULE.bazel.lock') }}
       - name: Check lockfile is up to date
         run: |
           bazel mod tidy
