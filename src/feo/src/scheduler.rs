@@ -440,7 +440,7 @@ mod loop_duration_meter {
 mod tests {
     use super::*;
     use alloc::vec; // Import the vec! macro
-    use std::collections::VecDeque;
+    use alloc::collections::VecDeque;
     use std::sync::Mutex;
 
     #[derive(Default)]
@@ -461,7 +461,7 @@ mod tests {
         }
 
         fn send_to_activity(&mut self, id: ActivityId, signal: &Signal) -> Result<(), Error> {
-            self.state.lock().unwrap().sent_signals.push((id, signal.clone()));
+            self.state.lock().unwrap().sent_signals.push((id, *signal));
             Ok(())
         }
         fn connect_remotes(&mut self) -> Result<(), Error> {
@@ -469,7 +469,7 @@ mod tests {
         }
 
         fn broadcast_terminate(&mut self, signal: &Signal) -> Result<(), Error> {
-            self.state.lock().unwrap().broadcasted_signals.push(signal.clone());
+            self.state.lock().unwrap().broadcasted_signals.push(*signal);
             Ok(())
         }
 
