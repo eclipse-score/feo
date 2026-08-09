@@ -103,4 +103,9 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
+
+    // Enforce Bazel configuration for rust-analyzer (ignore Cargo)
+    "rust-analyzer.linkedProjects": [
+        "rust-project.json"
+    ]
 }

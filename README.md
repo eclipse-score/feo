@@ -54,6 +54,17 @@ bazel run //examples/rust/mini-adas:adas_primary_com_iox2_direct_unix
 
 [bazelisk]: https://github.com/bazelbuild/bazelisk
 
+## IDE Setup (rust-analyzer)
+
+Because this project relies exclusively on **Bazel** for Rust, you must generate a `rust-project.json` file for `rust-analyzer` to provide features like code completion and go-to-definition.
+
+Generate the configuration by running:
+```sh
+bazel run @rules_rust//tools/rust_analyzer:gen_rust_project
+```
+
+*Note: If you use VS Code, a build task is included. You can press `Ctrl+Shift+B` (or `Cmd+Shift+B`) and select **Update rust-analyzer config** to regenerate this file anytime you add or modify dependencies in your `BUILD.bazel` files.*
+
 ## Profiling
 
 ### CPU
