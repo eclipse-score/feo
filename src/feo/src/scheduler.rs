@@ -439,8 +439,8 @@ mod loop_duration_meter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloc::vec; // Import the vec! macro
     use alloc::collections::VecDeque;
+    use alloc::vec; // Import the vec! macro
     use std::sync::Mutex;
 
     #[derive(Default)]
