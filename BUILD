@@ -44,7 +44,14 @@ exports_files([
     ".clang-format",
     "clippy.toml",
     "MODULE.bazel",
+    "MODULE.bazel.lock",
 ])
+
+alias(
+    name = "sbom",
+    actual = "//sbom",
+    tags = ["manual"],
+)
 
 test_suite(
     name = "unit_tests",

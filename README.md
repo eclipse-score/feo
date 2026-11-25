@@ -54,6 +54,21 @@ bazel run //examples/rust/mini-adas:adas_primary_com_iox2_direct_unix
 
 [bazelisk]: https://github.com/bazelbuild/bazelisk
 
+### Software bill of materials
+
+Generate a license inventory for the FEO runtime library and its transitive
+dependencies in SPDX 2.3 and CycloneDX 1.6 formats:
+
+```sh
+bazel build //:sbom
+```
+
+Use `--config=x86_64-linux` when the inventory should cover FEO's explicit
+x86-64 Linux target configuration.
+
+The reports are written to `bazel-bin/sbom/sbom.spdx.json` and
+`bazel-bin/sbom/sbom.cdx.json`. Their scope starts at `//src/feo:libfeo_rust`.
+
 ## IDE Setup (rust-analyzer)
 
 Because this project relies exclusively on **Bazel** for Rust, you must generate a `rust-project.json` file for `rust-analyzer` to provide features like code completion and go-to-definition.

@@ -14,8 +14,8 @@
     "https://bcr.bazel.build/modules/abseil-cpp/20250127.1/MODULE.bazel": "c4a89e7ceb9bf1e25cf84a9f830ff6b817b72874088bf5141b314726e46a57c1",
     "https://bcr.bazel.build/modules/abseil-cpp/20250512.1/MODULE.bazel": "d209fdb6f36ffaf61c509fcc81b19e81b411a999a934a032e10cd009a0226215",
     "https://bcr.bazel.build/modules/abseil-cpp/20250512.1/source.json": "d725d73707d01bb46ab3ca59ba408b8e9bd336642ca77a2269d4bfb8bbfd413d",
-    "https://bcr.bazel.build/modules/ape/1.0.1/MODULE.bazel": "37411cfd13bfc28cd264674d660a3ecb3b5b35b9dbe4c0b2be098683641b3fee",
-    "https://bcr.bazel.build/modules/ape/1.0.1/source.json": "96bc5909d1e3ccc4203272815ef874dbfd99651e240c05049f12193d16c1110b",
+    "https://bcr.bazel.build/modules/ape/1.1.0/MODULE.bazel": "07c162dbedc4a07d48d509e766e617913e3297631363c8e96915bd1d399199a8",
+    "https://bcr.bazel.build/modules/ape/1.1.0/source.json": "552eab68b7a522cd9ad636f2783b26e149181b5aa069a4eec1a097d5bc720916",
     "https://bcr.bazel.build/modules/apple_support/1.11.1/MODULE.bazel": "1843d7cd8a58369a444fc6000e7304425fba600ff641592161d9f15b179fb896",
     "https://bcr.bazel.build/modules/apple_support/1.13.0/MODULE.bazel": "7c8cdea7e031b7f9f67f0b497adf6d2c6a2675e9304ca93a9af6ed84eef5a524",
     "https://bcr.bazel.build/modules/apple_support/1.15.1/MODULE.bazel": "a0556fefca0b1bb2de8567b8827518f94db6a6e7e7d632b4c48dc5f865bc7c85",
@@ -444,7 +444,7 @@
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/abseil-cpp/20250127.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/abseil-cpp/20250127.1/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/abseil-cpp/20250512.1/MODULE.bazel": "not found",
-    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/ape/1.0.1/MODULE.bazel": "not found",
+    "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/ape/1.1.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/apple_support/1.11.1/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/apple_support/1.13.0/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/eclipse-score/bazel_registry/main/modules/apple_support/1.15.1/MODULE.bazel": "not found",
@@ -2069,7 +2069,7 @@
     "@@rules_nodejs+//nodejs:extensions.bzl%node": {
       "general": {
         "bzlTransitiveDigest": "FmfMiNXAxRoLWw3NloQbssosE1egrSvzirbQnso7j7E=",
-        "usagesDigest": "+/eD+bbRTXQvCxo1j0JSXtArQ5RZAZSjW14VyIMoWxY=",
+        "usagesDigest": "1eG+Rqcna0HLhmKwE8n3QZY7Reg20jQnsYATpkkCQvA=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -8360,6 +8360,28 @@
             "bazel_tools"
           ]
         ]
+      }
+    },
+    "@@score_sbom+//:extensions.bzl%sbom_metadata": {
+      "general": {
+        "bzlTransitiveDigest": "yMILe7GNX3N4kgmmSNIrsQpVM1BLB+E8wku7GCXr+Cs=",
+        "usagesDigest": "WeWz9mXgS/IJWfXm1LKRL38e+95Byfgo9Zxxs9OGO2Q=",
+        "recordedFileInputs": {
+          "@@//MODULE.bazel": "c3589d279f59ec25642f34985ef1e96b7fe0b4c72384f88dce2e9f3dbf580edd",
+          "@@score_sbom+//MODULE.bazel": "165508e9ed7a64bca3045d137880ed30bb0fcc5f5effb3f1992bf9a64506035b"
+        },
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "sbom_metadata": {
+            "repoRuleId": "@@score_sbom+//:extensions.bzl%_sbom_metadata_repo",
+            "attributes": {
+              "metadata_content": "{\"crates\":{},\"generator_version\":null,\"git_discovery_incomplete\":false,\"git_overrides\":{\"score_baselibs\":{\"commit\":\"bd9a138245b7c8bb47bbb9745a3fabc978e3a1b1\",\"remote\":\"https://github.com/eclipse-score/baselibs.git\"},\"score_baselibs_rust\":{\"commit\":\"1b9f2786cd746ae9745dd2e81bf9073b4185a5e2\",\"remote\":\"https://github.com/eclipse-score/baselibs_rust.git\"},\"score_communication\":{\"commit\":\"8024d81376e8f3271ebc7624c43fb075d408895f\",\"remote\":\"https://github.com/eclipse-score/communication.git\"},\"score_logging\":{\"commit\":\"2833f5d6f28cbd8be1f3037dfa1217aa1ec94848\",\"remote\":\"https://github.com/eclipse-score/logging.git\"},\"score_sbom\":{\"commit\":\"6c6f494887fb5a497849163db8dca9d79b0e8e98\",\"remote\":\"https://github.com/eclipse-score/sbom-tool.git\"},\"score_tooling\":{\"commit\":\"58581abf75b321defbb53ffbad3b65e7f62b5082\",\"remote\":\"https://github.com/eclipse-score/tooling.git\"},\"trlc\":{\"commit\":\"a4f7e95210d8093ba208b91cbc5b681eae8d502b\",\"remote\":\"https://github.com/bmw-software-engineering/trlc.git\"}},\"git_repositories\":{},\"http_archives\":{},\"licenses\":{},\"modules\":{\"score_feo\":{\"purl\":\"pkg:generic/score_feo@0.0.0\",\"version\":\"0.0.0\"}}}",
+              "tracked_modules": []
+            }
+          }
+        },
+        "recordedRepoMappingEntries": []
       }
     },
     "@@score_toolchains_rust+//extensions:ferrocene_toolchain_ext.bzl%ferrocene_toolchain_ext": {
