@@ -2069,7 +2069,7 @@
     "@@rules_nodejs+//nodejs:extensions.bzl%node": {
       "general": {
         "bzlTransitiveDigest": "FmfMiNXAxRoLWw3NloQbssosE1egrSvzirbQnso7j7E=",
-        "usagesDigest": "+/eD+bbRTXQvCxo1j0JSXtArQ5RZAZSjW14VyIMoWxY=",
+        "usagesDigest": "1eG+Rqcna0HLhmKwE8n3QZY7Reg20jQnsYATpkkCQvA=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -8360,6 +8360,28 @@
             "bazel_tools"
           ]
         ]
+      }
+    },
+    "@@score_sbom+//:extensions.bzl%sbom_metadata": {
+      "general": {
+        "bzlTransitiveDigest": "yMILe7GNX3N4kgmmSNIrsQpVM1BLB+E8wku7GCXr+Cs=",
+        "usagesDigest": "WeWz9mXgS/IJWfXm1LKRL38e+95Byfgo9Zxxs9OGO2Q=",
+        "recordedFileInputs": {
+          "@@//MODULE.bazel": "6d104d521c6696a1174520c6a88e0fc8afd39f43db2ae9feeb62eeedb532ce9c",
+          "@@score_sbom+//MODULE.bazel": "165508e9ed7a64bca3045d137880ed30bb0fcc5f5effb3f1992bf9a64506035b"
+        },
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "sbom_metadata": {
+            "repoRuleId": "@@score_sbom+//:extensions.bzl%_sbom_metadata_repo",
+            "attributes": {
+              "metadata_content": "{\"crates\":{},\"generator_version\":null,\"git_discovery_incomplete\":false,\"git_overrides\":{\"score_baselibs\":{\"commit\":\"bd9a138245b7c8bb47bbb9745a3fabc978e3a1b1\",\"remote\":\"https://github.com/eclipse-score/baselibs.git\"},\"score_baselibs_rust\":{\"commit\":\"1b9f2786cd746ae9745dd2e81bf9073b4185a5e2\",\"remote\":\"https://github.com/eclipse-score/baselibs_rust.git\"},\"score_communication\":{\"commit\":\"8024d81376e8f3271ebc7624c43fb075d408895f\",\"remote\":\"https://github.com/eclipse-score/communication.git\"},\"score_logging\":{\"commit\":\"2833f5d6f28cbd8be1f3037dfa1217aa1ec94848\",\"remote\":\"https://github.com/eclipse-score/logging.git\"},\"score_sbom\":{\"commit\":\"6c6f494887fb5a497849163db8dca9d79b0e8e98\",\"remote\":\"https://github.com/eclipse-score/sbom-tool.git\"},\"score_tooling\":{\"commit\":\"58581abf75b321defbb53ffbad3b65e7f62b5082\",\"remote\":\"https://github.com/eclipse-score/tooling.git\"},\"trlc\":{\"commit\":\"a4f7e95210d8093ba208b91cbc5b681eae8d502b\",\"remote\":\"https://github.com/bmw-software-engineering/trlc.git\"}},\"git_repositories\":{},\"http_archives\":{},\"licenses\":{},\"modules\":{\"score_feo\":{\"purl\":\"pkg:generic/score_feo@0.0.0\",\"version\":\"0.0.0\"}}}",
+              "tracked_modules": []
+            }
+          }
+        },
+        "recordedRepoMappingEntries": []
       }
     },
     "@@score_toolchains_rust+//extensions:ferrocene_toolchain_ext.bzl%ferrocene_toolchain_ext": {

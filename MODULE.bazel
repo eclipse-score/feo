@@ -89,6 +89,17 @@ bazel_dep(name = "protobuf", version = "30.2", repo_name = "com_google_protobuf"
 bazel_dep(name = "rules_proto", version = "7.1.0")
 
 # Tooling
+
+bazel_dep(name = "score_sbom", version = "0.1.1", dev_dependency = True)
+git_override(
+    module_name = "score_sbom",
+    commit = "6c6f494887fb5a497849163db8dca9d79b0e8e98",
+    remote = "https://github.com/eclipse-score/sbom-tool.git",
+)
+
+sbom_ext = use_extension("@score_sbom//:extensions.bzl", "sbom_metadata", dev_dependency = True)
+use_repo(sbom_ext, "sbom_metadata")
+
 bazel_dep(name = "aspect_rules_lint", version = "2.0.0")
 bazel_dep(name = "buildifier_prebuilt", version = "8.2.0.2")
 bazel_dep(name = "googletest", version = "1.17.0")
