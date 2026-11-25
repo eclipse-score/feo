@@ -16,6 +16,11 @@ module(
     compatibility_level = 1,
 )
 
+single_version_override(
+    module_name = "ape",
+    version = "1.1.0",
+)
+
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "score_bazel_platforms", version = "0.1.1")
 
